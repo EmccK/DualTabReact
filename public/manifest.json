@@ -1,0 +1,53 @@
+{
+    "manifest_version": 3,
+    "name": "DualTab",
+    "version": "1.0",
+    "description": "可自定义内外网地址的新标签页",
+    "permissions": [
+        "storage",
+        "unlimitedStorage",
+        "tabs",
+        "activeTab"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "images/icon16.png",
+            "48": "images/icon48.png",
+            "128": "images/icon128.png"
+        }
+    },
+    "host_permissions": [
+        "https://api.unsplash.com/*",
+        "*://*/"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "images/backgrounds/*"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "background": {
+        "service_worker": "js/background.js",
+        "type": "module"
+    },
+    "chrome_url_overrides": {
+        "newtab": "newtab.html"
+    },
+    "content_scripts": [
+        {
+            "matches": ["http://*/*", "https://*/*"],
+            "js": ["js/content-script.js"],
+            "run_at": "document_idle"
+        }
+    ],
+    "icons": {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+    }
+}
