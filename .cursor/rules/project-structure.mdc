@@ -1,0 +1,28 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# DualTab 项目结构
+
+DualTab是一个使用React和TypeScript构建的Chrome扩展，具有新标签页和弹出窗口功能。
+
+## 主要入口文件
+- 主应用入口: [src/main.tsx](mdc:src/main.tsx)
+- 新标签页入口: [src/pages/newtab/main.tsx](mdc:src/pages/newtab/main.tsx)
+- 弹出窗口入口: [src/pages/popup/main.tsx](mdc:src/pages/popup/main.tsx)
+- 背景脚本: [src/background/background.ts](mdc:src/background/background.ts)
+
+## 主要组件
+- 主应用组件: [src/App.tsx](mdc:src/App.tsx)
+- 新标签页组件: [src/pages/newtab/NewTabApp.tsx](mdc:src/pages/newtab/NewTabApp.tsx) 
+- 弹出窗口组件: [src/pages/popup/PopupApp.tsx](mdc:src/pages/popup/PopupApp.tsx)
+
+## 构建配置
+- Vite配置: [vite.config.js](mdc:vite.config.js)
+- TypeScript配置: [tsconfig.json](mdc:tsconfig.json), [tsconfig.app.json](mdc:tsconfig.app.json)
+
+## HTML模板
+- 主页模板: [index.html](mdc:index.html)
+- 新标签页模板: [newtab.html](mdc:newtab.html)
+- 弹出窗口模板: [popup.html](mdc:popup.html)

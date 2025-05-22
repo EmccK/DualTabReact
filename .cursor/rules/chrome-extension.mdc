@@ -1,0 +1,26 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# DualTab Chrome扩展架构
+
+DualTab是一个Chrome扩展，使用React和TypeScript构建，提供增强的新标签页和书签管理功能。
+
+## 扩展组件
+
+### 后台服务
+- [背景脚本](mdc:src/background/background.ts): 处理扩展的生命周期事件、消息通信和书签同步
+
+### 用户界面
+- [新标签页](mdc:src/pages/newtab/NewTabApp.tsx): 替代Chrome默认的新标签页，提供书签快速访问和分类管理
+- [弹出窗口](mdc:src/pages/popup/PopupApp.tsx): 点击工具栏图标时显示的弹出界面，提供快速添加书签功能
+
+### 构建系统
+Vite负责将React应用打包为Chrome扩展格式：
+- [构建配置](mdc:vite.config.js): 定义了多个入口点，包括新标签页、弹出窗口和背景脚本
+
+## 开发和调试
+- 使用`npm run dev`启动开发服务器
+- 使用`npm run build`构建生产版本的扩展
+- 在Chrome扩展管理页面加载`dist`目录进行测试

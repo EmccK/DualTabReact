@@ -1,0 +1,37 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# DualTab React组件架构
+
+本项目使用React 19和TypeScript构建用户界面组件，结合了TailwindCSS进行样式设计。
+
+## 组件设计原则
+- 组件应该遵循功能单一原则，每个组件只负责一个功能
+- 使用TypeScript类型定义确保类型安全
+- 使用React Hooks进行状态管理和副作用处理
+- 使用TailwindCSS进行样式设计，避免内联样式
+
+## 主要组件
+
+### 应用入口
+- [App](mdc:src/App.tsx): 主应用入口组件，在开发模式下使用
+- [NewTabApp](mdc:src/pages/newtab/NewTabApp.tsx): 新标签页应用组件，在扩展中替代Chrome默认新标签页
+- [PopupApp](mdc:src/pages/popup/PopupApp.tsx): 弹出窗口应用组件，点击扩展图标时显示
+
+### 状态管理
+使用React的useState和useEffect进行状态管理和副作用处理：
+```tsx
+const [mounted, setMounted] = useState(false)
+
+useEffect(() => {
+  setMounted(true)
+  console.log('[DEBUG] App mounted')
+}, [])
+```
+
+## 样式约定
+- 使用TailwindCSS的工具类进行样式设计
+- 页面布局使用Flex和Grid系统
+- 响应式设计使用TailwindCSS的断点系统 (sm, md, lg, xl)

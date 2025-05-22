@@ -1,0 +1,49 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# DualTab 开发工作流
+
+本文档描述了DualTab项目的开发、构建和测试流程。
+
+## 开发环境
+
+- 使用Vite作为开发服务器和构建工具
+- 使用React 19和TypeScript进行组件开发
+- 使用TailwindCSS进行样式设计
+- 使用ESLint进行代码质量检查
+
+## 项目命令
+
+通过[package.json](mdc:package.json)中定义的脚本可以执行以下命令：
+
+- `npm run dev`: 启动开发服务器
+- `npm run build`: 构建生产版本
+- `npm run build:check`: 运行TypeScript检查并构建
+- `npm run lint`: 运行ESLint代码质量检查
+- `npm run preview`: 预览构建后的应用
+
+## 构建流程
+
+Vite配置[vite.config.js](mdc:vite.config.js)定义了多个入口点，构建过程会生成Chrome扩展所需的所有文件：
+
+1. 新标签页 (newtab.html)
+2. 弹出窗口 (popup.html)
+3. 背景脚本 (background.js)
+4. 内容脚本 (content-script.js)
+
+## 扩展测试
+
+1. 运行`npm run build`生成扩展文件到`dist`目录
+2. 在Chrome浏览器中打开`chrome://extensions/`
+3. 启用"开发者模式"
+4. 点击"加载已解压的扩展程序"按钮
+5. 选择项目的`dist`目录
+
+## 代码提交流程
+
+1. 确保代码通过ESLint检查 (`npm run lint`)
+2. 确保应用可以成功构建 (`npm run build:check`)
+3. 确保新功能在Chrome扩展环境中正常工作
+4. 提交代码，使用清晰的提交消息描述更改
