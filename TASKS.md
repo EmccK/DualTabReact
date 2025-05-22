@@ -56,10 +56,55 @@
     - **备份恢复**：完整的数据备份和恢复机制
     - **API管理**：Unsplash API限制监控和管理
   
-- [ ] 子功能 1.3：配置路由与页面结构
-  - 设置newtab页面路由
-  - 设置popup页面路由
-  - 配置基础布局组件
+- [x] 子功能 1.3：配置路由与页面结构
+  - 完成日期：2025-05-22
+  - 实现方式：建立完整的现代化布局系统和UI组件库
+  - 修改/新增文件：
+    - src/lib/utils.ts（新增）- Shadcn/UI核心工具函数
+    - src/components/ui/button.tsx（新增）- 按钮组件
+    - src/components/ui/card.tsx（新增）- 卡片组件  
+    - src/components/ui/input.tsx（新增）- 输入框组件
+    - src/components/ui/dialog.tsx（新增）- 对话框组件
+    - src/components/layout/Header.tsx（新增）- 头部布局组件
+    - src/components/layout/SearchBar.tsx（新增）- 搜索栏组件
+    - src/components/layout/BackgroundContainer.tsx（新增）- 背景容器组件
+    - src/components/layout/MainLayout.tsx（新增）- 主布局组件
+    - src/components/layout/index.ts（新增）- 布局组件导出
+    - src/components/index.ts（新增）- 组件统一导出
+    - src/hooks/useClock.ts（新增）- 实时时钟Hook
+    - src/hooks/index.ts（更新）- 添加时钟Hook导出
+    - src/pages/newtab/NewTabApp.tsx（重构）- 使用新布局系统的主页面
+    - tsconfig.app.json（更新）- 添加路径别名支持
+    - tailwind.config.js（新增）- Tailwind CSS配置
+    - postcss.config.js（新增）- PostCSS配置
+    - src/index.css（重构）- 添加Shadcn/UI样式变量
+    - src/pages/newtab/index.css（重构）- 添加样式变量
+    - package.json（通过npm安装）- 添加UI库依赖
+  - 测试方法：运行 `npm run build` 成功构建，页面显示现代化布局和组件
+  - 备注：
+    - **样式系统修复**：正确配置Tailwind CSS v4和PostCSS，解决样式不显示问题
+    - **代码结构优化**：按功能模块拆分组件，每个组件职责单一
+    - **现代化UI系统**：集成Shadcn/UI组件库，提供一致的设计语言
+    - **布局系统架构**：
+      - MainLayout：主布局容器，整合所有布局元素
+      - Header：头部组件，包含时钟和操作按钮
+      - SearchBar：搜索栏组件，支持Google搜索和URL跳转
+      - BackgroundContainer：背景容器，支持图片背景和归属信息显示
+    - **性能优化**：
+      - 使用React.memo和useCallback优化渲染性能
+      - 实时时钟使用自定义Hook，避免不必要的重渲染
+      - 背景图片懒加载和错误处理机制
+    - **用户体验优化**：
+      - 毛玻璃效果的半透明卡片设计
+      - 平滑的hover动画和过渡效果
+      - 响应式布局适配不同屏幕尺寸
+      - 实时时钟显示和网络模式切换
+    - **TypeScript类型安全**：所有组件都有完整的类型定义
+    - **可扩展性**：组件化架构便于后续功能添加和维护
+    - **文件拆分原则**：
+      - UI组件按功能分类，每个组件独立文件
+      - 布局组件按职责分离，便于复用和维护
+      - 工具函数和Hooks独立组织，提高代码复用性
 
 ## 功能模块 2：核心书签系统（优先级：高）
 - [ ] 子功能 2.1：书签数据管理
