@@ -1,0 +1,480 @@
+/**
+ * Chrome存储API现代化封装
+ * 提供类型安全的存储操作，支持错误处理和性能优化
+ */
+
+import type { 
+  Bookmark, 
+  BookmarkCategory, 
+  NetworkMode, 
+  AppSettings, 
+  ApiLimits, 
+  BackupData,
+  StorageResponse,
+  OperationResult 
+} from '../types';
+
+// 存储键名常量
+export const STORAGE_KEYS = {
+  BOOKMARKS: 'bookmarks',
+  CATEGORIES: 'categories', 
+  NETWORK_MODE: 'networkMode',
+  SETTINGS: 'settings',
+  SPLASH_API_KEY: 'splash_api_key',
+  SPLASH_API_LIMITS: 'splash_api_limits',
+} as const;
+
+// 内存缓存，减少Chrome API调用
+const cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
+
+/**
+ * 通用的Chrome存储读取函数
+ */
+async function chromeStorageGet<T = any>(
+  keys: string | string[], 
+  useLocal = true
+): Promise<OperationResult<StorageResponse<T>>> {
+  try {
+    // 检查Chrome API可用性
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+      return {
+        success: false,
+        error: 'Chrome Storage API 不可用'
+      };
+    }
+
+    const storage = useLocal ? chrome.storage.local : chrome.storage.sync;
+    
+    return new Promise((resolve) => {
+      storage.get(keys, (data) => {
+        if (chrome.runtime.lastError) {
+          resolve({
+            success: false,
+            error: chrome.runtime.lastError.message
+          });
+        } else {
+          resolve({
+            success: true,
+            data: data as StorageResponse<T>
+          });
+        }
+      });
+    });
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '未知错误'
+    };
+  }
+}
+
+/**
+ * 通用的Chrome存储写入函数
+ */
+async function chromeStorageSet(
+  data: Record<string, any>, 
+  useLocal = true
+): Promise<OperationResult<void>> {
+  try {
+    // 检查Chrome API可用性
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+      return {
+        success: false,
+        error: 'Chrome Storage API 不可用'
+      };
+    }
+
+    const storage = useLocal ? chrome.storage.local : chrome.storage.sync;
+    
+    return new Promise((resolve) => {
+      storage.set(data, () => {
+        if (chrome.runtime.lastError) {
+          resolve({
+            success: false,
+            error: chrome.runtime.lastError.message
+          });
+        } else {
+          // 清除相关缓存
+          Object.keys(data).forEach(key => cache.delete(key));
+          resolve({ success: true });
+        }
+      });
+    });
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '未知错误'
+    };
+  }
+}
+
+/**
+ * 带缓存的数据读取
+ */
+async function getCachedData<T>(
+  key: string, 
+  fetcher: () => Promise<OperationResult<T>>, 
+  ttl = CACHE_TTL
+): Promise<OperationResult<T>> {
+  const cached = cache.get(key);
+  const now = Date.now();
+
+  // 检查缓存是否有效
+  if (cached && (now - cached.timestamp) < cached.ttl) {
+    return { success: true, data: cached.data };
+  }
+
+  // 获取新数据
+  const result = await fetcher();
+  
+  if (result.success && result.data !== undefined) {
+    // 更新缓存
+    cache.set(key, {
+      data: result.data,
+      timestamp: now,
+      ttl
+    });
+  }
+
+  return result;
+}
+
+/**
+ * 加载书签数据
+ */
+export async function loadBookmarks(): Promise<OperationResult<Bookmark[]>> {
+  return getCachedData(
+    STORAGE_KEYS.BOOKMARKS,
+    async () => {
+      const result = await chromeStorageGet<Bookmark[]>(STORAGE_KEYS.BOOKMARKS);
+      
+      if (!result.success) {
+        return result;
+      }
+
+      const bookmarks = result.data?.[STORAGE_KEYS.BOOKMARKS] || [];
+      return { success: true, data: bookmarks };
+    }
+  );
+}
+
+/**
+ * 保存书签数据
+ */
+export async function saveBookmarks(bookmarks: Bookmark[]): Promise<OperationResult<void>> {
+  // 数据验证
+  if (!Array.isArray(bookmarks)) {
+    return {
+      success: false,
+      error: '书签数据必须是数组格式'
+    };
+  }
+
+  return chromeStorageSet({ [STORAGE_KEYS.BOOKMARKS]: bookmarks });
+}
+
+/**
+ * 加载分类数据
+ */
+export async function loadCategories(): Promise<OperationResult<BookmarkCategory[]>> {
+  return getCachedData(
+    STORAGE_KEYS.CATEGORIES,
+    async () => {
+      const result = await chromeStorageGet<BookmarkCategory[]>(STORAGE_KEYS.CATEGORIES);
+      
+      if (!result.success) {
+        return result;
+      }
+
+      const categories = result.data?.[STORAGE_KEYS.CATEGORIES] || [];
+      return { success: true, data: categories };
+    }
+  );
+}
+
+/**
+ * 保存分类数据
+ */
+export async function saveCategories(categories: BookmarkCategory[]): Promise<OperationResult<void>> {
+  // 数据验证
+  if (!Array.isArray(categories)) {
+    return {
+      success: false,
+      error: '分类数据必须是数组格式'
+    };
+  }
+
+  return chromeStorageSet({ [STORAGE_KEYS.CATEGORIES]: categories });
+}
+
+/**
+ * 加载网络模式
+ */
+export async function loadNetworkMode(): Promise<OperationResult<NetworkMode>> {
+  return getCachedData(
+    STORAGE_KEYS.NETWORK_MODE,
+    async () => {
+      const result = await chromeStorageGet<NetworkMode>(STORAGE_KEYS.NETWORK_MODE, false); // 使用sync storage
+      
+      if (!result.success) {
+        return { success: true, data: 'external' }; // 默认外网模式
+      }
+
+      const mode = result.data?.[STORAGE_KEYS.NETWORK_MODE] || 'external';
+      return { success: true, data: mode };
+    }
+  );
+}
+
+/**
+ * 保存网络模式
+ */
+export async function saveNetworkMode(mode: NetworkMode): Promise<OperationResult<void>> {
+  // 数据验证
+  if (mode !== 'internal' && mode !== 'external') {
+    return {
+      success: false,
+      error: '网络模式必须是 internal 或 external'
+    };
+  }
+
+  return chromeStorageSet({ [STORAGE_KEYS.NETWORK_MODE]: mode }, false); // 使用sync storage
+}
+
+/**
+ * 加载应用设置
+ */
+export async function loadSettings(): Promise<OperationResult<AppSettings>> {
+  return getCachedData(
+    STORAGE_KEYS.SETTINGS,
+    async () => {
+      const result = await chromeStorageGet<AppSettings>(null); // 获取所有数据
+      
+      if (!result.success) {
+        return {
+          success: true,
+          data: {
+            networkMode: 'external',
+            enableBlur: true,
+            enableAnimations: true,
+            autoSync: false
+          }
+        };
+      }
+
+      // 合并默认设置
+      const defaultSettings: AppSettings = {
+        networkMode: 'external',
+        enableBlur: true,
+        enableAnimations: true,
+        autoSync: false
+      };
+
+      const settings = { ...defaultSettings, ...result.data };
+      return { success: true, data: settings };
+    }
+  );
+}
+
+/**
+ * 保存应用设置
+ */
+export async function saveSettings(settings: Partial<AppSettings>): Promise<OperationResult<void>> {
+  // 先加载现有设置
+  const currentResult = await loadSettings();
+  if (!currentResult.success) {
+    return currentResult;
+  }
+
+  // 合并设置
+  const mergedSettings = { ...currentResult.data, ...settings };
+  
+  return chromeStorageSet(mergedSettings);
+}
+
+/**
+ * 加载Unsplash API密钥
+ */
+export async function loadSplashApiKey(): Promise<OperationResult<string>> {
+  const result = await chromeStorageGet<string>(STORAGE_KEYS.SPLASH_API_KEY);
+  
+  if (!result.success) {
+    return { success: true, data: '' };
+  }
+
+  const apiKey = result.data?.[STORAGE_KEYS.SPLASH_API_KEY] || '';
+  return { success: true, data: apiKey };
+}
+
+/**
+ * 保存Unsplash API密钥
+ */
+export async function saveSplashApiKey(apiKey: string): Promise<OperationResult<void>> {
+  return chromeStorageSet({ [STORAGE_KEYS.SPLASH_API_KEY]: apiKey });
+}
+
+/**
+ * 加载API限制信息
+ */
+export async function loadSplashApiLimits(): Promise<OperationResult<ApiLimits | null>> {
+  const result = await chromeStorageGet<ApiLimits>(STORAGE_KEYS.SPLASH_API_LIMITS);
+  
+  if (!result.success) {
+    return { success: true, data: null };
+  }
+
+  const limits = result.data?.[STORAGE_KEYS.SPLASH_API_LIMITS];
+  
+  // 验证数据格式
+  if (limits && typeof limits === 'object' && 
+      typeof limits.limit === 'number' && 
+      typeof limits.remaining === 'number' && 
+      typeof limits.reset === 'number') {
+    return { success: true, data: limits };
+  }
+
+  return { success: true, data: null };
+}
+
+/**
+ * 保存API限制信息
+ */
+export async function saveSplashApiLimits(limits: ApiLimits): Promise<OperationResult<void>> {
+  // 数据验证
+  if (!limits || 
+      typeof limits.limit !== 'number' || 
+      typeof limits.remaining !== 'number' || 
+      typeof limits.reset !== 'number') {
+    return {
+      success: false,
+      error: 'API限制信息格式无效'
+    };
+  }
+
+  return chromeStorageSet({ [STORAGE_KEYS.SPLASH_API_LIMITS]: limits });
+}
+
+/**
+ * 备份所有数据
+ */
+export async function backupData(): Promise<OperationResult<BackupData>> {
+  try {
+    // 并行加载所有数据
+    const [bookmarksResult, categoriesResult, settingsResult, networkModeResult] = await Promise.all([
+      loadBookmarks(),
+      loadCategories(), 
+      loadSettings(),
+      loadNetworkMode()
+    ]);
+
+    // 检查是否有加载失败
+    if (!bookmarksResult.success || !categoriesResult.success || 
+        !settingsResult.success || !networkModeResult.success) {
+      return {
+        success: false,
+        error: '备份数据时部分数据加载失败'
+      };
+    }
+
+    const backupData: BackupData = {
+      bookmarks: bookmarksResult.data || [],
+      categories: categoriesResult.data || [],
+      settings: settingsResult.data!,
+      networkMode: networkModeResult.data!,
+      timestamp: Date.now(),
+      version: '2.0'
+    };
+
+    return { success: true, data: backupData };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '备份失败'
+    };
+  }
+}
+
+/**
+ * 从备份恢复数据
+ */
+export async function restoreFromBackup(backupData: BackupData): Promise<OperationResult<void>> {
+  try {
+    // 验证备份数据格式
+    if (!backupData || !backupData.version || !backupData.timestamp) {
+      return {
+        success: false,
+        error: '备份数据格式无效'
+      };
+    }
+
+    // 并行恢复数据
+    const restorePromises: Promise<OperationResult<void>>[] = [];
+
+    if (backupData.bookmarks) {
+      restorePromises.push(saveBookmarks(backupData.bookmarks));
+    }
+
+    if (backupData.categories) {
+      restorePromises.push(saveCategories(backupData.categories));
+    }
+
+    if (backupData.networkMode) {
+      restorePromises.push(saveNetworkMode(backupData.networkMode));
+    }
+
+    if (backupData.settings) {
+      // 保留当前WebDAV配置
+      const currentSettings = await loadSettings();
+      const mergedSettings = {
+        ...backupData.settings,
+        webdav_config: currentSettings.data?.webdav_config,
+      };
+      restorePromises.push(saveSettings(mergedSettings));
+    }
+
+    const results = await Promise.all(restorePromises);
+    
+    // 检查是否有恢复失败
+    const failedResults = results.filter(result => !result.success);
+    if (failedResults.length > 0) {
+      return {
+        success: false,
+        error: `部分数据恢复失败: ${failedResults.map(r => r.error).join(', ')}`
+      };
+    }
+
+    // 清除缓存，确保数据一致性
+    cache.clear();
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '恢复失败'
+    };
+  }
+}
+
+/**
+ * 清除所有缓存
+ */
+export function clearCache(): void {
+  cache.clear();
+}
+
+/**
+ * 获取缓存统计信息（调试用）
+ */
+export function getCacheStats() {
+  return {
+    size: cache.size,
+    keys: Array.from(cache.keys()),
+    entries: Array.from(cache.entries()).map(([key, value]) => ({
+      key,
+      timestamp: value.timestamp,
+      ttl: value.ttl,
+      age: Date.now() - value.timestamp
+    }))
+  };
+}

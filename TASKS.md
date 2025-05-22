@@ -29,10 +29,32 @@
     - 分离了React应用和扩展脚本的TypeScript配置
     - 构建脚本分为build（快速构建）和build:check（包含类型检查）
   
-- [ ] 子功能 1.2：建立核心存储与工具模块
-  - 迁移storage.js存储工具函数
-  - 迁移bookmark-utils.js书签工具函数
-  - 迁移BookmarkCategory.js数据模型
+- [x] 子功能 1.2：建立核心存储与工具模块
+  - 完成日期：2025-05-22
+  - 实现方式：完全现代化重构，使用TypeScript和React Hooks
+  - 修改/新增文件：
+    - src/types/index.ts（新增）- 完整的TypeScript类型定义
+    - src/utils/storage.ts（新增）- 现代化存储API封装，支持缓存和错误处理
+    - src/utils/bookmark-utils.ts（新增）- 完整的书签操作工具函数
+    - src/models/BookmarkCategory.ts（新增）- 分类数据模型和工具函数
+    - src/hooks/useStorage.ts（新增）- 存储相关React Hooks
+    - src/hooks/useSplashApi.ts（新增）- Unsplash API管理Hook
+    - src/hooks/useDataBackup.ts（新增）- 数据备份恢复Hook
+    - src/hooks/useBookmarks.ts（新增）- 书签管理Hook
+    - src/utils/index.ts（新增）- 工具函数统一导出
+    - src/hooks/index.ts（新增）- Hooks统一导出
+  - 测试方法：可通过import测试各模块功能，Chrome存储API调用正常
+  - 备注：
+    - **代码结构优化**：拆分为更小的模块，提高代码可维护性
+    - **类型安全**：完整的TypeScript类型定义，避免运行时错误
+    - **性能优化**：实现内存缓存机制，减少Chrome API调用次数
+    - **错误处理**：统一的错误处理机制，提供详细错误信息
+    - **React Hook模式**：现代化的状态管理，支持加载状态和错误状态
+    - **数据验证**：严格的数据格式验证，确保数据一致性
+    - **批量操作**：支持批量添加/删除书签，提高操作效率
+    - **搜索和排序**：内置搜索和排序功能，提升用户体验
+    - **备份恢复**：完整的数据备份和恢复机制
+    - **API管理**：Unsplash API限制监控和管理
   
 - [ ] 子功能 1.3：配置路由与页面结构
   - 设置newtab页面路由
