@@ -5,13 +5,47 @@ alwaysApply: false
 ---
 # DualTab React组件架构
 
-本项目使用React 19和TypeScript构建用户界面组件，结合了TailwindCSS进行样式设计。
+本项目使用React和TypeScript构建用户界面组件，结合了Shadcn/UI组件库和TailwindCSS进行样式设计。
 
 ## 组件设计原则
-- 组件应该遵循功能单一原则，每个组件只负责一个功能
-- 使用TypeScript类型定义确保类型安全
-- 使用React Hooks进行状态管理和副作用处理
-- 使用TailwindCSS进行样式设计，避免内联样式
+- **单一职责**：每个组件只负责一个功能，增强可维护性和可测试性
+- **合理分层**：将UI、状态管理和业务逻辑分离，保持组件清晰
+- **复用优先**：优先使用和创建可复用组件，减少代码重复
+- **性能优化**：使用React.memo, useMemo, useCallback避免不必要的渲染
+- **类型安全**：使用TypeScript类型定义确保类型安全
+- **状态管理**：使用React Hooks进行状态管理和副作用处理
+
+## 组件拆分指南
+- 当组件超过200行代码时，考虑拆分成多个子组件
+- 当组件有明确可分离的视觉或功能部分时进行拆分
+- 当相同的UI模式在多处使用时，提取为可复用组件
+- 拆分后的组件应该有明确的输入输出（props和事件）
+
+## React性能优化
+```jsx
+// 避免不必要的重渲染
+const MemoizedComponent = React.memo(MyComponent);
+
+// 缓存计算结果
+const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+
+// 缓存回调函数
+const memoizedCallback = useCallback(() => doSomething(a, b), [a, b]);
+
+// 惰性初始化状态
+const [state, setState] = useState(() => computeInitialState());
+```
+
+## Shadcn/UI组件使用指南
+- 优先使用Shadcn/UI提供的组件，保持UI一致性
+- 组件可以根据需要进行样式定制，但保持基础功能一致
+- 对于复杂交互场景，可以组合多个基础组件构建
+- 遵循Shadcn/UI的暗色/亮色主题切换模式
+
+## 错误处理与边界
+- 使用错误边界组件捕获渲染错误
+- 为异步操作提供加载状态和错误状态
+- 实现优雅的降级策略，确保核心功能可用
 
 ## 主要组件
 
