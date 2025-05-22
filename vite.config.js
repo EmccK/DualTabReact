@@ -10,6 +10,7 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
+  base: './', // 使用相对路径
   build: {
     rollupOptions: {
       input: {
@@ -33,7 +34,10 @@ export default defineConfig({
       }
     },
     outDir: 'dist',
-    emptyOutDir: true
+    emptyOutDir: true,
+    // Chrome扩展优化
+    minify: false, // 可选：关闭压缩便于调试
+    sourcemap: false
   },
   publicDir: 'public'
 })
