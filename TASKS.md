@@ -12,10 +12,22 @@
 ---
 
 ## 功能模块 1：基础架构与配置（优先级：高）
-- [ ] 子功能 1.1：配置Chrome插件基础结构
-  - 迁移manifest.json到React项目
-  - 配置Vite构建输出为Chrome插件格式
-  - 设置公共资源目录（图标、默认背景等）
+- [x] 子功能 1.1：配置Chrome插件基础结构
+  - 完成日期：2025-05-22
+  - 实现方式：修复TypeScript配置和构建脚本
+  - 修改/新增文件：
+    - tsconfig.scripts.json（新增）
+    - tsconfig.json（更新）
+    - tsconfig.app.json（更新）
+    - tsconfig.node.json（更新）
+    - package.json（更新构建脚本）
+    - src/content/content-script.ts（修复未使用参数警告）
+  - 测试方法：运行 `npm run build` 命令成功构建，生成dist目录
+  - 备注：
+    - 解决了TypeScript JSX配置问题
+    - 解决了Chrome扩展脚本的DOM类型问题
+    - 分离了React应用和扩展脚本的TypeScript配置
+    - 构建脚本分为build（快速构建）和build:check（包含类型检查）
   
 - [ ] 子功能 1.2：建立核心存储与工具模块
   - 迁移storage.js存储工具函数
