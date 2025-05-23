@@ -1,14 +1,26 @@
 import React, { useState, useCallback } from 'react'
-import { MainLayout } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { useClock } from '@/hooks'
-import { Plus, RefreshCw, Settings, Cloud, Droplets, Wifi, WifiOff } from 'lucide-react'
+import { BookmarkGrid } from '@/components/bookmarks'
+import { useClock, useBookmarks } from '@/hooks'
+import { Plus, RefreshCw, Settings, Cloud, Droplets, Wifi, WifiOff, TestTube } from 'lucide-react'
+import type { Bookmark, NetworkMode } from '@/types'
+import { createTestBookmarks } from '@/utils/test-data'
+import './newtab.css'
 
 function NewTabApp() {
   const currentTime = useClock()
-  const [isOnline, setIsOnline] = useState(true)
+  const [networkMode, setNetworkMode] = useState<NetworkMode>('external')
   const [backgroundImage, setBackgroundImage] = useState<string>()
   const [isGlassEffect, setIsGlassEffect] = useState(true)
+  
+  // 书签管理Hook
+  const {
+    bookmarks,
+    loading: bookmarksLoading,
+    error: bookmarksError,
+    reorderBookmarks,
+    reload: reloadBookmarks
+  } = useBookmarks()
   
   // 背景图片归属信息（示例数据）
   const backgroundAttributionInfo = backgroundImage ? {
@@ -33,8 +45,8 @@ function NewTabApp() {
   }, [])
 
   const toggleNetworkMode = useCallback(() => {
-    setIsOnline(!isOnline)
-  }, [isOnline])
+    setNetworkMode(prev => prev === 'external' ? 'internal' : 'external')
+  }, [])
 
   const toggleGlassEffect = useCallback(() => {
     setIsGlassEffect(!isGlassEffect)
@@ -42,7 +54,7 @@ function NewTabApp() {
 
   const handleAddBookmark = useCallback(() => {
     console.log('添加书签')
-    // TODO: 实现添加书签功能
+    // TODO: 打开书签添加模态框
   }, [])
 
   const handleWebDAVSync = useCallback(() => {
@@ -50,10 +62,46 @@ function NewTabApp() {
     // TODO: 实现WebDAV同步功能
   }, [])
 
-  // 示例书签数据
-  const bookmarks = [
-    // 暂时为空，等待书签功能实现
-  ]
+  // 处理书签点击
+  const handleBookmarkClick = useCallback((bookmark: Bookmark) => {
+    const url = networkMode === 'internal' && bookmark.internalUrl 
+      ? bookmark.internalUrl 
+      : networkMode === 'external' && bookmark.externalUrl 
+        ? bookmark.externalUrl 
+        : bookmark.url
+    
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  }, [networkMode])
+
+  // 处理书签右键菜单
+  const handleBookmarkContextMenu = useCallback((bookmark: Bookmark, event: React.MouseEvent) => {
+    event.preventDefault()
+    console.log('书签右键菜单:', bookmark)
+    // TODO: 显示右键菜单（编辑、删除等）
+  }, [])
+
+  // 处理书签重排序
+  const handleBookmarksReorder = useCallback(async (reorderedBookmarks: Bookmark[]) => {
+    try {
+      await reorderBookmarks(reorderedBookmarks)
+      console.log('书签重排序成功')
+    } catch (error) {
+      console.error('书签重排序失败:', error)
+    }
+  }, [reorderBookmarks])
+
+  // 开发测试：创建测试书签数据
+  const handleCreateTestBookmarks = useCallback(async () => {
+    try {
+      await createTestBookmarks()
+      reloadBookmarks() // 重新加载书签数据
+      console.log('测试书签数据创建成功')
+    } catch (error) {
+      console.error('创建测试书签数据失败:', error)
+    }
+  }, [reloadBookmarks])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
@@ -92,6 +140,17 @@ function NewTabApp() {
 
           {/* 右侧：控制按钮组 */}
           <div className="flex items-center space-x-3">
+            {/* 开发测试按钮 */}
+            <Button
+              onClick={handleCreateTestBookmarks}
+              size="sm"
+              variant="ghost"
+              className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
+              title="创建测试书签数据"
+            >
+              <TestTube className="h-4 w-4" />
+            </Button>
+
             {/* 毛玻璃效果切换 */}
             <Button
               onClick={toggleGlassEffect}
@@ -124,10 +183,10 @@ function NewTabApp() {
                 variant="ghost"
                 className="text-white hover:bg-white/20 p-1 h-auto"
               >
-                {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+                {networkMode === 'external' ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
               </Button>
-              <span className={`text-sm font-medium ${isOnline ? 'text-green-300' : 'text-yellow-300'}`}>
-                {isOnline ? '外网' : '内网'}
+              <span className={`text-sm font-medium ${networkMode === 'external' ? 'text-green-300' : 'text-yellow-300'}`}>
+                {networkMode === 'external' ? '外网' : '内网'}
               </span>
             </div>
           </div>
@@ -169,25 +228,17 @@ function NewTabApp() {
 
           {/* 书签网格区域 */}
           <div className="w-full max-w-6xl">
-            {bookmarks.length === 0 ? (
-              <div className="text-center">
-                <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg p-8 text-white border border-white/20`}>
-                  <p className="text-lg mb-4">还没有书签，点击右下角的 + 按钮开始添加</p>
-                  <p className="text-sm opacity-80">书签功能即将实现...</p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                {bookmarks.map((bookmark: any, index: number) => (
-                  <div
-                    key={index}
-                    className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg p-4 text-center cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-white/20 border border-white/20`}
-                  >
-                    {/* 书签图标和标题将在这里显示 */}
-                  </div>
-                ))}
-              </div>
-            )}
+            <BookmarkGrid
+              bookmarks={bookmarks}
+              networkMode={networkMode}
+              isGlassEffect={isGlassEffect}
+              loading={bookmarksLoading}
+              error={bookmarksError}
+              onBookmarkClick={handleBookmarkClick}
+              onBookmarkContextMenu={handleBookmarkContextMenu}
+              onAddBookmarkClick={handleAddBookmark}
+              onBookmarksReorder={handleBookmarksReorder}
+            />
           </div>
         </div>
 

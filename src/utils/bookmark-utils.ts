@@ -33,6 +33,7 @@ export function createBookmark(
     iconText?: string;
     iconColor?: string;
     backgroundColor?: string;
+    position?: number;
   } = {}
 ): Bookmark {
   const now = Date.now();
@@ -48,6 +49,7 @@ export function createBookmark(
     iconText: options.iconText || '',
     iconColor: options.iconColor || '#3B82F6',
     backgroundColor: options.backgroundColor || '#FFFFFF',
+    position: options.position,
     createdAt: now,
     updatedAt: now
   };

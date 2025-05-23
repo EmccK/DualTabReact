@@ -172,6 +172,59 @@ export function useBookmarks() {
     }
   }, []);
 
+  // 批量更新书签（用于拖拽重排序）
+  const updateMultipleBookmarks = useCallback(async (updatedBookmarks: Bookmark[]) => {
+    setSaving(true);
+    setError(null);
+    
+    try {
+      const result = await saveBookmarks(updatedBookmarks);
+      if (result.success) {
+        setBookmarks(updatedBookmarks);
+        return { success: true, data: updatedBookmarks };
+      } else {
+        setError(result.error || '批量更新书签失败');
+        return { success: false, error: result.error };
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : '未知错误';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  // 重排序书签（拖拽功能）
+  const reorderBookmarks = useCallback(async (newBookmarkOrder: Bookmark[]) => {
+    setSaving(true);
+    setError(null);
+    
+    try {
+      // 确保所有书签都有正确的position和updatedAt
+      const reorderedBookmarks = newBookmarkOrder.map((bookmark, index) => ({
+        ...bookmark,
+        position: index,
+        updatedAt: Date.now()
+      }));
+      
+      const result = await saveBookmarks(reorderedBookmarks);
+      if (result.success) {
+        setBookmarks(reorderedBookmarks);
+        return { success: true, data: reorderedBookmarks };
+      } else {
+        setError(result.error || '重排序书签失败');
+        return { success: false, error: result.error };
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : '未知错误';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
   // 获取单个书签
   const getBookmark = useCallback(async (bookmarkId: string) => {
     const result = await getBookmarkById(bookmarkId);
@@ -194,6 +247,8 @@ export function useBookmarks() {
     updateBookmark,
     deleteBookmark,
     deleteMultipleBookmarks,
+    updateMultipleBookmarks,
+    reorderBookmarks,
     getBookmark,
     reload: loadBookmarkList
   };

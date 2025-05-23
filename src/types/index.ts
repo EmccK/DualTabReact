@@ -14,6 +14,7 @@ export interface Bookmark {
   iconText?: string;
   iconColor?: string;
   backgroundColor?: string;
+  position?: number; // 书签在网格中的位置索引
   createdAt: number;
   updatedAt: number;
 }
