@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class', // 只有显式添加 'dark' class 时才启用暗色模式
   content: [
     "./index.html",
     "./newtab.html", 
@@ -22,8 +23,6 @@ export default {
     'text-slate-500',
     'text-slate-400',
     'border-slate-200',
-    'border-slate-800',
-    'bg-slate-950',
     'text-2xl',
     'font-semibold',
     'leading-none',

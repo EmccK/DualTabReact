@@ -2,16 +2,22 @@
  * 应用核心类型定义
  */
 
+// 图标类型
+export type IconType = 'official' | 'text' | 'upload';
+
 // 书签类型定义
 export interface Bookmark {
   id: string;
+  name: string; // 添加name字段作为title的别名
   title: string;
   url: string;
   internalUrl?: string; // 内网URL
   externalUrl?: string; // 外网URL
+  description?: string; // 书签描述
   icon?: string;
-  iconType?: 'official' | 'text' | 'upload';
+  iconType?: IconType;
   iconText?: string;
+  iconData?: string; // 上传图片的base64数据
   iconColor?: string;
   backgroundColor?: string;
   position?: number; // 书签在网格中的位置索引

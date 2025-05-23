@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { BookmarkGrid } from '@/components/bookmarks'
+import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
 import { useClock, useBookmarks } from '@/hooks'
 import { Plus, RefreshCw, Settings, Cloud, Droplets, Wifi, WifiOff, TestTube } from 'lucide-react'
 import type { Bookmark, NetworkMode } from '@/types'
@@ -13,6 +13,11 @@ function NewTabApp() {
   const [backgroundImage, setBackgroundImage] = useState<string>()
   const [isGlassEffect, setIsGlassEffect] = useState(true)
   
+  // 书签弹窗状态
+  const [bookmarkModalOpen, setBookmarkModalOpen] = useState(false)
+  const [bookmarkModalMode, setBookmarkModalMode] = useState<'add' | 'edit'>('add')
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | undefined>()
+  
   // 书签管理Hook
   const {
     bookmarks,
@@ -22,27 +27,12 @@ function NewTabApp() {
     reload: reloadBookmarks
   } = useBookmarks()
   
-  // 背景图片归属信息（示例数据）
   const backgroundAttributionInfo = backgroundImage ? {
     author: "示例作者",
     authorUrl: "https://unsplash.com/@author",
     source: "Unsplash",
     sourceUrl: "https://unsplash.com"
   } : undefined
-
-  const handleSettingsClick = useCallback(() => {
-    console.log('打开设置')
-    // TODO: 实现设置功能
-  }, [])
-
-  const handleRefreshBackground = useCallback(() => {
-    console.log('刷新背景图片')
-    // TODO: 实现背景图片刷新功能
-  }, [])
-
-  const handleSearch = useCallback((query: string) => {
-    console.log('搜索:', query)
-  }, [])
 
   const toggleNetworkMode = useCallback(() => {
     setNetworkMode(prev => prev === 'external' ? 'internal' : 'external')
@@ -52,14 +42,29 @@ function NewTabApp() {
     setIsGlassEffect(!isGlassEffect)
   }, [isGlassEffect])
 
-  const handleAddBookmark = useCallback(() => {
-    console.log('添加书签')
-    // TODO: 打开书签添加模态框
-  }, [])
-
   const handleWebDAVSync = useCallback(() => {
     console.log('WebDAV同步')
-    // TODO: 实现WebDAV同步功能
+  }, [])
+
+  const handleRefreshBackground = useCallback(() => {
+    console.log('刷新背景图片')
+    // TODO: 实现背景图片刷新功能
+  }, [])  // 书签弹窗处理函数
+  const handleAddBookmark = useCallback(() => {
+    setBookmarkModalMode('add')
+    setEditingBookmark(undefined)
+    setBookmarkModalOpen(true)
+  }, [])
+
+  const handleEditBookmark = useCallback((bookmark: Bookmark) => {
+    setBookmarkModalMode('edit')
+    setEditingBookmark(bookmark)
+    setBookmarkModalOpen(true)
+  }, [])
+
+  const handleCloseBookmarkModal = useCallback(() => {
+    setBookmarkModalOpen(false)
+    setEditingBookmark(undefined)
   }, [])
 
   // 处理书签点击
@@ -78,9 +83,8 @@ function NewTabApp() {
   // 处理书签右键菜单
   const handleBookmarkContextMenu = useCallback((bookmark: Bookmark, event: React.MouseEvent) => {
     event.preventDefault()
-    console.log('书签右键菜单:', bookmark)
-    // TODO: 显示右键菜单（编辑、删除等）
-  }, [])
+    handleEditBookmark(bookmark)
+  }, [handleEditBookmark])
 
   // 处理书签重排序
   const handleBookmarksReorder = useCallback(async (reorderedBookmarks: Bookmark[]) => {
@@ -160,9 +164,7 @@ function NewTabApp() {
               title="切换毛玻璃效果"
             >
               <Droplets className="h-4 w-4" />
-            </Button>
-
-            {/* WebDAV同步 */}
+            </Button>            {/* WebDAV同步 */}
             <Button
               onClick={handleWebDAVSync}
               size="sm"
@@ -224,9 +226,7 @@ function NewTabApp() {
                 />
               </div>
             </form>
-          </div>
-
-          {/* 书签网格区域 */}
+          </div>          {/* 书签网格区域 */}
           <div className="w-full max-w-6xl">
             <BookmarkGrid
               bookmarks={bookmarks}
@@ -287,8 +287,16 @@ function NewTabApp() {
               {backgroundAttributionInfo.source}
             </a>
           </div>
-        )}
-      </div>
+        )}      </div>
+
+      {/* 书签弹窗 */}
+      <BookmarkModal
+        isOpen={bookmarkModalOpen}
+        onClose={handleCloseBookmarkModal}
+        mode={bookmarkModalMode}
+        bookmark={editingBookmark}
+        networkMode={networkMode}
+      />
     </div>
   )
 }

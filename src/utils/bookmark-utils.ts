@@ -28,9 +28,11 @@ export function createBookmark(
   options: {
     internalUrl?: string;
     externalUrl?: string;
+    description?: string;
     icon?: string;
     iconType?: 'official' | 'text' | 'upload';
     iconText?: string;
+    iconData?: string;
     iconColor?: string;
     backgroundColor?: string;
     position?: number;
@@ -40,13 +42,16 @@ export function createBookmark(
   
   return {
     id: generateBookmarkId(),
+    name: title.trim(), // 添加name字段
     title: title.trim(),
     url: url.trim(),
     internalUrl: options.internalUrl?.trim() || '',
     externalUrl: options.externalUrl?.trim() || '',
+    description: options.description?.trim() || '',
     icon: options.icon || '',
     iconType: options.iconType || 'official',
     iconText: options.iconText || '',
+    iconData: options.iconData || '',
     iconColor: options.iconColor || '#3B82F6',
     backgroundColor: options.backgroundColor || '#FFFFFF',
     position: options.position,
