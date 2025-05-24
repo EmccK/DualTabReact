@@ -8,3 +8,4 @@ export * from './useDataBackup';
 export * from './useBookmarks';
 export * from './useClock';
 export * from './useNetworkMode';
+export * from './useCategories';

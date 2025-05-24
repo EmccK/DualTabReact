@@ -9,6 +9,7 @@ interface BookmarkGridProps {
   isGlassEffect: boolean
   loading?: boolean
   error?: string | null
+  selectedCategoryId?: string | null
   onBookmarkClick?: (bookmark: Bookmark) => void
   onBookmarkContextMenu?: (bookmark: Bookmark, event: React.MouseEvent) => void
   onAddBookmarkClick?: () => void
@@ -21,6 +22,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   isGlassEffect,
   loading = false,
   error = null,
+  selectedCategoryId = null,
   onBookmarkClick,
   onBookmarkContextMenu,
   onAddBookmarkClick,
@@ -33,9 +35,19 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   const dropTargetIndexRef = useRef<number>(-1)
   const dragLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // 按position排序书签，没有position的书签放在最后
+  // 按分类筛选并排序书签
   const sortedBookmarks = useMemo(() => {
-    return [...bookmarks].sort((a, b) => {
+    let filteredBookmarks = bookmarks
+    
+    // 如果选择了特定分类，只显示该分类的书签
+    if (selectedCategoryId) {
+      filteredBookmarks = bookmarks.filter(bookmark => 
+        bookmark.categoryId === selectedCategoryId
+      )
+    }
+    
+    // 按position排序书签，没有position的书签放在最后
+    return [...filteredBookmarks].sort((a, b) => {
       const posA = a.position ?? Number.MAX_SAFE_INTEGER
       const posB = b.position ?? Number.MAX_SAFE_INTEGER
       if (posA === posB) {
@@ -44,7 +56,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       }
       return posA - posB
     })
-  }, [bookmarks])
+  }, [bookmarks, selectedCategoryId])
 
   // 拖拽开始
   const handleDragStart = useCallback((bookmarkId: string, event: React.DragEvent) => {

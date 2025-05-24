@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react'
 import type { Bookmark, NetworkMode } from '@/types'
 import { Globe, Type, Image, ExternalLink } from 'lucide-react'
+import { getUrlDomain, safeOpenUrl } from '@/utils/url-utils'
 
 interface BookmarkCardProps {
   bookmark: Bookmark
@@ -55,7 +56,7 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({
     } else {
       const url = getActiveUrl()
       if (url) {
-        window.open(url, '_blank', 'noopener,noreferrer')
+        safeOpenUrl(url)
       }
     }
   }, [bookmark, onClick, getActiveUrl])
@@ -148,7 +149,18 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({
       case 'official':
       default:
         // 尝试获取网站favicon
-        const domain = new URL(getActiveUrl() || bookmark.url).hostname
+        const urlToUse = getActiveUrl() || bookmark.url
+        const domain = getUrlDomain(urlToUse)
+        
+        if (!domain) {
+          // 如果没有有效URL，显示默认图标
+          return (
+            <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
+              <span className="text-gray-500 text-sm">🔗</span>
+            </div>
+          )
+        }
+        
         return (
           <div className="relative">
             <img

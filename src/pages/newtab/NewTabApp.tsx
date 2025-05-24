@@ -2,10 +2,12 @@ import React, { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
 import { NetworkSwitch } from '@/components/network'
-import { useClock, useBookmarks, useNetworkMode } from '@/hooks'
+import { CategorySidebar, CategoryModal } from '@/components/categories'
+import { useClock, useBookmarks, useNetworkMode, useCategories } from '@/hooks'
 import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube } from 'lucide-react'
-import type { Bookmark } from '@/types'
+import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import { createTestBookmarks } from '@/utils/test-data'
+import { safeOpenUrl } from '@/utils/url-utils'
 import './newtab.css'
 
 function NewTabApp() {
@@ -27,6 +29,25 @@ function NewTabApp() {
     reorderBookmarks,
     reload: reloadBookmarks
   } = useBookmarks()
+  
+  // 分类管理Hook
+  const {
+    categories,
+    loading: categoriesLoading,
+    error: categoriesError,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    reorderCategories
+  } = useCategories()
+  
+  // 分类筛选状态
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  
+  // 分类弹窗状态
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false)
+  const [categoryModalMode, setCategoryModalMode] = useState<'add' | 'edit'>('add')
+  const [editingCategory, setEditingCategory] = useState<BookmarkCategory | undefined>()
   
   const backgroundAttributionInfo = backgroundImage ? {
     author: "示例作者",
@@ -83,7 +104,7 @@ function NewTabApp() {
         : bookmark.url
     
     if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer')
+      safeOpenUrl(url)
     }
   }, [networkMode])
 
@@ -114,6 +135,91 @@ function NewTabApp() {
     }
   }, [reloadBookmarks])
 
+  // 分类选择处理
+  const handleCategorySelect = useCallback((categoryId: string | null) => {
+    setSelectedCategoryId(categoryId)
+  }, [])
+
+  // 添加分类处理
+  const handleAddCategory = useCallback(() => {
+    setCategoryModalMode('add')
+    setEditingCategory(undefined)
+    setCategoryModalOpen(true)
+  }, [])
+
+  // 编辑分类处理
+  const handleEditCategory = useCallback((category: BookmarkCategory) => {
+    setCategoryModalMode('edit')
+    setEditingCategory(category)
+    setCategoryModalOpen(true)
+  }, [])
+
+  // 删除分类处理
+  const handleDeleteCategory = useCallback(async (categoryId: string) => {
+    try {
+      const result = await deleteCategory(categoryId)
+      if (result.success) {
+        console.log('分类删除成功')
+        // 如果删除的是当前选中的分类，切换到全部
+        if (selectedCategoryId === categoryId) {
+          setSelectedCategoryId(null)
+        }
+      } else {
+        console.error('分类删除失败:', result.error)
+      }
+    } catch (error) {
+      console.error('分类删除失败:', error)
+    }
+  }, [deleteCategory, selectedCategoryId])
+
+  // 关闭分类弹窗
+  const handleCloseCategoryModal = useCallback(() => {
+    setCategoryModalOpen(false)
+    setEditingCategory(undefined)
+  }, [])
+
+  // 保存分类
+  const handleSaveCategory = useCallback(async (categoryData: Omit<BookmarkCategory, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const result = await addCategory(categoryData)
+      if (result.success) {
+        console.log('分类添加成功')
+      } else {
+        console.error('分类添加失败:', result.error)
+      }
+    } catch (error) {
+      console.error('分类添加失败:', error)
+    }
+  }, [addCategory])
+
+  // 更新分类
+  const handleUpdateCategory = useCallback(async (id: string, updates: Partial<BookmarkCategory>) => {
+    try {
+      const result = await updateCategory(id, updates)
+      if (result.success) {
+        console.log('分类更新成功')
+      } else {
+        console.error('分类更新失败:', result.error)
+      }
+    } catch (error) {
+      console.error('分类更新失败:', error)
+    }
+  }, [updateCategory])
+
+  // 重排序分类
+  const handleReorderCategories = useCallback(async (reorderedCategories: BookmarkCategory[]) => {
+    try {
+      const result = await reorderCategories(reorderedCategories)
+      if (result.success) {
+        console.log('分类重排序成功')
+      } else {
+        console.error('分类重排序失败:', result.error)
+      }
+    } catch (error) {
+      console.error('分类重排序失败:', error)
+    }
+  }, [reorderCategories])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
       {/* 背景图片容器 */}
@@ -124,8 +230,10 @@ function NewTabApp() {
         />
       )}
       
-      {/* 主要内容区域 */}
-      <div className="relative z-10 flex flex-col h-screen">
+      {/* 主要内容区域 - 使用flex布局 */}
+      <div className="relative z-10 flex h-screen">
+        {/* 左侧主内容区域 */}
+        <div className="flex-1 flex flex-col">
         
         {/* 头部控制区域 */}
         <header className="flex justify-between items-start p-6">
@@ -192,9 +300,9 @@ function NewTabApp() {
           </div>
         </header>
 
-        {/* 中央搜索区域 */}
-        <div className="flex-1 flex flex-col justify-center items-center px-6">
-          <div className="w-full max-w-2xl mb-16">
+          {/* 中央搜索区域 */}
+          <div className="flex-1 flex flex-col justify-center items-center px-6">
+            <div className="w-full max-w-2xl mb-16">
             {/* Google搜索框 */}
             <form 
               action="https://www.google.com/search" 
@@ -224,21 +332,39 @@ function NewTabApp() {
                 />
               </div>
             </form>
-          </div>          {/* 书签网格区域 */}
-          <div className="w-full max-w-6xl">
-            <BookmarkGrid
-              bookmarks={bookmarks}
-              networkMode={networkMode}
-              isGlassEffect={isGlassEffect}
-              loading={bookmarksLoading}
-              error={bookmarksError}
-              onBookmarkClick={handleBookmarkClick}
-              onBookmarkContextMenu={handleBookmarkContextMenu}
-              onAddBookmarkClick={handleAddBookmark}
-              onBookmarksReorder={handleBookmarksReorder}
-            />
+          </div>            {/* 书签网格区域 */}
+            <div className="w-full max-w-5xl">
+              <BookmarkGrid
+                bookmarks={bookmarks}
+                networkMode={networkMode}
+                isGlassEffect={isGlassEffect}
+                loading={bookmarksLoading}
+                error={bookmarksError}
+                selectedCategoryId={selectedCategoryId}
+                onBookmarkClick={handleBookmarkClick}
+                onBookmarkContextMenu={handleBookmarkContextMenu}
+                onAddBookmarkClick={handleAddBookmark}
+                onBookmarksReorder={handleBookmarksReorder}
+              />
+            </div>
           </div>
         </div>
+
+        {/* 右侧分类边栏 */}
+        <div className="w-80 p-6">
+          <CategorySidebar
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onCategorySelect={handleCategorySelect}
+            onAddCategory={handleAddCategory}
+            onEditCategory={handleEditCategory}
+            onDeleteCategory={handleDeleteCategory}
+            onReorderCategories={handleReorderCategories}
+            isGlassEffect={isGlassEffect}
+            loading={categoriesLoading}
+          />
+        </div>
+      </div>
 
         {/* 右下角固定按钮组 */}
         <div className="fixed bottom-6 right-6 flex flex-col space-y-3">
@@ -285,7 +411,7 @@ function NewTabApp() {
               {backgroundAttributionInfo.source}
             </a>
           </div>
-        )}      </div>
+        )}
 
       {/* 书签弹窗 */}
       <BookmarkModal
@@ -294,6 +420,16 @@ function NewTabApp() {
         mode={bookmarkModalMode}
         bookmark={editingBookmark}
         networkMode={networkMode}
+      />
+
+      {/* 分类弹窗 */}
+      <CategoryModal
+        isOpen={categoryModalOpen}
+        onClose={handleCloseCategoryModal}
+        mode={categoryModalMode}
+        category={editingCategory}
+        onSave={handleSaveCategory}
+        onUpdate={handleUpdateCategory}
       />
     </div>
   )

@@ -209,6 +209,121 @@ export async function saveCategories(categories: BookmarkCategory[]): Promise<Op
 }
 
 /**
+ * 添加分类
+ */
+export async function addCategory(categoryData: Omit<BookmarkCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<OperationResult<BookmarkCategory>> {
+  try {
+    const categoriesResult = await loadCategories()
+    if (!categoriesResult.success) {
+      return { success: false, error: categoriesResult.error }
+    }
+    
+    const categories = categoriesResult.data || []
+    const now = Date.now()
+    const newCategory: BookmarkCategory = {
+      ...categoryData,
+      id: `category_${now}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: now,
+      updatedAt: now
+    }
+    
+    const updatedCategories = [...categories, newCategory]
+    const saveResult = await saveCategories(updatedCategories)
+    
+    if (saveResult.success) {
+      return { success: true, data: newCategory }
+    } else {
+      return { success: false, error: saveResult.error }
+    }
+  } catch (error) {
+    console.error('添加分类失败:', error)
+    return { success: false, error: '添加分类失败' }
+  }
+}
+
+/**
+ * 更新分类
+ */
+export async function updateCategory(id: string, updates: Partial<BookmarkCategory>): Promise<OperationResult<BookmarkCategory>> {
+  try {
+    const categoriesResult = await loadCategories()
+    if (!categoriesResult.success) {
+      return { success: false, error: categoriesResult.error }
+    }
+    
+    const categories = categoriesResult.data || []
+    const categoryIndex = categories.findIndex(cat => cat.id === id)
+    
+    if (categoryIndex === -1) {
+      return { success: false, error: '分类不存在' }
+    }
+    
+    const updatedCategory = {
+      ...categories[categoryIndex],
+      ...updates,
+      id, // 确保ID不被修改
+      updatedAt: Date.now()
+    }
+    
+    const updatedCategories = [...categories]
+    updatedCategories[categoryIndex] = updatedCategory
+    
+    const saveResult = await saveCategories(updatedCategories)
+    
+    if (saveResult.success) {
+      return { success: true, data: updatedCategory }
+    } else {
+      return { success: false, error: saveResult.error }
+    }
+  } catch (error) {
+    console.error('更新分类失败:', error)
+    return { success: false, error: '更新分类失败' }
+  }
+}
+
+/**
+ * 删除分类
+ */
+export async function deleteCategory(id: string): Promise<OperationResult<void>> {
+  try {
+    const categoriesResult = await loadCategories()
+    if (!categoriesResult.success) {
+      return { success: false, error: categoriesResult.error }
+    }
+    
+    const categories = categoriesResult.data || []
+    const filteredCategories = categories.filter(cat => cat.id !== id)
+    
+    if (filteredCategories.length === categories.length) {
+      return { success: false, error: '分类不存在' }
+    }
+    
+    return await saveCategories(filteredCategories)
+  } catch (error) {
+    console.error('删除分类失败:', error)
+    return { success: false, error: '删除分类失败' }
+  }
+}
+
+/**
+ * 重排序分类
+ */
+export async function reorderCategories(reorderedCategories: BookmarkCategory[]): Promise<OperationResult<void>> {
+  try {
+    // 更新所有分类的updatedAt时间戳
+    const categoriesWithTimestamp = reorderedCategories.map(category => ({
+      ...category,
+      updatedAt: Date.now()
+    }))
+    
+    return await saveCategories(categoriesWithTimestamp)
+  } catch (error) {
+    console.error('重排序分类失败:', error)
+    return { success: false, error: '重排序分类失败' }
+  }
+}
+
+/**
  * 加载网络模式
  */
 export async function loadNetworkMode(): Promise<OperationResult<NetworkMode>> {
