@@ -24,72 +24,7 @@ import {
   restoreFromBackup
 } from '../utils/storage';
 
-/**
- * 网络模式管理Hook
- */
-export function useNetworkMode() {
-  const [networkMode, setNetworkMode] = useState<NetworkMode>('external');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // 加载网络模式
-  const loadMode = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const result = await loadNetworkMode();
-      if (result.success && result.data) {
-        setNetworkMode(result.data);
-      } else {
-        setError(result.error || '加载网络模式失败');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '未知错误');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // 保存网络模式
-  const saveMode = useCallback(async (mode: NetworkMode) => {
-    setError(null);
-    
-    try {
-      const result = await saveNetworkMode(mode);
-      if (result.success) {
-        setNetworkMode(mode);
-        return { success: true };
-      } else {
-        setError(result.error || '保存网络模式失败');
-        return { success: false, error: result.error };
-      }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : '未知错误';
-      setError(errorMsg);
-      return { success: false, error: errorMsg };
-    }
-  }, []);
-
-  // 切换网络模式
-  const toggleMode = useCallback(async () => {
-    const newMode: NetworkMode = networkMode === 'external' ? 'internal' : 'external';
-    return await saveMode(newMode);
-  }, [networkMode, saveMode]);
-
-  useEffect(() => {
-    loadMode();
-  }, [loadMode]);
-
-  return {
-    networkMode,
-    loading,
-    error,
-    saveMode,
-    toggleMode,
-    reload: loadMode
-  };
-}
 
 /**
  * 应用设置管理Hook

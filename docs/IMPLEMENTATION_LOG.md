@@ -39,6 +39,46 @@
 - Tailwind配置`darkMode: 'class'`，只有显式添加dark类才启用暗色模式
 - 解决暗色模式冲突：书签弹窗背景从`rgb(2, 6, 23)`恢复到正确的`#FAFBFC`
 
+## 内外网双模式支持
+**完成日期**：2025-05-23  
+**实现方式**：完整的现代化React网络模式切换系统，支持状态持久化和动画效果
+
+**修改/新增文件**：
+- src/components/network/NetworkSwitch.tsx（新增）- 专业的网络模式切换组件
+- src/components/network/index.ts（新增）- 网络组件导出文件
+- src/hooks/useNetworkMode.ts（新增）- 网络模式管理Hook
+- src/hooks/index.ts（更新）- 添加useNetworkMode导出
+- src/hooks/useStorage.ts（重构）- 移除旧版本useNetworkMode，避免命名冲突
+- src/pages/newtab/NewTabApp.tsx（重构）- 集成新的NetworkSwitch组件
+- src/components/index.ts（更新）- 添加网络组件导出
+
+**核心功能实现**：
+- **NetworkSwitch组件**：现代化的网络模式切换器，支持动画效果和状态指示
+- **useNetworkMode Hook**：完整的网络模式状态管理，包含加载、保存、错误处理
+- **状态持久化**：使用Chrome Storage Sync API保存网络模式设置
+- **即时反馈**：网络模式切换时的动画效果和视觉反馈
+- **错误处理**：完整的错误处理和状态回滚机制
+
+**技术特性**：
+- **React Hooks架构**：使用现代化的React Hooks进行状态管理
+- **TypeScript类型安全**：完整的类型定义和类型检查
+- **动画效果**：切换时的旋转动画、脉冲效果和缩放动画
+- **状态指示器**：清晰的网络状态指示点和颜色区分
+- **Chrome扩展适配**：使用Chrome Storage API进行跨标签页同步
+
+**用户体验优化**：
+- **一键切换**：点击按钮即可在内外网模式间快速切换
+- **状态持久化**：网络模式选择会被保存，下次打开时自动恢复
+- **视觉反馈**：清晰的网络状态指示器（绿色=外网，黄色=内网）
+- **动画效果**：平滑的切换动画，提升操作体验
+- **错误处理**：网络切换失败时的状态回滚和错误提示
+
+**与书签系统集成**：
+- **BookmarkCard组件**：已支持根据网络模式显示对应URL
+- **BookmarkModal组件**：已支持内外网URL分别配置
+- **URL智能选择**：内网模式优先使用内网URL，外网模式使用外网URL
+- **网络状态指示**：书签卡片显示网络模式指示器
+
 ## 待实现功能记录
 
 ### 内外网双模式支持

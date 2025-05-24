@@ -1,15 +1,16 @@
 import React, { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
-import { useClock, useBookmarks } from '@/hooks'
-import { Plus, RefreshCw, Settings, Cloud, Droplets, Wifi, WifiOff, TestTube } from 'lucide-react'
-import type { Bookmark, NetworkMode } from '@/types'
+import { NetworkSwitch } from '@/components/network'
+import { useClock, useBookmarks, useNetworkMode } from '@/hooks'
+import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube } from 'lucide-react'
+import type { Bookmark } from '@/types'
 import { createTestBookmarks } from '@/utils/test-data'
 import './newtab.css'
 
 function NewTabApp() {
   const currentTime = useClock()
-  const [networkMode, setNetworkMode] = useState<NetworkMode>('external')
+  const { networkMode, setNetworkMode, loading: networkLoading } = useNetworkMode()
   const [backgroundImage, setBackgroundImage] = useState<string>()
   const [isGlassEffect, setIsGlassEffect] = useState(true)
   
@@ -34,9 +35,15 @@ function NewTabApp() {
     sourceUrl: "https://unsplash.com"
   } : undefined
 
-  const toggleNetworkMode = useCallback(() => {
-    setNetworkMode(prev => prev === 'external' ? 'internal' : 'external')
-  }, [])
+  // 网络模式切换处理
+  const handleNetworkModeChange = useCallback(async (mode: NetworkMode) => {
+    try {
+      await setNetworkMode(mode)
+      console.log(`网络模式已切换到: ${mode}`)
+    } catch (error) {
+      console.error('网络模式切换失败:', error)
+    }
+  }, [setNetworkMode])
 
   const toggleGlassEffect = useCallback(() => {
     setIsGlassEffect(!isGlassEffect)
@@ -177,20 +184,11 @@ function NewTabApp() {
             </Button>
 
             {/* 网络模式切换 */}
-            <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg px-3 py-2 flex items-center space-x-2 border border-white/20`}>
-              <span className="text-white text-sm">网络模式：</span>
-              <Button
-                onClick={toggleNetworkMode}
-                size="sm"
-                variant="ghost"
-                className="text-white hover:bg-white/20 p-1 h-auto"
-              >
-                {networkMode === 'external' ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
-              </Button>
-              <span className={`text-sm font-medium ${networkMode === 'external' ? 'text-green-300' : 'text-yellow-300'}`}>
-                {networkMode === 'external' ? '外网' : '内网'}
-              </span>
-            </div>
+            <NetworkSwitch
+              networkMode={networkMode}
+              onNetworkModeChange={handleNetworkModeChange}
+              isGlassEffect={isGlassEffect}
+            />
           </div>
         </header>
 
