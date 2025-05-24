@@ -1,7 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Plus, GripVertical, Edit, Trash2, Home } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import type { BookmarkCategory } from '@/types'
 
 interface CategorySidebarProps {
@@ -86,7 +84,7 @@ export function CategorySidebar({
     }
   }, [categories, onReorderCategories])
 
-  const handleCategoryClick = useCallback((categoryId: string | null) => {
+  const handleCategoryClick = useCallback((categoryId: string) => {
     onCategorySelect(categoryId)
   }, [onCategorySelect])
 
@@ -97,6 +95,12 @@ export function CategorySidebar({
 
   const handleDeleteClick = useCallback((e: React.MouseEvent, categoryId: string) => {
     e.stopPropagation()
+    
+    // 只有一个分类时不可删除
+    if (categories.length <= 1) {
+      return
+    }
+    
     const category = categories.find(cat => cat.id === categoryId)
     const bookmarkCount = category?.bookmarks.length || 0
     
@@ -118,49 +122,25 @@ export function CategorySidebar({
 
   if (loading) {
     return (
-      <div className={`w-64 h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg p-4 border border-white/20`}>
-        <div className="space-y-3">
-          <div className="h-8 bg-white/20 rounded animate-pulse" />
-          <div className="h-8 bg-white/20 rounded animate-pulse" />
-          <div className="h-8 bg-white/20 rounded animate-pulse" />
+      <div className={`w-64 h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'}`}>
+        <div className="space-y-1">
+          <div className="h-12 bg-white/20 animate-pulse" />
+          <div className="h-12 bg-white/20 animate-pulse" />
+          <div className="h-12 bg-white/20 animate-pulse" />
         </div>
       </div>
     )
   }  return (
-    <div className={`w-64 h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg border border-white/20 flex flex-col`}>
-      {/* 头部 */}
-      <div className="p-4 border-b border-white/20">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-white/90">分类管理</h3>
-          <Button
-            onClick={onAddCategory}
-            size="sm"
-            variant="ghost"
-            className="text-white/80 hover:text-white hover:bg-white/20 h-8 px-2"
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-
+    <div className={`w-64 h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} flex flex-col`}>
       {/* 分类列表 */}
-      <div className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {/* 全部分类 */}
+      <div className="flex-1 space-y-1 overflow-y-auto">
+        {/* 添加分类按钮 */}
         <div
-          onClick={() => handleCategoryClick(null)}
-          className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-            selectedCategoryId === null
-              ? 'bg-blue-500/80 text-white shadow-lg'
-              : 'text-white/80 hover:text-white hover:bg-white/10'
-          }`}
+          onClick={onAddCategory}
+          className="group flex items-center space-x-3 px-4 py-3 cursor-pointer transition-all duration-200 text-white/80 hover:text-white hover:bg-white/10"
         >
-          <div className="flex items-center space-x-3">
-            <Home className="h-4 w-4" />
-            <span className="text-sm font-medium">全部</span>
-          </div>
-          <Badge variant="secondary" className="h-5 px-2 text-xs bg-white/20 text-white">
-            {categories.reduce((total, cat) => total + cat.bookmarks.length, 0)}
-          </Badge>
+          <Plus className="h-4 w-4" />
+          <span className="text-sm font-medium">添加分类</span>
         </div>
 
         {/* 分类项目 */}
@@ -175,7 +155,7 @@ export function CategorySidebar({
             onDrop={handleDrop}
             onClick={() => handleCategoryClick(category.id)}
             onContextMenu={(e) => handleCategoryContextMenu(e, category)}
-            className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+            className={`group flex items-center space-x-3 px-4 py-3 cursor-pointer transition-all duration-200 ${
               selectedCategoryId === category.id
                 ? 'text-white shadow-lg'
                 : 'text-white/80 hover:text-white hover:bg-white/10'
@@ -188,35 +168,8 @@ export function CategorySidebar({
               backgroundColor: selectedCategoryId === category.id ? category.color : undefined
             }}
           >
-            <div className="flex items-center space-x-3 flex-1">
-              <GripVertical className="h-4 w-4 text-white/40 group-hover:text-white/60" />
-              <span className="text-lg">{category.icon}</span>
-              <span className="text-sm font-medium truncate">{category.name}</span>
-            </div>
-            
-            <div className="flex items-center space-x-1">
-              <Badge variant="secondary" className="h-5 px-2 text-xs bg-white/20 text-white">
-                {category.bookmarks.length}
-              </Badge>
-              
-              <Button
-                onClick={(e) => handleEditClick(e, category)}
-                size="sm"
-                variant="ghost"
-                className="opacity-0 group-hover:opacity-100 text-white/60 hover:text-white hover:bg-white/20 h-6 w-6 p-0"
-              >
-                <Edit className="h-3 w-3" />
-              </Button>
-              
-              <Button
-                onClick={(e) => handleDeleteClick(e, category.id)}
-                size="sm"
-                variant="ghost"
-                className="opacity-0 group-hover:opacity-100 text-white/60 hover:text-red-400 hover:bg-white/20 h-6 w-6 p-0"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
+            <span className="text-lg">{category.icon}</span>
+            <span className="text-sm font-medium truncate flex-1">{category.name}</span>
           </div>
         ))}
       </div>

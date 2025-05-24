@@ -1,10 +1,12 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
-import type { Bookmark, NetworkMode } from '@/types'
+import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import BookmarkCard from './BookmarkCard'
 import { Plus } from 'lucide-react'
+import { useBookmarkCategories } from '@/hooks'
 
 interface BookmarkGridProps {
   bookmarks: Bookmark[]
+  categories: BookmarkCategory[]
   networkMode: NetworkMode
   isGlassEffect: boolean
   loading?: boolean
@@ -18,6 +20,7 @@ interface BookmarkGridProps {
 
 const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   bookmarks,
+  categories,
   networkMode,
   isGlassEffect,
   loading = false,
@@ -35,16 +38,13 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   const dropTargetIndexRef = useRef<number>(-1)
   const dragLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // 使用新的分类关联Hook
+  const { getBookmarksByCategory } = useBookmarkCategories(bookmarks, categories)
+
   // 按分类筛选并排序书签
   const sortedBookmarks = useMemo(() => {
-    let filteredBookmarks = bookmarks
-    
-    // 如果选择了特定分类，只显示该分类的书签
-    if (selectedCategoryId) {
-      filteredBookmarks = bookmarks.filter(bookmark => 
-        bookmark.categoryId === selectedCategoryId
-      )
-    }
+    // 根据选中的分类筛选书签
+    const filteredBookmarks = getBookmarksByCategory(selectedCategoryId)
     
     // 按position排序书签，没有position的书签放在最后
     return [...filteredBookmarks].sort((a, b) => {
@@ -56,7 +56,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       }
       return posA - posB
     })
-  }, [bookmarks, selectedCategoryId])
+  }, [getBookmarksByCategory, selectedCategoryId])
 
   // 拖拽开始
   const handleDragStart = useCallback((bookmarkId: string, event: React.DragEvent) => {
@@ -247,7 +247,9 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
                 <Plus className="w-8 h-8 text-white/60" />
               </div>
-              <p className="text-lg mb-2">还没有书签</p>
+              <p className="text-lg mb-2">
+                {selectedCategoryId ? '此分类还没有书签' : '还没有书签'}
+              </p>
               <p className="text-sm opacity-80 mb-6">点击右下角的 + 按钮开始添加书签</p>
             </div>
             {onAddBookmarkClick && (
@@ -259,7 +261,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
                   border border-white/20 hover:border-white/40
                 `}
               >
-                添加第一个书签
+                {selectedCategoryId ? '为此分类添加书签' : '添加第一个书签'}
               </button>
             )}
           </div>
@@ -310,8 +312,10 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       <div className="mt-6 text-center">
         <div className="text-white/60 text-sm">
           共 {sortedBookmarks.length} 个书签
-          {networkMode === 'internal' && ' (内网模式)'}
-          {networkMode === 'external' && ' (外网模式)'}
+          {selectedCategoryId && categories.find(cat => cat.id === selectedCategoryId) && 
+           ` (${categories.find(cat => cat.id === selectedCategoryId)?.name})`}
+          {networkMode === 'internal' && ' - 内网模式'}
+          {networkMode === 'external' && ' - 外网模式'}
         </div>
       </div>
     </div>

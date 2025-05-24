@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Plus, Filter, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import type { BookmarkCategory } from '@/types'
 
 interface CategoryTabsProps {
@@ -31,55 +30,37 @@ export function CategoryTabs({
 
   const handleCategoryClick = useCallback((categoryId: string) => {
     if (selectedCategoryId === categoryId) {
-      onCategorySelect(null)
+      // 如果有多个分类，可以取消选择（显示第一个分类）
+      // 否则保持当前选择
+      if (categories.length > 1) {
+        const firstCategory = categories.find(cat => cat.id !== categoryId)
+        onCategorySelect(firstCategory?.id || categoryId)
+      }
     } else {
       onCategorySelect(categoryId)
     }
-  }, [selectedCategoryId, onCategorySelect])
+  }, [selectedCategoryId, onCategorySelect, categories])
 
   if (loading) {
     return (
-      <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg p-4 border border-white/20`}>
+      <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} p-4`}>
         <div className="flex items-center space-x-2">
-          <div className="h-8 w-16 bg-white/20 rounded animate-pulse" />
+          <div className="h-8 w-16 bg-white/20 animate-pulse" />
         </div>
       </div>
     )
   }  return (
-    <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg p-4 border border-white/20`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-white/80" />
-          <span className="text-sm font-medium text-white/90">分类筛选</span>
-        </div>
-        
+    <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} p-4`}>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* 添加分类按钮 */}
         <Button
           onClick={onAddCategory}
           size="sm"
           variant="ghost"
-          className="text-white/80 hover:text-white hover:bg-white/20 h-8 px-2"
+          className="h-8 px-3 text-xs text-white/80 hover:text-white hover:bg-white/20"
         >
           <Plus className="h-3 w-3 mr-1" />
-          <span className="text-xs">添加分类</span>
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        {/* 全部分类按钮 */}
-        <Button
-          onClick={() => onCategorySelect(null)}
-          size="sm"
-          variant={selectedCategoryId === null ? "default" : "ghost"}
-          className={`h-8 px-3 text-xs ${
-            selectedCategoryId === null
-              ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'text-white/80 hover:text-white hover:bg-white/20'
-          }`}
-        >
-          全部
-          <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs bg-white/20 text-white">
-            {categories.reduce((total, cat) => total + cat.bookmarks.length, 0)}
-          </Badge>
+          添加分类
         </Button>
 
         {/* 分类标签 */}
@@ -100,9 +81,6 @@ export function CategoryTabs({
           >
             <span className="mr-1">{category.icon}</span>
             {category.name}
-            <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs bg-white/20 text-white">
-              {category.bookmarks.length}
-            </Badge>
           </Button>
         ))}
 

@@ -26,6 +26,7 @@ export function createBookmark(
   title: string,
   url: string,
   options: {
+    categoryId?: string;
     internalUrl?: string;
     externalUrl?: string;
     description?: string;
@@ -45,6 +46,7 @@ export function createBookmark(
     name: title.trim(), // 添加name字段
     title: title.trim(),
     url: url.trim(),
+    categoryId: options.categoryId, // 添加categoryId支持
     internalUrl: options.internalUrl?.trim() || '',
     externalUrl: options.externalUrl?.trim() || '',
     description: options.description?.trim() || '',

@@ -13,7 +13,6 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { IconSelector } from './IconSelector'
 import { ColorPicker } from './ColorPicker'
-import { CategorySelector } from './CategorySelector'
 import type { Bookmark, IconType, NetworkMode } from '@/types'
 import { useBookmarks, useCategories } from '@/hooks'
 import { themeClasses } from '@/styles/theme'
@@ -25,6 +24,7 @@ interface BookmarkModalProps {
   mode: 'add' | 'edit'
   bookmark?: Bookmark
   networkMode: NetworkMode
+  selectedCategoryId?: string | null
   onSuccess?: () => void
 }
 
@@ -34,6 +34,7 @@ export function BookmarkModal({
   mode,
   bookmark,
   networkMode,
+  selectedCategoryId,
   onSuccess
 }: BookmarkModalProps) {
   // 表单状态
@@ -46,7 +47,7 @@ export function BookmarkModal({
     iconText: '',
     iconData: '',
     backgroundColor: 'transparent',
-    categories: [] as string[]
+    categoryId: '' as string
   })
 
   const [activeTab, setActiveTab] = useState<'external' | 'internal'>('external')
@@ -67,10 +68,10 @@ export function BookmarkModal({
         iconText: bookmark.iconText || '',
         iconData: bookmark.iconData || '',
         backgroundColor: bookmark.backgroundColor || 'transparent',
-        categories: [] // TODO: 从书签获取分类
+        categoryId: bookmark.categoryId || ''
       })
     } else {
-      // 重置表单
+      // 重置表单，新书签默认分配到当前选中的分类
       setFormData({
         name: '',
         externalUrl: '',
@@ -80,10 +81,10 @@ export function BookmarkModal({
         iconText: '',
         iconData: '',
         backgroundColor: 'transparent',
-        categories: []
+        categoryId: selectedCategoryId || ''
       })
     }
-  }, [mode, bookmark, isOpen])  // 表单字段更新处理
+  }, [mode, bookmark, isOpen, selectedCategoryId])  // 表单字段更新处理
   const handleInputChange = useCallback((field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }, [])
@@ -104,8 +105,8 @@ export function BookmarkModal({
     setFormData(prev => ({ ...prev, backgroundColor }))
   }, [])
 
-  const handleCategoriesChange = useCallback((categories: string[]) => {
-    setFormData(prev => ({ ...prev, categories }))
+  const handleCategoryChange = useCallback((categoryId: string) => {
+    setFormData(prev => ({ ...prev, categoryId }))
   }, [])
 
   // 表单验证
@@ -131,6 +132,7 @@ export function BookmarkModal({
     try {
       const bookmarkData: Partial<Bookmark> = {
         name: formData.name.trim(),
+        title: formData.name.trim(), // 保持title与name同步
         url: formData.externalUrl.trim() || formData.internalUrl.trim(),
         externalUrl: formData.externalUrl.trim() || undefined,
         internalUrl: formData.internalUrl.trim() || undefined,
@@ -139,6 +141,7 @@ export function BookmarkModal({
         iconText: formData.iconType === 'text' ? formData.iconText.trim() : undefined,
         iconData: formData.iconType === 'upload' ? formData.iconData : undefined,
         backgroundColor: formData.backgroundColor !== 'transparent' ? formData.backgroundColor : undefined,
+        categoryId: formData.categoryId || undefined,
       }
 
       if (mode === 'add') {
@@ -294,11 +297,17 @@ export function BookmarkModal({
               {/* 分类选择器 */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">分类</Label>
-                <CategorySelector
-                  selectedCategories={formData.categories}
-                  onCategoriesChange={handleCategoriesChange}
-                  availableCategories={categories}
-                />
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition-colors text-sm`}
+                >
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.icon} {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

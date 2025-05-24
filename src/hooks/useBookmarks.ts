@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Bookmark, BookmarkCategory, NetworkMode, OperationResult } from '../types';
+import { useState, useEffect, useCallback } from 'react';
+import type { Bookmark, OperationResult } from '../types';
 import { 
   loadBookmarks, 
   saveBookmarks, 
@@ -8,17 +8,7 @@ import {
 } from '../utils/storage';
 import {
   migrateBookmarksToUniqueIds,
-  getBookmarkById,
-  getBookmarksWithCategories,
-  getBookmarksByCategory,
-  getUncategorizedBookmarks,
   addBookmarkToCategory,
-  removeBookmarkFromCategory,
-  getCategoriesByBookmarkId,
-  addBookmarks,
-  deleteBookmarks,
-  searchBookmarks as searchBookmarksUtil,
-  sortBookmarks,
   createBookmark
 } from '../utils/bookmark-utils';
 
@@ -44,7 +34,9 @@ export function useBookmarks() {
     } finally {
       setLoading(false);
     }
-  }, [])  // 添加书签 - 新的API接口
+  }, []);
+
+  // 添加书签 - 新的API接口
   const addBookmark = useCallback(async (
     bookmarkData: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt' | 'position'>
   ) => {
@@ -56,6 +48,7 @@ export function useBookmarks() {
         bookmarkData.name || bookmarkData.title,
         bookmarkData.url,
         {
+          categoryId: bookmarkData.categoryId,
           internalUrl: bookmarkData.internalUrl,
           externalUrl: bookmarkData.externalUrl,
           description: bookmarkData.description,
@@ -71,6 +64,17 @@ export function useBookmarks() {
       const result = await saveBookmarks(updatedBookmarks);
       if (result.success) {
         setBookmarks(updatedBookmarks);
+        
+        // 如果有categoryId，将书签添加到对应分类
+        if (bookmarkData.categoryId) {
+          try {
+            await addBookmarkToCategory(bookmarkData.categoryId, newBookmark.id);
+            console.log(`书签已添加到分类 ${bookmarkData.categoryId}`);
+          } catch (categoryError) {
+            console.warn('添加书签到分类时出错:', categoryError);
+          }
+        }
+        
         return { success: true, data: newBookmark };
       } else {
         setError(result.error || '添加书签失败');

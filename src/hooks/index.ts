@@ -9,3 +9,4 @@ export * from './useBookmarks';
 export * from './useClock';
 export * from './useNetworkMode';
 export * from './useCategories';
+export * from './useBookmarkCategories';

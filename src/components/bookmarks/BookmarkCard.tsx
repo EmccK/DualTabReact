@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback } from 'react'
 import type { Bookmark, NetworkMode } from '@/types'
-import { Globe, Type, Image } from 'lucide-react'
-import { getUrlDomain, safeOpenUrl } from '@/utils/url-utils'
+import { safeOpenUrl } from '@/utils/url-utils'
+import BookmarkIcon from './BookmarkIcon'
 
 interface BookmarkCardProps {
   bookmark: Bookmark
@@ -108,80 +108,6 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({
     })
   }, [bookmark.id, onDragLeave])
 
-  // 渲染书签图标
-  const renderIcon = useCallback(() => {
-    const iconSize = 'w-8 h-8'
-    const iconStyle = bookmark.iconColor ? { color: bookmark.iconColor } : {}
-
-    switch (bookmark.iconType) {
-      case 'text':
-        return (
-          <div
-            className={`${iconSize} rounded-lg flex items-center justify-center text-lg font-bold border-2 border-white/20`}
-            style={{
-              backgroundColor: bookmark.backgroundColor || '#3b82f6',
-              color: bookmark.iconColor || '#ffffff'
-            }}
-          >
-            {bookmark.iconText?.charAt(0)?.toUpperCase() || bookmark.title?.charAt(0)?.toUpperCase() || '?'}
-          </div>
-        )
-      
-      case 'upload':
-        return bookmark.icon ? (
-          <img
-            src={bookmark.icon}
-            alt={bookmark.title}
-            className={`${iconSize} rounded-lg object-cover border-2 border-white/20`}
-            onError={(e) => {
-              // 图片加载失败时显示默认图标
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              target.nextElementSibling?.classList.remove('hidden')
-            }}
-          />
-        ) : (
-          <div className={`${iconSize} rounded-lg bg-blue-500 flex items-center justify-center border-2 border-white/20`}>
-            <Image className="w-4 h-4 text-white" />
-          </div>
-        )
-      
-      case 'official':
-      default:
-        // 尝试获取网站favicon
-        const urlToUse = getActiveUrl() || bookmark.url
-        const domain = getUrlDomain(urlToUse)
-        
-        if (!domain) {
-          // 如果没有有效URL，显示默认图标
-          return (
-            <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-              <span className="text-gray-500 text-sm">🔗</span>
-            </div>
-          )
-        }
-        
-        return (
-          <div className="relative">
-            <img
-              src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
-              alt={bookmark.title}
-              className={`${iconSize} rounded-lg object-cover border-2 border-white/20`}
-              onError={(e) => {
-                // favicon加载失败时显示默认图标
-                const target = e.target as HTMLImageElement
-                target.style.display = 'none'
-                target.nextElementSibling?.classList.remove('hidden')
-              }}
-            />
-            <div className={`${iconSize} rounded-lg bg-blue-500 flex items-center justify-center border-2 border-white/20 hidden`}>
-              <Globe className="w-4 h-4 text-white" />
-            </div>
-          </div>
-        )
-    }
-  }, [bookmark, getActiveUrl])
-
   return (
     <div
       className={`
@@ -234,7 +160,12 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({
 
         {/* 书签图标 */}
         <div className="flex justify-center mb-3">
-          {renderIcon()}
+          <BookmarkIcon 
+            bookmark={bookmark} 
+            networkMode={networkMode}
+            size={32}
+            className="w-8 h-8"
+          />
         </div>
 
         {/* 书签标题 */}

@@ -11,6 +11,7 @@ export interface Bookmark {
   name: string; // 添加name字段作为title的别名
   title: string;
   url: string;
+  categoryId?: string; // 所属分类ID
   internalUrl?: string; // 内网URL
   externalUrl?: string; // 外网URL
   description?: string; // 书签描述

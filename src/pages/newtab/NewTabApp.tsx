@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
 import { NetworkSwitch } from '@/components/network'
@@ -42,8 +42,15 @@ function NewTabApp() {
     reorderCategories
   } = useCategories()
   
-  // 分类筛选状态
+  // 分类筛选状态 - 确保始终选中第一个分类
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  
+  // 当分类数据加载完成后，确保有默认选中的分类
+  useEffect(() => {
+    if (categories.length > 0 && !selectedCategoryId) {
+      setSelectedCategoryId(categories[0].id)
+    }
+  }, [categories, selectedCategoryId])
   
   // 分类弹窗状态
   const [categoryModalOpen, setCategoryModalOpen] = useState(false)
@@ -225,10 +232,16 @@ function NewTabApp() {
     }
   }, [reloadBookmarks])
 
-  // 分类选择处理
+  // 分类选择处理 - 确保始终有分类被选中
   const handleCategorySelect = useCallback((categoryId: string | null) => {
-    setSelectedCategoryId(categoryId)
-  }, [])
+    // 如果传入null或者选择的分类不存在，选择第一个分类
+    if (!categoryId || !categories.find(cat => cat.id === categoryId)) {
+      const firstCategory = categories.length > 0 ? categories[0] : null
+      setSelectedCategoryId(firstCategory?.id || null)
+    } else {
+      setSelectedCategoryId(categoryId)
+    }
+  }, [categories])
 
   // 添加分类处理
   const handleAddCategory = useCallback(() => {
@@ -244,16 +257,23 @@ function NewTabApp() {
     setCategoryModalOpen(true)
   }, [])
 
-  // 删除分类处理
+  // 删除分类处理 - 只有一个分类时不可删除
   const handleDeleteCategory = useCallback(async (categoryId: string) => {
+    // 只有一个分类时不可删除
+    if (categories.length <= 1) {
+      alert('至少需要保留一个分类')
+      return
+    }
+    
     try {
       const result = await deleteCategory(categoryId)
       if (result.success) {
         console.log('分类删除成功')
         hideContextMenu()
-        // 如果删除的是当前选中的分类，切换到全部
+        // 如果删除的是当前选中的分类，切换到第一个可用分类
         if (selectedCategoryId === categoryId) {
-          setSelectedCategoryId(null)
+          const remainingCategory = categories.find(cat => cat.id !== categoryId)
+          setSelectedCategoryId(remainingCategory?.id || null)
         }
       } else {
         console.error('分类删除失败:', result.error)
@@ -261,7 +281,7 @@ function NewTabApp() {
     } catch (error) {
       console.error('分类删除失败:', error)
     }
-  }, [deleteCategory, selectedCategoryId, hideContextMenu])
+  }, [deleteCategory, selectedCategoryId, hideContextMenu, categories])
 
   // 关闭分类弹窗
   const handleCloseCategoryModal = useCallback(() => {
@@ -464,6 +484,7 @@ function NewTabApp() {
             <div className="w-full max-w-5xl">
               <BookmarkGrid
                 bookmarks={bookmarks}
+                categories={categories}
                 networkMode={networkMode}
                 isGlassEffect={isGlassEffect}
                 loading={bookmarksLoading}
@@ -479,7 +500,7 @@ function NewTabApp() {
         </div>
 
         {/* 右侧分类边栏 */}
-        <div className="w-80 p-6">
+        <div className="w-80">
           <CategorySidebar
             categories={categories}
             selectedCategoryId={selectedCategoryId}
@@ -496,7 +517,7 @@ function NewTabApp() {
       </div>
 
       {/* 右下角固定按钮组 - 调整位置避开分类边栏 */}
-      <div className="fixed bottom-6 right-96 flex flex-col space-y-3">
+      <div className="fixed bottom-6 right-80 mr-6 flex flex-col space-y-3">
         {/* 刷新背景按钮 */}
         <Button
           onClick={handleRefreshBackground}
@@ -549,6 +570,7 @@ function NewTabApp() {
         mode={bookmarkModalMode}
         bookmark={editingBookmark}
         networkMode={networkMode}
+        selectedCategoryId={selectedCategoryId}
         onSuccess={reloadBookmarks}
       />
 
@@ -596,7 +618,12 @@ function NewTabApp() {
                 handleDeleteCategory((contextMenu.target as BookmarkCategory).id)
               }
             }}
-            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors duration-150"
+            disabled={contextMenu.type === 'category' && categories.length <= 1}
+            className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-2 transition-colors duration-150 ${
+              contextMenu.type === 'category' && categories.length <= 1
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-red-600 hover:bg-red-50 hover:text-red-700'
+            }`}
           >
             <Trash2 className="w-4 h-4" />
             <span>{contextMenu.type === 'bookmark' ? '删除' : '删除分类'}</span>
