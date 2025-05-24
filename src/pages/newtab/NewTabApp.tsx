@@ -495,8 +495,8 @@ function NewTabApp() {
         </div>
       </div>
 
-      {/* 右下角固定按钮组 */}
-      <div className="fixed bottom-6 right-6 flex flex-col space-y-3">
+      {/* 右下角固定按钮组 - 调整位置避开分类边栏 */}
+      <div className="fixed bottom-6 right-96 flex flex-col space-y-3">
         {/* 刷新背景按钮 */}
         <Button
           onClick={handleRefreshBackground}
