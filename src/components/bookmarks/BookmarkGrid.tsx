@@ -1,14 +1,16 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
+import type { BookmarkSettings } from '@/types/settings'
 import BookmarkCard from './BookmarkCard'
 import { Plus } from 'lucide-react'
-import { useBookmarkCategories } from '@/hooks'
+import { useBookmarkCategories, useBookmarkStyles } from '@/hooks'
 
 interface BookmarkGridProps {
   bookmarks: Bookmark[]
   categories: BookmarkCategory[]
   networkMode: NetworkMode
   isGlassEffect: boolean
+  bookmarkSettings: BookmarkSettings
   loading?: boolean
   error?: string | null
   selectedCategoryId?: string | null
@@ -23,6 +25,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   categories,
   networkMode,
   isGlassEffect,
+  bookmarkSettings,
   loading = false,
   error = null,
   selectedCategoryId = null,
@@ -41,6 +44,21 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   // 使用新的分类关联Hook
   const { getBookmarksByCategory } = useBookmarkCategories(bookmarks, categories)
 
+  // 使用书签样式Hook
+  const {
+    gridStyles,
+    cardStyles,
+    iconStyles,
+    gridClasses,
+    cardClasses,
+    showTitle,
+    showFavicons,
+    showDescriptions,
+    enableDrag,
+    openIn,
+    hoverScale,
+  } = useBookmarkStyles(bookmarkSettings)
+
   // 按分类筛选并排序书签
   const sortedBookmarks = useMemo(() => {
     // 根据选中的分类筛选书签
@@ -58,8 +76,28 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
     })
   }, [getBookmarksByCategory, selectedCategoryId])
 
+  // 处理书签点击
+  const handleBookmarkClick = useCallback((bookmark: Bookmark) => {
+    if (onBookmarkClick) {
+      onBookmarkClick(bookmark)
+    } else {
+      // 根据设置决定打开方式
+      const url = networkMode === 'internal' && bookmark.internalUrl ? bookmark.internalUrl : bookmark.url
+      if (openIn === 'new') {
+        window.open(url, '_blank')
+      } else {
+        window.location.href = url
+      }
+    }
+  }, [onBookmarkClick, networkMode, openIn])
+
   // 拖拽开始
   const handleDragStart = useCallback((bookmarkId: string, event: React.DragEvent) => {
+    if (!enableDrag) {
+      event.preventDefault()
+      return
+    }
+
     try {
       setDraggedBookmarkId(bookmarkId)
       draggedIndexRef.current = sortedBookmarks.findIndex(b => b.id === bookmarkId)
@@ -71,7 +109,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       // 添加拖拽样式
       const target = event.currentTarget as HTMLElement
       if (target) {
-        target.classList.add('dragging')
+        target.style.opacity = '0.5'
       }
     } catch (error) {
       console.error('拖拽开始失败:', error)
@@ -79,7 +117,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       setDraggedBookmarkId(null)
       draggedIndexRef.current = -1
     }
-  }, [sortedBookmarks])
+  }, [sortedBookmarks, enableDrag])
 
   // 拖拽结束
   const handleDragEnd = useCallback(async (bookmarkId: string, event: React.DragEvent) => {
@@ -87,11 +125,12 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       // 移除拖拽样式
       const target = event.currentTarget as HTMLElement
       if (target) {
-        target.classList.remove('dragging')
+        target.style.opacity = '1'
       }
 
       // 如果有有效的拖拽移动，执行重排序
       if (
+        enableDrag &&
         draggedIndexRef.current !== -1 && 
         dropTargetIndexRef.current !== -1 && 
         draggedIndexRef.current !== dropTargetIndexRef.current &&
@@ -128,10 +167,12 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       draggedIndexRef.current = -1
       dropTargetIndexRef.current = -1
     }
-  }, [sortedBookmarks, onBookmarksReorder])
+  }, [sortedBookmarks, onBookmarksReorder, enableDrag])
 
   // 拖拽悬停
   const handleDragOver = useCallback((bookmarkId: string, event: React.DragEvent) => {
+    if (!enableDrag) return
+    
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
     
@@ -140,18 +181,22 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
     if (targetIndex !== -1) {
       dropTargetIndexRef.current = targetIndex
     }
-  }, [sortedBookmarks])
+  }, [sortedBookmarks, enableDrag])
 
   // 拖拽进入
   const handleDragEnter = useCallback((bookmarkId: string, event: React.DragEvent) => {
+    if (!enableDrag) return
+    
     event.preventDefault()
     if (bookmarkId !== draggedBookmarkId) {
       setDragOverBookmarkId(bookmarkId)
     }
-  }, [draggedBookmarkId])
+  }, [draggedBookmarkId, enableDrag])
 
   // 拖拽离开
   const handleDragLeave = useCallback((bookmarkId: string, event: React.DragEvent) => {
+    if (!enableDrag) return
+    
     event.preventDefault()
     
     // 清除之前的延时
@@ -163,10 +208,12 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
     dragLeaveTimeoutRef.current = setTimeout(() => {
       setDragOverBookmarkId(prev => prev === bookmarkId ? null : prev)
     }, 50)
-  }, [])
+  }, [enableDrag])
 
   // 放置
   const handleDrop = useCallback((bookmarkId: string, event: React.DragEvent) => {
+    if (!enableDrag) return
+    
     event.preventDefault()
     const draggedId = event.dataTransfer.getData('text/plain')
     
@@ -174,7 +221,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       // 拖拽逻辑将在dragEnd中处理
       setDragOverBookmarkId(null)
     }
-  }, [])
+  }, [enableDrag])
 
   // 处理键盘导航（可选功能）
   const handleKeyDown = useCallback((event: React.KeyboardEvent, bookmarkId: string) => {
@@ -182,10 +229,10 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       event.preventDefault()
       const bookmark = bookmarks.find(b => b.id === bookmarkId)
       if (bookmark) {
-        onBookmarkClick?.(bookmark)
+        handleBookmarkClick(bookmark)
       }
     }
-  }, [bookmarks, onBookmarkClick])
+  }, [bookmarks, handleBookmarkClick])
 
   // 清理定时器
   useEffect(() => {
@@ -198,20 +245,31 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
 
   // 如果正在加载
   if (loading) {
+    // 根据设置生成加载占位符
+    const placeholderCount = typeof bookmarkSettings.display.itemsPerRow === 'number' 
+      ? bookmarkSettings.display.itemsPerRow * 2 
+      : 8
+      
     return (
       <div className="w-full max-w-6xl">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-          {Array.from({ length: 8 }).map((_, index) => (
+        <div className={gridClasses} style={gridStyles}>
+          {Array.from({ length: placeholderCount }).map((_, index) => (
             <div
               key={index}
               className={`
-                p-4 rounded-xl text-center animate-pulse
+                rounded-xl text-center animate-pulse
                 ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/30'}
                 border border-white/20
               `}
+              style={cardStyles}
             >
-              <div className="w-8 h-8 mx-auto mb-3 bg-white/20 rounded-lg"></div>
-              <div className="h-4 bg-white/20 rounded mx-2"></div>
+              <div 
+                className="mx-auto mb-3 bg-white/20 rounded-lg" 
+                style={iconStyles}
+              ></div>
+              {showTitle && (
+                <div className="h-4 bg-white/20 rounded mx-2"></div>
+              )}
             </div>
           ))}
         </div>
@@ -287,13 +345,14 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       )}
 
       {/* 书签网格 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+      <div className={gridClasses} style={gridStyles}>
         {sortedBookmarks.map((bookmark) => (
           <BookmarkCard
             key={bookmark.id}
             bookmark={bookmark}
             networkMode={networkMode}
             isGlassEffect={isGlassEffect}
+            bookmarkSettings={bookmarkSettings}
             isDragging={draggedBookmarkId === bookmark.id}
             isDragOver={dragOverBookmarkId === bookmark.id}
             onDragStart={handleDragStart}
@@ -302,7 +361,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={onBookmarkClick}
+            onClick={handleBookmarkClick}
             onContextMenu={onBookmarkContextMenu}
           />
         ))}

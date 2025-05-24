@@ -487,6 +487,7 @@ function NewTabApp() {
                 categories={categories}
                 networkMode={networkMode}
                 isGlassEffect={isGlassEffect}
+                bookmarkSettings={settings.bookmarks}
                 loading={bookmarksLoading}
                 error={bookmarksError}
                 selectedCategoryId={selectedCategoryId}
