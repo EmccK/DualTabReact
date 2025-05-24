@@ -56,8 +56,8 @@ const TABS: TabItem[] = [
  */
 export function SettingsTabs({ activeTab, onTabChange, className }: SettingsTabsProps) {
   return (
-    <div className={cn('border-b border-gray-200', className)}>
-      <nav className="flex space-x-8" aria-label="Settings navigation">
+    <div className={cn('bg-gray-50 p-1 rounded-xl border border-gray-200', className)}>
+      <nav className="flex space-x-1" aria-label="Settings navigation">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -67,19 +67,25 @@ export function SettingsTabs({ activeTab, onTabChange, className }: SettingsTabs
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                'group flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors',
-                'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
+                'group relative flex flex-col items-center justify-center px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200',
+                'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500',
+                'min-w-0 flex-1',
                 isActive
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-white text-indigo-700 shadow-sm border border-gray-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
               )}
               title={tab.description}
             >
               <Icon className={cn(
-                'mr-2 h-4 w-4 transition-colors',
-                isActive ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'
+                'h-5 w-5 transition-colors mb-1',
+                isActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-gray-700'
               )} />
-              <span>{tab.label}</span>
+              <span className="text-xs leading-none">{tab.label}</span>
+              
+              {/* 活动指示器 */}
+              {isActive && (
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/5 to-purple-500/5" />
+              )}
             </button>
           );
         })}

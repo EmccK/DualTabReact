@@ -225,23 +225,11 @@ export function SyncSettings({ settings, onUpdate }: SyncSettingsProps) {
           </div>
           
           {settings.webdavEnabled && (
-            <>
-              <Alert className="mb-4">
-                <AlertDescription>
-                  每次打开新标签页时将自动检查并同步书签数据
-                </AlertDescription>
-              </Alert>
-              
-              <div className="flex space-x-3">
-                <Button
-                  onClick={handleManualSync}
-                  size="sm"
-                  className="flex-1"
-                >
-                  立即同步
-                </Button>
-              </div>
-            </>
+            <Alert>
+              <AlertDescription>
+                每次打开新标签页时将自动检查并同步书签数据
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </section>

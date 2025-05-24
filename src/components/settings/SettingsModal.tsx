@@ -13,7 +13,7 @@ import { BookmarkSettings } from './sections/BookmarkSettings';
 import { BackgroundSettings } from './sections/BackgroundSettings';
 import { SyncSettings } from './sections/SyncSettings';
 import { useSettings } from '@/hooks/useSettings';
-import { Settings, Save, RotateCcw, X } from 'lucide-react';
+import { Settings, Save, RotateCcw, X, Cloud } from 'lucide-react';
 
 interface SettingsModalProps {
   open: boolean;
@@ -58,6 +58,11 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const handleClose = () => {
     setShowResetConfirm(false);
     onOpenChange(false);
+  };
+
+  const handleManualSync = async () => {
+    // TODO: 实现手动同步功能
+    console.log('Manual sync triggered');
   };
 
   const renderTabContent = () => {
@@ -176,6 +181,19 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
             </div>
 
             <div className="flex items-center space-x-3">
+              {/* 同步备份Tab的特殊按钮 */}
+              {activeTab === 'sync' && settings.sync.webdavEnabled && (
+                <Button
+                  variant="outline"
+                  onClick={handleManualSync}
+                  disabled={isLoading}
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                >
+                  <Cloud className="w-4 h-4 mr-2" />
+                  立即同步
+                </Button>
+              )}
+              
               <Button
                 variant="outline"
                 onClick={handleClose}
