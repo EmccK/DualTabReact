@@ -8,6 +8,8 @@ import {
   deleteCategory,
   reorderCategories 
 } from '@/utils/storage'
+import { createBookmarkCategory } from '@/models/BookmarkCategory'
+import { loadBookmarks, saveBookmarks } from '@/utils/storage'
 
 interface UseCategoriesReturn {
   categories: BookmarkCategory[]
@@ -32,7 +34,18 @@ export function useCategories(): UseCategoriesReturn {
       
       const result = await loadCategories()
       if (result.success) {
-        setCategories(result.data || [])
+        let categoriesData = result.data || []
+        
+        // 如果没有分类，创建默认分类
+        if (categoriesData.length === 0) {
+          const defaultCategory = createBookmarkCategory('默认分类', '📁', '#3B82F6')
+          const saveResult = await saveCategories([defaultCategory])
+          if (saveResult.success) {
+            categoriesData = [defaultCategory]
+          }
+        }
+        
+        setCategories(categoriesData)
       } else {
         setError(result.error || '加载分类失败')
         setCategories([])
@@ -86,6 +99,30 @@ export function useCategories(): UseCategoriesReturn {
   // 删除分类
   const handleDeleteCategory = useCallback(async (id: string): Promise<OperationResult<void>> => {
     try {
+      // 检查是否是最后一个分类
+      if (categories.length <= 1) {
+        return { success: false, error: '不能删除最后一个分类' }
+      }
+      
+      // 先获取要删除的分类信息
+      const categoryToDelete = categories.find(cat => cat.id === id)
+      if (!categoryToDelete) {
+        return { success: false, error: '分类不存在' }
+      }
+      
+      // 删除分类中的所有书签
+      if (categoryToDelete.bookmarks.length > 0) {
+        const bookmarksResult = await loadBookmarks()
+        if (bookmarksResult.success) {
+          const allBookmarks = bookmarksResult.data || []
+          const updatedBookmarks = allBookmarks.filter(bookmark => 
+            !categoryToDelete.bookmarks.includes(bookmark.id)
+          )
+          await saveBookmarks(updatedBookmarks)
+        }
+      }
+      
+      // 删除分类
       const result = await deleteCategory(id)
       if (result.success) {
         await loadCategoriesData()
@@ -95,7 +132,7 @@ export function useCategories(): UseCategoriesReturn {
       console.error('删除分类失败:', err)
       return { success: false, error: '删除分类失败' }
     }
-  }, [loadCategoriesData])
+  }, [loadCategoriesData, categories])
 
   // 重排序分类
   const handleReorderCategories = useCallback(async (

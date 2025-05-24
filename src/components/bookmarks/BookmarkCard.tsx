@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react'
 import type { Bookmark, NetworkMode } from '@/types'
-import { Globe, Type, Image, ExternalLink } from 'lucide-react'
+import { Globe, Type, Image } from 'lucide-react'
 import { getUrlDomain, safeOpenUrl } from '@/utils/url-utils'
 
 interface BookmarkCardProps {
@@ -190,6 +190,7 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({
         ${isDragOver ? 'transform scale-105' : ''}
         ${isHovered ? 'transform scale-105' : ''}
       `}
+      data-context-target="bookmark"
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -249,11 +250,6 @@ const BookmarkCard: React.FC<BookmarkCardProps> = ({
           `}>
             {getActiveUrl()}
           </div>
-        </div>
-
-        {/* 外部链接指示器 */}
-        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-60 transition-opacity duration-200">
-          <ExternalLink className="w-3 h-3 text-white" />
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ interface CategorySidebarProps {
   onEditCategory: (category: BookmarkCategory) => void
   onDeleteCategory: (categoryId: string) => void
   onReorderCategories: (reorderedCategories: BookmarkCategory[]) => void
+  onCategoryContextMenu?: (category: BookmarkCategory, event: React.MouseEvent) => void
   isGlassEffect?: boolean
   loading?: boolean
 }
@@ -24,6 +25,7 @@ export function CategorySidebar({
   onEditCategory,
   onDeleteCategory,
   onReorderCategories,
+  onCategoryContextMenu,
   isGlassEffect = true,
   loading = false
 }: CategorySidebarProps) {
@@ -95,10 +97,24 @@ export function CategorySidebar({
 
   const handleDeleteClick = useCallback((e: React.MouseEvent, categoryId: string) => {
     e.stopPropagation()
-    if (confirm('确定要删除这个分类吗？')) {
+    const category = categories.find(cat => cat.id === categoryId)
+    const bookmarkCount = category?.bookmarks.length || 0
+    
+    let confirmMessage = '确定要删除这个分类吗？'
+    if (bookmarkCount > 0) {
+      confirmMessage = `确定要删除这个分类吗？分类中的 ${bookmarkCount} 个书签也会被删除。`
+    }
+    
+    if (confirm(confirmMessage)) {
       onDeleteCategory(categoryId)
     }
-  }, [onDeleteCategory])
+  }, [onDeleteCategory, categories])
+
+  const handleCategoryContextMenu = useCallback((e: React.MouseEvent, category: BookmarkCategory) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onCategoryContextMenu?.(category, e)
+  }, [onCategoryContextMenu])
 
   if (loading) {
     return (
@@ -151,12 +167,14 @@ export function CategorySidebar({
         {categories.map((category) => (
           <div
             key={category.id}
+            data-context-target="category"
             draggable
             onDragStart={(e) => handleDragStart(e, category.id)}
             onDragEnd={handleDragEnd}
             onDragOver={(e) => handleDragOver(e, category.id)}
             onDrop={handleDrop}
             onClick={() => handleCategoryClick(category.id)}
+            onContextMenu={(e) => handleCategoryContextMenu(e, category)}
             className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 ${
               selectedCategoryId === category.id
                 ? 'text-white shadow-lg'

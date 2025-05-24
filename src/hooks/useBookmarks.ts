@@ -116,7 +116,51 @@ export function useBookmarks() {
     } finally {
       setSaving(false);
     }
-  }, [bookmarks]);  // 重排序书签（拖拽功能）
+  }, [bookmarks]);
+
+  // 删除书签
+  const deleteBookmark = useCallback(async (bookmarkId: string) => {
+    setSaving(true);
+    setError(null);
+    
+    try {
+      const updatedBookmarks = bookmarks.filter(bookmark => bookmark.id !== bookmarkId);
+      
+      const result = await saveBookmarks(updatedBookmarks);
+      if (result.success) {
+        setBookmarks(updatedBookmarks);
+        
+        // 同时从所有分类中移除该书签
+        try {
+          const categoriesResult = await loadCategories();
+          if (categoriesResult.success) {
+            const categories = categoriesResult.data || [];
+            const updatedCategories = categories.map(category => ({
+              ...category,
+              bookmarks: category.bookmarks.filter(id => id !== bookmarkId),
+              updatedAt: Date.now()
+            }));
+            await saveCategories(updatedCategories);
+          }
+        } catch (categoryError) {
+          console.warn('从分类中移除书签时出错:', categoryError);
+        }
+        
+        return { success: true };
+      } else {
+        setError(result.error || '删除书签失败');
+        return { success: false, error: result.error };
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : '未知错误';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setSaving(false);
+    }
+  }, [bookmarks]);
+
+  // 重排序书签（拖拽功能）
   const reorderBookmarks = useCallback(async (newBookmarkOrder: Bookmark[]) => {
     setSaving(true);
     setError(null);
@@ -156,6 +200,7 @@ export function useBookmarks() {
     saving,
     addBookmark,
     updateBookmark,
+    deleteBookmark,
     reorderBookmarks,
     reload: loadBookmarkList
   };

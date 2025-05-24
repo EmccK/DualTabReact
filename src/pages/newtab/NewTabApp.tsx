@@ -4,7 +4,7 @@ import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
 import { NetworkSwitch } from '@/components/network'
 import { CategorySidebar, CategoryModal } from '@/components/categories'
 import { useClock, useBookmarks, useNetworkMode, useCategories } from '@/hooks'
-import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube } from 'lucide-react'
+import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import { createTestBookmarks } from '@/utils/test-data'
 import { safeOpenUrl } from '@/utils/url-utils'
@@ -26,6 +26,7 @@ function NewTabApp() {
     bookmarks,
     loading: bookmarksLoading,
     error: bookmarksError,
+    deleteBookmark,
     reorderBookmarks,
     reload: reloadBookmarks
   } = useBookmarks()
@@ -49,6 +50,21 @@ function NewTabApp() {
   const [categoryModalMode, setCategoryModalMode] = useState<'add' | 'edit'>('add')
   const [editingCategory, setEditingCategory] = useState<BookmarkCategory | undefined>()
   
+  // 通用右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean
+    x: number
+    y: number
+    type: 'bookmark' | 'category' | null
+    target: Bookmark | BookmarkCategory | null
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    type: null,
+    target: null
+  })
+
   const backgroundAttributionInfo = backgroundImage ? {
     author: "示例作者",
     authorUrl: "https://unsplash.com/@author",
@@ -77,7 +93,9 @@ function NewTabApp() {
   const handleRefreshBackground = useCallback(() => {
     console.log('刷新背景图片')
     // TODO: 实现背景图片刷新功能
-  }, [])  // 书签弹窗处理函数
+  }, [])
+
+  // 书签弹窗处理函数
   const handleAddBookmark = useCallback(() => {
     setBookmarkModalMode('add')
     setEditingBookmark(undefined)
@@ -108,11 +126,83 @@ function NewTabApp() {
     }
   }, [networkMode])
 
+  // 通用右键菜单显示函数
+  const showContextMenu = useCallback((
+    event: React.MouseEvent,
+    type: 'bookmark' | 'category',
+    target: Bookmark | BookmarkCategory
+  ) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    // 如果是同一个目标，直接返回
+    if (contextMenu.visible && contextMenu.target === target) {
+      return
+    }
+
+    // 计算菜单位置
+    const menuWidth = 150
+    const menuHeight = 100
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+
+    let x = event.clientX
+    let y = event.clientY
+
+    // 边界检查
+    if (x + menuWidth > viewportWidth) {
+      x = viewportWidth - menuWidth - 10
+    }
+    if (y + menuHeight > viewportHeight) {
+      y = viewportHeight - menuHeight - 10
+    }
+    if (x < 10) x = 10
+    if (y < 10) y = 10
+
+    // 如果当前有菜单显示且是不同目标，先关闭再显示新的
+    if (contextMenu.visible && contextMenu.target !== target) {
+      setContextMenu(prev => ({ ...prev, visible: false }))
+      setTimeout(() => {
+        setContextMenu({
+          visible: true,
+          x,
+          y,
+          type,
+          target
+        })
+      }, 50)
+    } else {
+      // 直接显示菜单
+      setContextMenu({
+        visible: true,
+        x,
+        y,
+        type,
+        target
+      })
+    }
+  }, [contextMenu.visible, contextMenu.target])
+
+  // 关闭右键菜单
+  const hideContextMenu = useCallback(() => {
+    setContextMenu({
+      visible: false,
+      x: 0,
+      y: 0,
+      type: null,
+      target: null
+    })
+  }, [])
+
   // 处理书签右键菜单
   const handleBookmarkContextMenu = useCallback((bookmark: Bookmark, event: React.MouseEvent) => {
-    event.preventDefault()
-    handleEditBookmark(bookmark)
-  }, [handleEditBookmark])
+    showContextMenu(event, 'bookmark', bookmark)
+  }, [showContextMenu])
+
+  // 处理分类右键菜单
+  const handleCategoryContextMenu = useCallback((category: BookmarkCategory, event: React.MouseEvent) => {
+    showContextMenu(event, 'category', category)
+  }, [showContextMenu])
 
   // 处理书签重排序
   const handleBookmarksReorder = useCallback(async (reorderedBookmarks: Bookmark[]) => {
@@ -160,6 +250,7 @@ function NewTabApp() {
       const result = await deleteCategory(categoryId)
       if (result.success) {
         console.log('分类删除成功')
+        hideContextMenu()
         // 如果删除的是当前选中的分类，切换到全部
         if (selectedCategoryId === categoryId) {
           setSelectedCategoryId(null)
@@ -170,7 +261,7 @@ function NewTabApp() {
     } catch (error) {
       console.error('分类删除失败:', error)
     }
-  }, [deleteCategory, selectedCategoryId])
+  }, [deleteCategory, selectedCategoryId, hideContextMenu])
 
   // 关闭分类弹窗
   const handleCloseCategoryModal = useCallback(() => {
@@ -220,8 +311,41 @@ function NewTabApp() {
     }
   }, [reorderCategories])
 
+  // 处理删除书签
+  const handleDeleteBookmark = useCallback(async (bookmark: Bookmark) => {
+    if (confirm(`确定要删除书签"${bookmark.title}"吗？`)) {
+      try {
+        const result = await deleteBookmark(bookmark.id)
+        if (result.success) {
+          console.log('书签删除成功')
+          hideContextMenu()
+        } else {
+          console.error('书签删除失败:', result.error)
+          alert('删除书签失败，请重试')
+        }
+      } catch (error) {
+        console.error('书签删除失败:', error)
+        alert('删除书签失败，请重试')
+      }
+    }
+  }, [deleteBookmark, hideContextMenu])
+
+  // 全局点击处理
+  const handleGlobalClick = useCallback((event: React.MouseEvent) => {
+    if (contextMenu.visible) {
+      // 检查是否点击在右键菜单内部
+      const target = event.target as Element
+      const menuElement = target.closest('[data-context-menu="true"]')
+      
+      // 如果不是在菜单内部点击，则关闭菜单
+      if (!menuElement) {
+        hideContextMenu()
+      }
+    }
+  }, [contextMenu.visible, hideContextMenu])
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden" onClick={handleGlobalClick}>
       {/* 背景图片容器 */}
       {backgroundImage && (
         <div 
@@ -235,104 +359,108 @@ function NewTabApp() {
         {/* 左侧主内容区域 */}
         <div className="flex-1 flex flex-col">
         
-        {/* 头部控制区域 */}
-        <header className="flex justify-between items-start p-6">
-          {/* 左侧：时间日期显示 */}
-          <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg px-4 py-2 text-white shadow-lg border border-white/20`}>
-            <div className="text-2xl font-bold tracking-wide">
-              {currentTime.toLocaleTimeString('zh-CN', { 
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-              })}
+          {/* 头部控制区域 */}
+          <header className="flex justify-between items-start p-6">
+            {/* 左侧：时间日期显示 */}
+            <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg px-4 py-2 text-white shadow-lg border border-white/20`}>
+              <div className="text-2xl font-bold tracking-wide">
+                {currentTime.toLocaleTimeString('zh-CN', { 
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit'
+                })}
+              </div>
+              <div className="text-sm opacity-80">
+                {currentTime.toLocaleDateString('zh-CN', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  weekday: 'long'
+                })}
+              </div>
             </div>
-            <div className="text-sm opacity-80">
-              {currentTime.toLocaleDateString('zh-CN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                weekday: 'long'
-              })}
+
+            {/* 右侧：控制按钮组 */}
+            <div className="flex items-center space-x-3">
+              {/* 开发测试按钮 */}
+              <Button
+                onClick={handleCreateTestBookmarks}
+                size="sm"
+                variant="ghost"
+                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
+                title="创建测试书签数据"
+              >
+                <TestTube className="h-4 w-4" />
+              </Button>
+
+              {/* 毛玻璃效果切换 */}
+              <Button
+                onClick={toggleGlassEffect}
+                size="sm"
+                variant="ghost"
+                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
+                title="切换毛玻璃效果"
+              >
+                <Droplets className="h-4 w-4" />
+              </Button>
+
+              {/* WebDAV同步 */}
+              <Button
+                onClick={handleWebDAVSync}
+                size="sm"
+                variant="ghost"
+                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
+                title="WebDAV同步设置"
+              >
+                <Cloud className="h-4 w-4 mr-1" />
+                <span className="text-xs">同步</span>
+              </Button>
+
+              {/* 网络模式切换 */}
+              <NetworkSwitch
+                networkMode={networkMode}
+                onNetworkModeChange={handleNetworkModeChange}
+                isGlassEffect={isGlassEffect}
+              />
             </div>
-          </div>
-
-          {/* 右侧：控制按钮组 */}
-          <div className="flex items-center space-x-3">
-            {/* 开发测试按钮 */}
-            <Button
-              onClick={handleCreateTestBookmarks}
-              size="sm"
-              variant="ghost"
-              className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
-              title="创建测试书签数据"
-            >
-              <TestTube className="h-4 w-4" />
-            </Button>
-
-            {/* 毛玻璃效果切换 */}
-            <Button
-              onClick={toggleGlassEffect}
-              size="sm"
-              variant="ghost"
-              className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
-              title="切换毛玻璃效果"
-            >
-              <Droplets className="h-4 w-4" />
-            </Button>            {/* WebDAV同步 */}
-            <Button
-              onClick={handleWebDAVSync}
-              size="sm"
-              variant="ghost"
-              className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
-              title="WebDAV同步设置"
-            >
-              <Cloud className="h-4 w-4 mr-1" />
-              <span className="text-xs">同步</span>
-            </Button>
-
-            {/* 网络模式切换 */}
-            <NetworkSwitch
-              networkMode={networkMode}
-              onNetworkModeChange={handleNetworkModeChange}
-              isGlassEffect={isGlassEffect}
-            />
-          </div>
-        </header>
+          </header>
 
           {/* 中央搜索区域 */}
           <div className="flex-1 flex flex-col justify-center items-center px-6">
             <div className="w-full max-w-2xl mb-16">
-            {/* Google搜索框 */}
-            <form 
-              action="https://www.google.com/search" 
-              method="get"
-              className="w-full"
-            >
-              <div className={`${isGlassEffect ? 'bg-white/90 backdrop-blur-md' : 'bg-white/95'} rounded-full shadow-lg border border-white/30 p-4 flex items-center transition-all duration-300 hover:shadow-xl hover:bg-white/95`}>
-                <img
-                  src="./images/google-logo.png"
-                  alt="Google"
-                  className="w-8 h-8 mr-4"
-                />
-                <input
-                  type="text"
-                  name="q"
-                  placeholder="搜索"
-                  className="flex-1 bg-transparent outline-none text-lg text-gray-700 placeholder-gray-500 font-medium"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      const query = (e.target as HTMLInputElement).value
-                      if (query.trim()) {
-                        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank')
+              {/* Google搜索框 */}
+              <form 
+                action="https://www.google.com/search" 
+                method="get"
+                className="w-full"
+              >
+                <div className={`${isGlassEffect ? 'bg-white/90 backdrop-blur-md' : 'bg-white/95'} rounded-full shadow-lg border border-white/30 p-4 flex items-center transition-all duration-300 hover:shadow-xl hover:bg-white/95`}>
+                  <img
+                    src="./images/google-logo.png"
+                    alt="Google"
+                    className="w-8 h-8 mr-4"
+                  />
+                  <input
+                    type="text"
+                    name="q"
+                    placeholder="搜索"
+                    className="flex-1 bg-transparent outline-none text-lg text-gray-700 placeholder-gray-500 font-medium"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const query = (e.target as HTMLInputElement).value
+                        if (query.trim()) {
+                          window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank')
+                        }
                       }
-                    }
-                  }}
-                />
-              </div>
-            </form>
-          </div>            {/* 书签网格区域 */}
+                    }}
+                  />
+                </div>
+              </form>
+            </div>
+
+            {/* 书签网格区域 */}
             <div className="w-full max-w-5xl">
               <BookmarkGrid
                 bookmarks={bookmarks}
@@ -360,58 +488,59 @@ function NewTabApp() {
             onEditCategory={handleEditCategory}
             onDeleteCategory={handleDeleteCategory}
             onReorderCategories={handleReorderCategories}
+            onCategoryContextMenu={handleCategoryContextMenu}
             isGlassEffect={isGlassEffect}
             loading={categoriesLoading}
           />
         </div>
       </div>
 
-        {/* 右下角固定按钮组 */}
-        <div className="fixed bottom-6 right-6 flex flex-col space-y-3">
-          {/* 刷新背景按钮 */}
-          <Button
-            onClick={handleRefreshBackground}
-            size="sm"
-            className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
-            title="刷新背景图片"
-          >
-            <RefreshCw className="h-5 w-5" />
-          </Button>
+      {/* 右下角固定按钮组 */}
+      <div className="fixed bottom-6 right-6 flex flex-col space-y-3">
+        {/* 刷新背景按钮 */}
+        <Button
+          onClick={handleRefreshBackground}
+          size="sm"
+          className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
+          title="刷新背景图片"
+        >
+          <RefreshCw className="h-5 w-5" />
+        </Button>
 
-          {/* 添加书签按钮 */}
-          <Button
-            onClick={handleAddBookmark}
-            size="sm"
-            className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
-            title="添加书签"
+        {/* 添加书签按钮 */}
+        <Button
+          onClick={handleAddBookmark}
+          size="sm"
+          className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
+          title="添加书签"
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* 背景图片归属信息 */}
+      {backgroundAttributionInfo && (
+        <div className="fixed bottom-3 right-3 text-xs text-white/70 bg-black/30 px-2 py-1 rounded backdrop-blur-sm">
+          Photo by{' '}
+          <a
+            href={backgroundAttributionInfo.authorUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/90 hover:underline"
           >
-            <Plus className="h-5 w-5" />
-          </Button>
+            {backgroundAttributionInfo.author}
+          </a>
+          {' '}on{' '}
+          <a
+            href={backgroundAttributionInfo.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/90 hover:underline"
+          >
+            {backgroundAttributionInfo.source}
+          </a>
         </div>
-
-        {/* 背景图片归属信息 */}
-        {backgroundAttributionInfo && (
-          <div className="fixed bottom-3 right-3 text-xs text-white/70 bg-black/30 px-2 py-1 rounded backdrop-blur-sm">
-            Photo by{' '}
-            <a
-              href={backgroundAttributionInfo.authorUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/90 hover:underline"
-            >
-              {backgroundAttributionInfo.author}
-            </a>
-            {' '}on{' '}
-            <a
-              href={backgroundAttributionInfo.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/90 hover:underline"
-            >
-              {backgroundAttributionInfo.source}
-            </a>
-          </div>
-        )}
+      )}
 
       {/* 书签弹窗 */}
       <BookmarkModal
@@ -420,6 +549,7 @@ function NewTabApp() {
         mode={bookmarkModalMode}
         bookmark={editingBookmark}
         networkMode={networkMode}
+        onSuccess={reloadBookmarks}
       />
 
       {/* 分类弹窗 */}
@@ -431,6 +561,48 @@ function NewTabApp() {
         onSave={handleSaveCategory}
         onUpdate={handleUpdateCategory}
       />
+
+      {/* 统一右键菜单 */}
+      {contextMenu.visible && contextMenu.target && (
+        <div
+          data-context-menu="true"
+          className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-32 animate-in fade-in-0 zoom-in-95 duration-200"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <button
+            onClick={() => {
+              if (contextMenu.type === 'bookmark') {
+                handleEditBookmark(contextMenu.target as Bookmark)
+              } else if (contextMenu.type === 'category') {
+                handleEditCategory(contextMenu.target as BookmarkCategory)
+              }
+              hideContextMenu()
+            }}
+            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2 transition-colors duration-150"
+          >
+            <Edit className="w-4 h-4" />
+            <span>{contextMenu.type === 'bookmark' ? '编辑' : '编辑分类'}</span>
+          </button>
+          <button
+            onClick={() => {
+              if (contextMenu.type === 'bookmark') {
+                handleDeleteBookmark(contextMenu.target as Bookmark)
+              } else if (contextMenu.type === 'category') {
+                handleDeleteCategory((contextMenu.target as BookmarkCategory).id)
+              }
+            }}
+            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors duration-150"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>{contextMenu.type === 'bookmark' ? '删除' : '删除分类'}</span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

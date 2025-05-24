@@ -36,6 +36,17 @@ export interface BookmarkCategory {
   updatedAt: number;
 }
 
+// 右键菜单项类型
+export interface ContextMenuItem {
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+  className?: string;
+  disabled?: boolean;
+  separator?: boolean;
+}
+
 // 网络模式类型
 export type NetworkMode = 'internal' | 'external';
 

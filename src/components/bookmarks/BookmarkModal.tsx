@@ -15,7 +15,7 @@ import { IconSelector } from './IconSelector'
 import { ColorPicker } from './ColorPicker'
 import { CategorySelector } from './CategorySelector'
 import type { Bookmark, IconType, NetworkMode } from '@/types'
-import { useBookmarks } from '@/hooks'
+import { useBookmarks, useCategories } from '@/hooks'
 import { themeClasses } from '@/styles/theme'
 import { Bookmark as BookmarkIcon, Edit, Globe, Wifi } from 'lucide-react'
 
@@ -25,6 +25,7 @@ interface BookmarkModalProps {
   mode: 'add' | 'edit'
   bookmark?: Bookmark
   networkMode: NetworkMode
+  onSuccess?: () => void
 }
 
 export function BookmarkModal({
@@ -32,7 +33,8 @@ export function BookmarkModal({
   onClose,
   mode,
   bookmark,
-  networkMode
+  networkMode,
+  onSuccess
 }: BookmarkModalProps) {
   // 表单状态
   const [formData, setFormData] = useState({
@@ -51,6 +53,7 @@ export function BookmarkModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { addBookmark, updateBookmark } = useBookmarks()
+  const { categories } = useCategories()
 
   // 初始化表单数据
   useEffect(() => {
@@ -145,13 +148,14 @@ export function BookmarkModal({
       }
 
       onClose()
+      onSuccess?.()
     } catch (error) {
       console.error('保存书签失败:', error)
       alert('保存书签失败，请重试')
     } finally {
       setIsSubmitting(false)
     }
-  }, [formData, validateForm, mode, bookmark, addBookmark, updateBookmark, onClose])
+  }, [formData, validateForm, mode, bookmark, addBookmark, updateBookmark, onClose, onSuccess])
 
   const handleCancel = useCallback(() => {
     onClose()
@@ -293,6 +297,7 @@ export function BookmarkModal({
                 <CategorySelector
                   selectedCategories={formData.categories}
                   onCategoriesChange={handleCategoriesChange}
+                  availableCategories={categories}
                 />
               </div>
             </div>
