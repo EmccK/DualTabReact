@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { Wifi, WifiOff } from 'lucide-react'
+import { Wifi, Building } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { NetworkMode } from '@/types'
 
@@ -30,7 +30,7 @@ const NetworkSwitch: React.FC<NetworkSwitchProps> = ({
   }, [networkMode, onNetworkModeChange, isAnimating])
 
   const isExternal = networkMode === 'external'
-  const IconComponent = isExternal ? Wifi : WifiOff
+  const IconComponent = isExternal ? Wifi : Building
   const modeLabel = isExternal ? '外网' : '内网'
   const modeColor = isExternal ? 'text-green-300' : 'text-yellow-300'
   const indicatorColor = isExternal ? 'bg-green-400' : 'bg-yellow-400'
@@ -39,18 +39,18 @@ const NetworkSwitch: React.FC<NetworkSwitchProps> = ({
     <div className={`relative ${className}`}>
       <div className={`
         ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} 
-        rounded-lg px-4 py-2 flex items-center space-x-3 border border-white/20
+        rounded-lg px-3 py-2 flex items-center space-x-2 border border-white/20
         transition-all duration-300 hover:bg-white/20 hover:border-white/40
         ${isAnimating ? 'scale-105' : 'scale-100'}
       `}>
-        <span className="text-white text-sm font-medium">网络模式：</span>        
+        <span className="text-white text-xs">网络：</span>        
         <Button
           onClick={handleToggle}
           disabled={isAnimating}
           size="sm"
           variant="ghost"
           className={`
-            text-white hover:bg-white/20 p-2 h-auto rounded-md
+            text-white hover:bg-white/20 p-1 h-auto rounded-md
             transition-all duration-300 ${isAnimating ? 'animate-pulse' : ''}
           `}
         >
@@ -62,23 +62,21 @@ const NetworkSwitch: React.FC<NetworkSwitchProps> = ({
           </div>
         </Button>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
           <div className={`
-            w-2 h-2 rounded-full transition-all duration-300
+            w-1.5 h-1.5 rounded-full transition-all duration-300
             ${indicatorColor} ${isAnimating ? 'animate-ping' : ''}
           `} />
           
           <span className={`
-            text-sm font-medium transition-all duration-300
+            text-xs font-medium transition-all duration-300
             ${modeColor} ${isAnimating ? 'opacity-50' : 'opacity-100'}
           `}>
             {modeLabel}
           </span>
         </div>
 
-        {isAnimating && (
-          <div className="absolute inset-0 rounded-lg border-2 border-blue-400/60 animate-pulse" />
-        )}
+
       </div>
     </div>
   )

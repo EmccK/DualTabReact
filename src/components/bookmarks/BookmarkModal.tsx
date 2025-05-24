@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -177,6 +178,12 @@ export function BookmarkModal({
               </>
             )}
           </DialogTitle>
+          <DialogDescription className="text-sm text-gray-600">
+            {mode === 'add' 
+              ? '创建一个新的书签，可以设置内外网地址、图标和分类。' 
+              : '修改书签的信息，包括地址、图标和分类设置。'
+            }
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
