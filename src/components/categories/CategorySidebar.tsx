@@ -122,7 +122,7 @@ export function CategorySidebar({
 
   if (loading) {
     return (
-      <div className={`w-64 h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'}`}>
+      <div className={`w-full h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'}`}>
         <div className="space-y-1">
           <div className="h-12 bg-white/20 animate-pulse" />
           <div className="h-12 bg-white/20 animate-pulse" />
@@ -131,18 +131,9 @@ export function CategorySidebar({
       </div>
     )
   }  return (
-    <div className={`w-64 h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} flex flex-col`}>
+    <div className={`w-full h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} flex flex-col`}>
       {/* 分类列表 */}
-      <div className="flex-1 space-y-1 overflow-y-auto">
-        {/* 添加分类按钮 */}
-        <div
-          onClick={onAddCategory}
-          className="group flex items-center space-x-3 px-4 py-3 cursor-pointer transition-all duration-200 text-white/80 hover:text-white hover:bg-white/10"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="text-sm font-medium">添加分类</span>
-        </div>
-
+      <div className="flex-1 flex flex-col justify-center space-y-1 overflow-y-auto">
         {/* 分类项目 */}
         {categories.map((category) => (
           <div
@@ -172,6 +163,17 @@ export function CategorySidebar({
             <span className="text-sm font-medium truncate flex-1">{category.name}</span>
           </div>
         ))}
+      </div>
+      
+      {/* 添加分类按钮 */}
+      <div className="p-4 border-t border-white/10">
+        <div
+          onClick={onAddCategory}
+          className="group flex items-center justify-center space-x-3 px-4 py-3 cursor-pointer transition-all duration-200 text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
+        >
+          <Plus className="h-4 w-4" />
+          <span className="text-sm font-medium">添加分类</span>
+        </div>
       </div>
     </div>
   )

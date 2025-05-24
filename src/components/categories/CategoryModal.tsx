@@ -72,7 +72,7 @@ export function CategoryModal({ isOpen, onClose, mode, category, onSave, onUpdat
         
         <div className="space-y-4">
           <div>
-            <Label htmlFor="name">分类名称</Label>
+            <Label htmlFor="name" className="mb-2 block">分类名称</Label>
             <Input
               id="name"
               value={formData.name}

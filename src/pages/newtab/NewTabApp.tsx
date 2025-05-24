@@ -375,12 +375,12 @@ function NewTabApp() {
       )}
       
       {/* 主要内容区域 - 使用flex布局 */}
-      <div className="relative z-10 flex h-screen">
+      <div className="relative z-10 flex h-screen w-full">
         {/* 左侧主内容区域 */}
         <div className="flex-1 flex flex-col">
         
           {/* 头部控制区域 */}
-          <header className="flex justify-between items-start p-6">
+          <header className="flex justify-between items-start p-6 pr-56">
             {/* 左侧：时间日期显示 */}
             <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg px-4 py-2 text-white shadow-lg border border-white/20`}>
               <div className="text-2xl font-bold tracking-wide">
@@ -500,7 +500,7 @@ function NewTabApp() {
         </div>
 
         {/* 右侧分类边栏 */}
-        <div className="w-80">
+        <div className="w-48 fixed right-0 top-0 h-full z-10">
           <CategorySidebar
             categories={categories}
             selectedCategoryId={selectedCategoryId}
@@ -517,7 +517,7 @@ function NewTabApp() {
       </div>
 
       {/* 右下角固定按钮组 - 调整位置避开分类边栏 */}
-      <div className="fixed bottom-6 right-96 flex flex-col space-y-3 z-30">
+      <div className="fixed bottom-6 right-56 flex flex-col space-y-3 z-30">
         {/* 刷新背景按钮 */}
         <Button
           onClick={handleRefreshBackground}
