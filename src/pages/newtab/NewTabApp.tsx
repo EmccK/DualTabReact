@@ -4,7 +4,9 @@ import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
 import { NetworkSwitch } from '@/components/network'
 import { CategorySidebar, CategoryModal } from '@/components/categories'
 import { SettingsModal } from '@/components/settings'
-import { useClock, useBookmarks, useNetworkMode, useCategories } from '@/hooks'
+import { SearchBox } from '@/components/search'
+import { ClockDisplay } from '@/components/clock'
+import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings } from '@/hooks'
 import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import { createTestBookmarks } from '@/utils/test-data'
@@ -12,7 +14,11 @@ import { safeOpenUrl } from '@/utils/url-utils'
 import './newtab.css'
 
 function NewTabApp() {
-  const currentTime = useClock()
+  // 设置管理Hook - 最优先加载
+  const { settings, isLoading: settingsLoading } = useSettings()
+  
+  // 使用设置数据的其他Hooks
+  const { currentTime } = useClock(settings.preferences)
   const { networkMode, setNetworkMode, loading: networkLoading } = useNetworkMode()
   const [backgroundImage, setBackgroundImage] = useState<string>()
   const [isGlassEffect, setIsGlassEffect] = useState(true)
@@ -372,6 +378,18 @@ function NewTabApp() {
     }
   }, [contextMenu.visible, hideContextMenu])
 
+  // 如果设置还在加载，显示加载状态
+  if (settingsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-lg">加载应用设置中...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden" onClick={handleGlobalClick}>
       {/* 背景图片容器 */}
@@ -390,24 +408,11 @@ function NewTabApp() {
           {/* 头部控制区域 */}
           <header className="flex justify-between items-start p-6 pr-56">
             {/* 左侧：时间日期显示 */}
-            <div className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} rounded-lg px-4 py-2 text-white shadow-lg border border-white/20`}>
-              <div className="text-2xl font-bold tracking-wide">
-                {currentTime.toLocaleTimeString('zh-CN', { 
-                  hour12: false,
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit'
-                })}
-              </div>
-              <div className="text-sm opacity-80">
-                {currentTime.toLocaleDateString('zh-CN', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  weekday: 'long'
-                })}
-              </div>
-            </div>
+            <ClockDisplay
+              currentTime={currentTime}
+              preferences={settings.preferences}
+              isGlassEffect={isGlassEffect}
+            />
 
             {/* 右侧：控制按钮组 */}
             <div className="flex items-center space-x-3">
@@ -467,36 +472,12 @@ function NewTabApp() {
 
           {/* 中央搜索区域 */}
           <div className="flex-1 flex flex-col justify-center items-center px-6">
-            <div className="w-full max-w-2xl mb-16">
-              {/* Google搜索框 */}
-              <form 
-                action="https://www.google.com/search" 
-                method="get"
-                className="w-full"
-              >
-                <div className={`${isGlassEffect ? 'bg-white/90 backdrop-blur-md' : 'bg-white/95'} rounded-full shadow-lg border border-white/30 p-4 flex items-center transition-all duration-300 hover:shadow-xl hover:bg-white/95`}>
-                  <img
-                    src="./images/google-logo.png"
-                    alt="Google"
-                    className="w-8 h-8 mr-4"
-                  />
-                  <input
-                    type="text"
-                    name="q"
-                    placeholder="搜索"
-                    className="flex-1 bg-transparent outline-none text-lg text-gray-700 placeholder-gray-500 font-medium"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        const query = (e.target as HTMLInputElement).value
-                        if (query.trim()) {
-                          window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank')
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </form>
+            <div className="mb-16">
+              {/* 现代化搜索框 */}
+              <SearchBox
+                preferences={settings.preferences}
+                isGlassEffect={isGlassEffect}
+              />
             </div>
 
             {/* 书签网格区域 */}

@@ -17,44 +17,37 @@ export function AppPreferences({ preferences, onUpdate }: AppPreferencesProps) {
   const searchEngineOptions = [
     { 
       value: 'google', 
-      label: 'Google', 
-      description: '使用Google搜索引擎' 
+      label: 'Google'
     },
     { 
       value: 'baidu', 
-      label: '百度', 
-      description: '使用百度搜索引擎' 
+      label: '百度'
     },
     { 
       value: 'bing', 
-      label: 'Bing', 
-      description: '使用Bing搜索引擎' 
+      label: 'Bing'
     },
   ];
 
   const timeFormatOptions = [
     { 
       value: '24h', 
-      label: '24小时制', 
-      description: '显示24小时格式时间' 
+      label: '24小时制'
     },
     { 
       value: '12h', 
-      label: '12小时制', 
-      description: '显示12小时格式时间' 
+      label: '12小时制'
     },
   ];
 
   const dateFormatOptions = [
     { 
       value: 'zh-CN', 
-      label: '中文格式', 
-      description: '2024年5月24日 星期五' 
+      label: '中文格式'
     },
     { 
       value: 'en-US', 
-      label: '英文格式', 
-      description: 'Friday, May 24, 2024' 
+      label: '英文格式'
     },
   ];
 
@@ -75,7 +68,7 @@ export function AppPreferences({ preferences, onUpdate }: AppPreferencesProps) {
               value={preferences.searchEngine}
               onValueChange={(value) => onUpdate({ searchEngine: value as AppPreferences['searchEngine'] })}
               options={searchEngineOptions}
-              className="w-32"
+              className="w-24"
             />
           </SettingItem>
           
@@ -116,7 +109,7 @@ export function AppPreferences({ preferences, onUpdate }: AppPreferencesProps) {
               value={preferences.timeFormat}
               onValueChange={(value) => onUpdate({ timeFormat: value as AppPreferences['timeFormat'] })}
               options={timeFormatOptions}
-              className="w-32"
+              className="w-28"
             />
           </SettingItem>
           
@@ -128,7 +121,7 @@ export function AppPreferences({ preferences, onUpdate }: AppPreferencesProps) {
               value={preferences.dateFormat}
               onValueChange={(value) => onUpdate({ dateFormat: value as AppPreferences['dateFormat'] })}
               options={dateFormatOptions}
-              className="w-36"
+              className="w-28"
             />
           </SettingItem>
           

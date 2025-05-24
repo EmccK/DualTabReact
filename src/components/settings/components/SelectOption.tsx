@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 interface SelectOption {
   value: string;
@@ -40,20 +41,17 @@ export function SelectOption({
       onValueChange={onValueChange}
       disabled={disabled}
     >
-      <SelectTrigger className={className}>
+      <SelectTrigger className={cn("text-sm", className)}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            <div className="flex flex-col">
-              <span className="font-medium">{option.label}</span>
-              {option.description && (
-                <span className="text-xs text-gray-500 mt-1">
-                  {option.description}
-                </span>
-              )}
-            </div>
+          <SelectItem 
+            key={option.value} 
+            value={option.value}
+            className="text-sm"
+          >
+            <span className="whitespace-nowrap">{option.label}</span>
           </SelectItem>
         ))}
       </SelectContent>

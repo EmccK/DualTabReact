@@ -18,3 +18,9 @@ export * from './categories'
 
 // Settings Components
 export * from './settings'
+
+// Search Components
+export * from './search'
+
+// Clock Components
+export * from './clock'
