@@ -15,3 +15,6 @@ export * from './network'
 
 // Category Components
 export * from './categories'
+
+// Settings Components
+export * from './settings'

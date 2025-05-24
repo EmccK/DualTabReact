@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
 import { NetworkSwitch } from '@/components/network'
 import { CategorySidebar, CategoryModal } from '@/components/categories'
+import { SettingsModal } from '@/components/settings'
 import { useClock, useBookmarks, useNetworkMode, useCategories } from '@/hooks'
 import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
@@ -57,6 +58,9 @@ function NewTabApp() {
   const [categoryModalMode, setCategoryModalMode] = useState<'add' | 'edit'>('add')
   const [editingCategory, setEditingCategory] = useState<BookmarkCategory | undefined>()
   
+  // 设置弹窗状态
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false)
+  
   // 通用右键菜单状态
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean
@@ -95,6 +99,10 @@ function NewTabApp() {
 
   const handleWebDAVSync = useCallback(() => {
     console.log('WebDAV同步')
+  }, [])
+
+  const handleOpenSettings = useCallback(() => {
+    setSettingsModalOpen(true)
   }, [])
 
   const handleRefreshBackground = useCallback(() => {
@@ -403,6 +411,17 @@ function NewTabApp() {
 
             {/* 右侧：控制按钮组 */}
             <div className="flex items-center space-x-3">
+              {/* 设置按钮 */}
+              <Button
+                onClick={handleOpenSettings}
+                size="sm"
+                variant="ghost"
+                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
+                title="应用设置"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+
               {/* 开发测试按钮 */}
               <Button
                 onClick={handleCreateTestBookmarks}
@@ -582,6 +601,12 @@ function NewTabApp() {
         category={editingCategory}
         onSave={handleSaveCategory}
         onUpdate={handleUpdateCategory}
+      />
+
+      {/* 设置弹窗 */}
+      <SettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
       />
 
       {/* 统一右键菜单 */}

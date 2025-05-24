@@ -31,7 +31,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
 /**
  * 通用的Chrome存储读取函数
  */
-async function chromeStorageGet<T = any>(
+export async function chromeStorageGet<T = any>(
   keys: string | string[], 
   useLocal = true
 ): Promise<OperationResult<StorageResponse<T>>> {
@@ -72,7 +72,7 @@ async function chromeStorageGet<T = any>(
 /**
  * 通用的Chrome存储写入函数
  */
-async function chromeStorageSet(
+export async function chromeStorageSet(
   data: Record<string, any>, 
   useLocal = true
 ): Promise<OperationResult<void>> {
