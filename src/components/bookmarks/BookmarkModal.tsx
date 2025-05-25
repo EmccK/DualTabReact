@@ -245,23 +245,25 @@ export function BookmarkModal({
                 </TabsTrigger>
               </TabsList>              
               
-              <TabsContent value="external" className="mt-2">
+              <TabsContent value="external" className="mt-2" tabIndex={-1}>
                 <Input
                   type="url"
                   value={formData.externalUrl}
                   onChange={(e) => handleInputChange('externalUrl', e.target.value)}
                   placeholder="https://example.com"
                   className={themeClasses.input.base}
+                  tabIndex={activeTab === 'external' ? 0 : -1}
                 />
               </TabsContent>
               
-              <TabsContent value="internal" className="mt-2">
+              <TabsContent value="internal" className="mt-2" tabIndex={-1}>
                 <Input
                   type="url"
                   value={formData.internalUrl}
                   onChange={(e) => handleInputChange('internalUrl', e.target.value)}
                   placeholder="http://192.168.1.100"
                   className={themeClasses.input.base}
+                  tabIndex={activeTab === 'internal' ? 0 : -1}
                 />
               </TabsContent>
             </Tabs>
