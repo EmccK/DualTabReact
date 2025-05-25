@@ -13,3 +13,4 @@ export * from './useBookmarkCategories';
 export * from './useSettings';
 export * from './useBookmarkStyles';
 export * from './useBackground';
+export { useUnsplash, useImageCache, useUnsplashApiKey } from './useUnsplash';

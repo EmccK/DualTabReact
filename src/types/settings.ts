@@ -78,11 +78,17 @@ export interface BackgroundSettings {
     type: string;
   } | null;
   
-  // Unsplash设置
-  unsplash: {
-    category: string;
-    refreshInterval: number;
-    showAttribution: boolean;
+  // Unsplash图片设置
+  unsplashPhoto?: {
+    id: string;
+    url: string;
+    cachedUrl: string;
+    photographer: string;
+    photographerUrl: string;
+    description: string;
+    width: number;
+    height: number;
+    downloadLocation: string;
   };
   
   // 显示效果设置
@@ -180,11 +186,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
       size: 'farthest-corner',
     },
     image: null,
-    unsplash: {
-      category: 'nature',
-      refreshInterval: 24,
-      showAttribution: true,
-    },
     display: {
       fillMode: 'cover',
       opacity: 100,

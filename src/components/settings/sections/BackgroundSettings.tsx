@@ -15,13 +15,16 @@ import { ToggleSwitch } from '../components/ToggleSwitch';
 import { SelectOption as SelectControl } from '../components/SelectOption';
 import { GradientPicker } from '@/components/background/GradientPicker';
 import { ImageUploader } from '@/components/background/ImageUploader';
+import { UnsplashGallery } from '@/components/background/UnsplashGallery';
 import { useBackground } from '@/hooks/useBackground';
+import { UnsplashPhoto } from '@/services/unsplash';
 
 export function BackgroundSettings() {
   const { 
     backgroundSettings, 
     setGradientBackground, 
     setImageBackground, 
+    setUnsplashBackground,
     updateDisplaySettings 
   } = useBackground();
   
@@ -43,6 +46,17 @@ export function BackgroundSettings() {
         console.error('Failed to set image background:', error);
         alert('图片上传失败，请重试');
       }
+    }
+  };
+
+  const handleUnsplashSelect = async (photo: UnsplashPhoto, imageUrl: string) => {
+    try {
+      await setUnsplashBackground(photo, imageUrl);
+      // 可选：显示成功提示
+      console.log('Unsplash背景设置成功:', photo.user.name);
+    } catch (error) {
+      console.error('Failed to set Unsplash background:', error);
+      alert('设置Unsplash背景失败，请重试');
     }
   };
 
@@ -94,12 +108,13 @@ export function BackgroundSettings() {
             variant={activeTab === 'unsplash' ? "default" : "outline"}
             size="sm"
             onClick={() => handleTabChange('unsplash')}
-            disabled
-            className="flex items-center gap-2 opacity-50"
+            className="flex items-center gap-2"
           >
             <Globe className="w-4 h-4" />
             Unsplash
-            <Badge variant="outline" className="ml-1 text-xs">即将推出</Badge>
+            {backgroundSettings.type === 'unsplash' && (
+              <Badge variant="secondary" className="ml-1 text-xs">当前</Badge>
+            )}
           </Button>
         </div>
       </div>
@@ -150,13 +165,13 @@ export function BackgroundSettings() {
                 Unsplash 背景设置
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="p-8 text-center space-y-3">
-                <div className="text-4xl">🚧</div>
-                <p className="text-gray-600 font-medium">Unsplash 集成即将推出</p>
-                <p className="text-sm text-gray-500">
-                  将支持从 Unsplash 获取高质量背景图片，敬请期待
-                </p>
+            <CardContent className="p-0">
+              <div className="h-96">
+                <UnsplashGallery
+                  onSelectImage={handleUnsplashSelect}
+                  selectedImageId={backgroundSettings.type === 'unsplash' ? backgroundSettings.unsplashPhoto?.id : undefined}
+                  className="h-full"
+                />
               </div>
             </CardContent>
           </Card>
@@ -251,6 +266,7 @@ export function BackgroundSettings() {
               <ul className="text-xs space-y-1 text-blue-700">
                 <li>• <strong>渐变色背景</strong>：现代化的视觉效果，加载速度快，支持无限缩放</li>
                 <li>• <strong>本地图片</strong>：个性化定制，建议使用高分辨率横向图片</li>
+                <li>• <strong>Unsplash图片</strong>：专业摄影作品，高质量背景图片，自动缓存</li>
                 <li>• <strong>模糊和亮度</strong>：可以提升文字内容的可读性</li>
                 <li>• <strong>不透明度</strong>：较低的不透明度可以突出前景内容</li>
               </ul>

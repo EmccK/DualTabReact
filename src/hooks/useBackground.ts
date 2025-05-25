@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import { generateGradientCSS } from '@/utils/gradientUtils';
 import type { BackgroundSettings } from '@/types/settings';
+import type { UnsplashPhoto } from '@/services/unsplash';
 
 export interface BackgroundStyles {
   backgroundImage?: string;
@@ -69,8 +70,12 @@ export function useBackground() {
           }
           break;
         case 'unsplash':
-          // TODO: 后续实现Unsplash图片
-          styles.backgroundImage = generateGradientCSS(gradient);
+          if (backgroundSettings.unsplashPhoto?.cachedUrl) {
+            styles.backgroundImage = `url(${backgroundSettings.unsplashPhoto.cachedUrl})`;
+          } else {
+            // 回退到渐变
+            styles.backgroundImage = generateGradientCSS(gradient);
+          }
           break;
         default:
           styles.backgroundImage = generateGradientCSS(gradient);
@@ -156,6 +161,28 @@ export function useBackground() {
   };
 
   /**
+   * 设置Unsplash背景
+   */
+  const setUnsplashBackground = async (photo: UnsplashPhoto, cachedUrl: string) => {
+    const unsplashPhoto = {
+      id: photo.id,
+      url: photo.urls.regular,
+      cachedUrl,
+      photographer: photo.user.name,
+      photographerUrl: photo.user.links.html,
+      description: photo.alt_description || photo.description || '',
+      width: photo.width,
+      height: photo.height,
+      downloadLocation: photo.links.download_location
+    };
+
+    await updateBackground({
+      type: 'unsplash',
+      unsplashPhoto
+    });
+  };
+
+  /**
    * 更新显示效果设置
    */
   const updateDisplaySettings = async (display: Partial<BackgroundSettings['display']>) => {
@@ -196,6 +223,7 @@ export function useBackground() {
     updateBackground,
     setGradientBackground,
     setImageBackground,
+    setUnsplashBackground,
     updateDisplaySettings,
     resetBackground,
   };
