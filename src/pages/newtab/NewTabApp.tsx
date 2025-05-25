@@ -6,7 +6,7 @@ import { CategoryModal, ResizableCategorySidebar } from '@/components/categories
 import { SettingsModal } from '@/components/settings'
 import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
-import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings } from '@/hooks'
+import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
 import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import { createTestBookmarks } from '@/utils/test-data'
@@ -17,10 +17,12 @@ function NewTabApp() {
   // 设置管理Hook - 最优先加载
   const { settings, updateSettings, isLoading: settingsLoading } = useSettings()
   
+  // 背景管理Hook
+  const { backgroundStyles } = useBackground()
+  
   // 使用设置数据的其他Hooks
   const { currentTime } = useClock(settings.preferences)
   const { networkMode, setNetworkMode, loading: networkLoading } = useNetworkMode()
-  const [backgroundImage, setBackgroundImage] = useState<string>()
   const [isGlassEffect, setIsGlassEffect] = useState(true)
   
   // 书签弹窗状态
@@ -82,7 +84,7 @@ function NewTabApp() {
     target: null
   })
 
-  const backgroundAttributionInfo = backgroundImage ? {
+  const backgroundAttributionInfo = settings.background.type === 'unsplash' ? {
     author: "示例作者",
     authorUrl: "https://unsplash.com/@author",
     source: "Unsplash",
@@ -405,14 +407,12 @@ function NewTabApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden" onClick={handleGlobalClick}>
-      {/* 背景图片容器 */}
-      {backgroundImage && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
-        />
-      )}
+    <div 
+      className="min-h-screen relative overflow-hidden transition-all duration-500" 
+      style={backgroundStyles}
+      onClick={handleGlobalClick}
+    >
+      {/* 渐变/图片背景层 - 由背景样式自动处理 */}
       
       {/* 主要内容区域 - 使用flex布局，右侧留出动态边栏空间 */}
       <div 

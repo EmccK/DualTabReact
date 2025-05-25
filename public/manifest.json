@@ -52,6 +52,6 @@
         "128": "images/icon128.png"
     },
     "content_security_policy": {
-        "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline';"
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline';"
     }
 }

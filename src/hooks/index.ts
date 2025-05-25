@@ -12,3 +12,4 @@ export * from './useCategories';
 export * from './useBookmarkCategories';
 export * from './useSettings';
 export * from './useBookmarkStyles';
+export * from './useBackground';

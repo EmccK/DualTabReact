@@ -100,12 +100,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
           />
         );
       case 'background':
-        return (
-          <BackgroundSettings
-            settings={settings.background}
-            onUpdate={(updates) => updateSettings('background', updates)}
-          />
-        );
+        return <BackgroundSettings />;
       case 'sync':
         return (
           <SyncSettings

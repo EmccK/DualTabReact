@@ -54,13 +54,44 @@ export interface BookmarkSettings {
 }
 
 export interface BackgroundSettings {
-  type: 'unsplash' | 'local' | 'solid';
-  unsplashCategory: string;
-  refreshInterval: number;
-  showAttribution: boolean;
-  solidColor: string;
-  blurLevel: number;
-  opacity: number;
+  type: 'gradient' | 'image' | 'unsplash';
+  
+  // 渐变设置
+  gradient: {
+    type: 'linear' | 'radial' | 'conic';
+    direction: number; // 角度 0-360 (线性渐变) 或径向渐变的起始角度
+    colors: Array<{
+      color: string;
+      position: number; // 0-100
+    }>;
+    centerX?: number; // 径向渐变中心点 X 坐标 0-100
+    centerY?: number; // 径向渐变中心点 Y 坐标 0-100
+    shape?: 'circle' | 'ellipse'; // 径向渐变形状
+    size?: 'closest-side' | 'closest-corner' | 'farthest-side' | 'farthest-corner'; // 径向渐变大小
+  };
+  
+  // 图片设置
+  image: {
+    url: string;
+    name: string;
+    size: number;
+    type: string;
+  } | null;
+  
+  // Unsplash设置
+  unsplash: {
+    category: string;
+    refreshInterval: number;
+    showAttribution: boolean;
+  };
+  
+  // 显示效果设置
+  display: {
+    fillMode: 'cover' | 'contain' | 'stretch' | 'center';
+    opacity: number; // 0-100
+    blur: number; // 0-20px
+    brightness: number; // 0-200%
+  };
 }
 
 export interface SyncSettings {
@@ -135,13 +166,31 @@ export const DEFAULT_SETTINGS: AppSettings = {
     },
   },
   background: {
-    type: 'unsplash',
-    unsplashCategory: 'nature',
-    refreshInterval: 24,
-    showAttribution: true,
-    solidColor: '#4F46E5',
-    blurLevel: 0,
-    opacity: 100,
+    type: 'gradient',
+    gradient: {
+      type: 'linear',
+      direction: 135,
+      colors: [
+        { color: '#667eea', position: 0 },
+        { color: '#764ba2', position: 100 }
+      ],
+      centerX: 50,
+      centerY: 50,
+      shape: 'ellipse',
+      size: 'farthest-corner',
+    },
+    image: null,
+    unsplash: {
+      category: 'nature',
+      refreshInterval: 24,
+      showAttribution: true,
+    },
+    display: {
+      fillMode: 'cover',
+      opacity: 100,
+      blur: 0,
+      brightness: 100,
+    },
   },
   sync: {
     webdavEnabled: false,

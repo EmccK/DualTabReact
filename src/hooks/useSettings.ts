@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AppSettings, SettingsContextType } from '@/types/settings';
 import { DEFAULT_SETTINGS } from '@/types/settings';
 import { chromeStorageGet, chromeStorageSet } from '@/utils/storage';
@@ -93,13 +93,16 @@ export function useSettings(): SettingsContextType {
     await saveSettings(newSettings);
   }, [settings, saveSettings]);
 
-  // 防抖保存
-  const debouncedSave = useCallback(
-    debounce((settingsToSave: AppSettings) => {
+  // 防抖保存 - 使用useRef来保存防抖函数
+  const debouncedSaveRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedSave = useCallback((settingsToSave: AppSettings) => {
+    if (debouncedSaveRef.current) {
+      clearTimeout(debouncedSaveRef.current);
+    }
+    debouncedSaveRef.current = setTimeout(() => {
       saveSettings(settingsToSave);
-    }, 1000),
-    [saveSettings]
-  );
+    }, 1000);
+  }, [saveSettings]);
 
   // 组件挂载时加载设置
   useEffect(() => {
@@ -152,19 +155,4 @@ function mergeWithDefaults(saved: Partial<AppSettings>, defaults: AppSettings): 
   });
   
   return merged;
-}
-
-/**
- * 防抖函数
- */
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
 }
