@@ -72,11 +72,11 @@ export function SearchBox({ preferences, isGlassEffect = true, className = '' }:
   };
 
   return (
-    <div className={`w-full max-w-2xl ${className}`}>
+    <div className={`w-full max-w-3xl mx-auto ${className}`}>
       <div 
         className={`${
           isGlassEffect ? 'bg-white/90 backdrop-blur-md' : 'bg-white/95'
-        } rounded-full shadow-lg border border-white/30 p-4 flex items-center transition-all duration-300 hover:shadow-xl hover:bg-white/95`}
+        } rounded-full shadow-lg border border-white/30 p-5 flex items-center transition-all duration-300 hover:shadow-xl hover:bg-white/95`}
       >
         <img
           src={currentEngine.logo}
@@ -96,7 +96,7 @@ export function SearchBox({ preferences, isGlassEffect = true, className = '' }:
           ref={inputRef}
           type="text"
           placeholder={`在${currentEngine.name}中搜索`}
-          className="flex-1 bg-transparent outline-none text-lg text-gray-700 placeholder-gray-500 font-medium"
+          className="flex-1 bg-transparent outline-none text-xl text-gray-700 placeholder-gray-500 font-medium"
           onKeyDown={handleKeyDown}
         />
       </div>

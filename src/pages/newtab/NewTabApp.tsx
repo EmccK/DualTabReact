@@ -471,8 +471,8 @@ function NewTabApp() {
           </header>
 
           {/* 中央搜索区域 */}
-          <div className="flex-1 flex flex-col justify-center items-center px-6">
-            <div className="mb-16">
+          <div className="flex-1 flex flex-col justify-center items-center px-4">
+            <div className="mb-16 w-full">
               {/* 现代化搜索框 */}
               <SearchBox
                 preferences={settings.preferences}
