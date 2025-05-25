@@ -49,6 +49,7 @@ export interface BookmarkSettings {
     enableSort: boolean;        // 分类排序
     tabPosition: 'top' | 'bottom'; // 标签位置（当layout为tabs时）
     sidebarWidth: number;       // 边栏宽度 200-400px
+    sidebarVisible: 'always' | 'auto'; // 边栏显示模式
   };
 }
 
@@ -130,6 +131,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
       enableSort: true,
       tabPosition: 'top',
       sidebarWidth: 280,
+      sidebarVisible: 'always',
     },
   },
   background: {

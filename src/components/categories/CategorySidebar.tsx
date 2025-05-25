@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react'
 import { Plus } from 'lucide-react'
 import type { BookmarkCategory } from '@/types'
+import type { BookmarkSettings } from '@/types/settings'
 
 interface CategorySidebarProps {
   categories: BookmarkCategory[]
@@ -13,6 +14,7 @@ interface CategorySidebarProps {
   onCategoryContextMenu?: (category: BookmarkCategory, event: React.MouseEvent) => void
   isGlassEffect?: boolean
   loading?: boolean
+  categorySettings?: BookmarkSettings['categories']
 }
 
 export function CategorySidebar({
@@ -25,7 +27,8 @@ export function CategorySidebar({
   onReorderCategories,
   onCategoryContextMenu,
   isGlassEffect = true,
-  loading = false
+  loading = false,
+  categorySettings
 }: CategorySidebarProps) {
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null)
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)
@@ -33,11 +36,17 @@ export function CategorySidebar({
   const dropTargetIndexRef = useRef<number>(-1)
 
   const handleDragStart = useCallback((e: React.DragEvent, categoryId: string) => {
+    // 检查是否启用拖拽排序
+    if (!categorySettings?.enableSort) {
+      e.preventDefault()
+      return
+    }
+    
     setDraggedCategoryId(categoryId)
     draggedIndexRef.current = categories.findIndex(cat => cat.id === categoryId)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', categoryId)
-  }, [categories])
+  }, [categories, categorySettings?.enableSort])
 
   const handleDragEnd = useCallback(() => {
     setDraggedCategoryId(null)
@@ -47,6 +56,8 @@ export function CategorySidebar({
   }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent, categoryId: string) => {
+    if (!categorySettings?.enableSort) return
+    
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     
@@ -54,7 +65,7 @@ export function CategorySidebar({
       setDragOverCategoryId(categoryId)
       dropTargetIndexRef.current = categories.findIndex(cat => cat.id === categoryId)
     }
-  }, [draggedCategoryId, categories])
+  }, [draggedCategoryId, categories, categorySettings?.enableSort])
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
@@ -135,34 +146,55 @@ export function CategorySidebar({
       {/* 分类列表 */}
       <div className="flex-1 flex flex-col justify-center space-y-1 overflow-y-auto">
         {/* 分类项目 */}
-        {categories.map((category) => (
-          <div
-            key={category.id}
-            data-context-target="category"
-            draggable
-            onDragStart={(e) => handleDragStart(e, category.id)}
-            onDragEnd={handleDragEnd}
-            onDragOver={(e) => handleDragOver(e, category.id)}
-            onDrop={handleDrop}
-            onClick={() => handleCategoryClick(category.id)}
-            onContextMenu={(e) => handleCategoryContextMenu(e, category)}
-            className={`group flex items-center space-x-3 px-4 py-3 cursor-pointer transition-all duration-200 ${
-              selectedCategoryId === category.id
-                ? 'text-white shadow-lg'
-                : 'text-white/80 hover:text-white hover:bg-white/10'
-            } ${
-              draggedCategoryId === category.id ? 'opacity-50 scale-95' : ''
-            } ${
-              dragOverCategoryId === category.id ? 'bg-white/20 scale-105' : ''
-            }`}
-            style={{
-              backgroundColor: selectedCategoryId === category.id ? category.color : undefined
-            }}
-          >
-            <span className="text-lg">{category.icon}</span>
-            <span className="text-sm font-medium truncate flex-1">{category.name}</span>
-          </div>
-        ))}
+        {categories.map((category) => {
+          // 根据样式设置决定显示方式
+          const isBadgeStyle = categorySettings?.style === 'badge'
+          const bookmarkCount = category.bookmarks?.length || 0
+          
+          return (
+            <div
+              key={category.id}
+              data-context-target="category"
+              draggable={categorySettings?.enableSort !== false}
+              onDragStart={(e) => handleDragStart(e, category.id)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, category.id)}
+              onDrop={handleDrop}
+              onClick={() => handleCategoryClick(category.id)}
+              onContextMenu={(e) => handleCategoryContextMenu(e, category)}
+              className={`group flex items-center space-x-3 px-4 py-3 cursor-pointer transition-all duration-200 ${
+                selectedCategoryId === category.id
+                  ? 'text-white shadow-lg'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              } ${
+                draggedCategoryId === category.id ? 'opacity-50 scale-95' : ''
+              } ${
+                dragOverCategoryId === category.id ? 'bg-white/20 scale-105' : ''
+              } ${
+                !categorySettings?.enableSort ? '' : 'hover:cursor-grab active:cursor-grabbing'
+              }`}
+              style={{
+                backgroundColor: selectedCategoryId === category.id ? category.color : undefined
+              }}
+            >
+              <span className="text-lg">{category.icon}</span>
+              <span className="text-sm font-medium truncate flex-1">{category.name}</span>
+              
+              {/* 徽章样式：显示书签数量 */}
+              {isBadgeStyle && bookmarkCount > 0 && (
+                <span className={`
+                  px-2 py-0.5 text-xs rounded-full font-medium
+                  ${selectedCategoryId === category.id 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-white/10 text-white/80'
+                  }
+                `}>
+                  {bookmarkCount}
+                </span>
+              )}
+            </div>
+          )
+        })}
       </div>
       
       {/* 添加分类按钮 */}

@@ -22,13 +22,13 @@ export function SettingItem({
 }: SettingItemProps) {
   return (
     <div className={cn(
-      'flex items-center justify-between py-4 px-1',
+      'flex items-center justify-between py-3 px-4',
       'border-b border-gray-100 last:border-b-0',
       disabled && 'opacity-50 pointer-events-none',
       className
     )}>
       <div className="flex-1 min-w-0 mr-4">
-        <h3 className="text-sm font-medium text-gray-900 mb-1">
+        <h3 className="text-sm font-medium text-gray-900 mb-0.5">
           {title}
         </h3>
         {description && (

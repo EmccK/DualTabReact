@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
 import { NetworkSwitch } from '@/components/network'
-import { CategorySidebar, CategoryModal } from '@/components/categories'
+import { CategoryModal, ResizableCategorySidebar } from '@/components/categories'
 import { SettingsModal } from '@/components/settings'
 import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
@@ -15,7 +15,7 @@ import './newtab.css'
 
 function NewTabApp() {
   // 设置管理Hook - 最优先加载
-  const { settings, isLoading: settingsLoading } = useSettings()
+  const { settings, updateSettings, isLoading: settingsLoading } = useSettings()
   
   // 使用设置数据的其他Hooks
   const { currentTime } = useClock(settings.preferences)
@@ -345,6 +345,20 @@ function NewTabApp() {
     }
   }, [reorderCategories])
 
+  // 处理边栏宽度更改
+  const handleSidebarWidthChange = useCallback(async (width: number) => {
+    try {
+      await updateSettings('bookmarks', {
+        categories: {
+          ...settings.bookmarks.categories,
+          sidebarWidth: width
+        }
+      })
+    } catch (error) {
+      console.error('更新边栏宽度失败:', error)
+    }
+  }, [updateSettings, settings.bookmarks.categories])
+
   // 处理删除书签
   const handleDeleteBookmark = useCallback(async (bookmark: Bookmark) => {
     if (confirm(`确定要删除书签"${bookmark.title}"吗？`)) {
@@ -400,13 +414,20 @@ function NewTabApp() {
         />
       )}
       
-      {/* 主要内容区域 - 使用flex布局 */}
-      <div className="relative z-10 flex h-screen w-full">
+      {/* 主要内容区域 - 使用flex布局，右侧留出动态边栏空间 */}
+      <div 
+        className="relative z-10 flex h-screen w-full transition-all duration-300"
+        style={{ 
+          paddingRight: settings.bookmarks.categories.sidebarVisible === 'auto' 
+            ? '0px' 
+            : `${settings.bookmarks.categories.sidebarWidth}px` 
+        }}
+      >
         {/* 左侧主内容区域 */}
         <div className="flex-1 flex flex-col">
         
           {/* 头部控制区域 */}
-          <header className="flex justify-between items-start p-6 pr-56">
+          <header className="flex justify-between items-start p-6">
             {/* 左侧：时间日期显示 */}
             <ClockDisplay
               currentTime={currentTime}
@@ -501,24 +522,31 @@ function NewTabApp() {
         </div>
 
         {/* 右侧分类边栏 */}
-        <div className="w-48 fixed right-0 top-0 h-full z-10">
-          <CategorySidebar
-            categories={categories}
-            selectedCategoryId={selectedCategoryId}
-            onCategorySelect={handleCategorySelect}
-            onAddCategory={handleAddCategory}
-            onEditCategory={handleEditCategory}
-            onDeleteCategory={handleDeleteCategory}
-            onReorderCategories={handleReorderCategories}
-            onCategoryContextMenu={handleCategoryContextMenu}
-            isGlassEffect={isGlassEffect}
-            loading={categoriesLoading}
-          />
-        </div>
+        <ResizableCategorySidebar
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          onCategorySelect={handleCategorySelect}
+          onAddCategory={handleAddCategory}
+          onEditCategory={handleEditCategory}
+          onDeleteCategory={handleDeleteCategory}
+          onReorderCategories={handleReorderCategories}
+          onCategoryContextMenu={handleCategoryContextMenu}
+          isGlassEffect={isGlassEffect}
+          loading={categoriesLoading}
+          categorySettings={settings.bookmarks.categories}
+          onWidthChange={handleSidebarWidthChange}
+        />
       </div>
 
-      {/* 右下角固定按钮组 - 调整位置避开分类边栏 */}
-      <div className="fixed bottom-6 right-56 flex flex-col space-y-3 z-30">
+      {/* 右下角固定按钮组 - 根据边栏设置动态调整位置 */}
+      <div 
+        className="fixed bottom-6 z-30 flex flex-col space-y-3 transition-all duration-300"
+        style={{ 
+          right: settings.bookmarks.categories.sidebarVisible === 'auto' 
+            ? '24px' 
+            : `${settings.bookmarks.categories.sidebarWidth + 24}px` 
+        }}
+      >
         {/* 刷新背景按钮 */}
         <Button
           onClick={handleRefreshBackground}

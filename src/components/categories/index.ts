@@ -5,3 +5,4 @@
 export { CategoryTabs } from './CategoryTabs'
 export { CategorySidebar } from './CategorySidebar'
 export { CategoryModal } from './CategoryModal'
+export { ResizableCategorySidebar } from './ResizableCategorySidebar'

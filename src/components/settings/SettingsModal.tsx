@@ -113,17 +113,17 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] p-0">
-        <DialogHeader className="px-6 py-4 border-b border-gray-200">
-          <DialogTitle className="flex items-center text-xl font-semibold">
-            <Settings className="w-5 h-5 mr-2 text-indigo-600" />
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0">
+        <DialogHeader className="px-6 py-3 border-b border-gray-200">
+          <DialogTitle className="flex items-center text-lg font-semibold">
+            <Settings className="w-4 h-4 mr-2 text-indigo-600" />
             应用设置
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col h-full">
           {/* 标签页导航 */}
-          <div className="px-6">
+          <div className="px-6 py-2">
             <SettingsTabs
               activeTab={activeTab}
               onTabChange={handleTabChange}
@@ -131,11 +131,11 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
           </div>
 
           {/* 设置内容区域 */}
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             {showResetConfirm && (
-              <Alert className="mb-6 border-orange-200 bg-orange-50">
+              <Alert className="mb-4 border-orange-200 bg-orange-50">
                 <AlertDescription className="flex items-center justify-between">
-                  <span>确定要重置当前分组的所有设置吗？此操作不可撤销。</span>
+                  <span className="text-sm">确定要重置当前分组的所有设置吗？此操作不可撤销。</span>
                   <div className="flex space-x-2 ml-4">
                     <Button
                       size="sm"
@@ -160,7 +160,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
           </div>
 
           {/* 底部按钮栏 */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50">
             <div className="flex items-center space-x-3">
               <Button
                 variant="outline"
