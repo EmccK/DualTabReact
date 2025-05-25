@@ -53,14 +53,79 @@ export interface BookmarkSettings {
   };
 }
 
-export interface BackgroundSettings {
-  type: 'unsplash' | 'local' | 'solid';
-  unsplashCategory: string;
-  refreshInterval: number;
+export interface LocalBackgroundImage {
+  id: string;
+  name: string;
+  data: string; // base64 encoded image data
+  size: number;
+  type: string;
+  uploadTime: number;
+}
+
+export interface UnsplashSettings {
+  category: string;
+  refreshInterval: number; // hours
   showAttribution: boolean;
-  solidColor: string;
-  blurLevel: number;
-  opacity: number;
+  apiKey?: string;
+  collections: string[];
+  featured: boolean;
+  orientation?: 'landscape' | 'portrait' | 'squarish';
+}
+
+export interface BackgroundDisplaySettings {
+  fillMode: 'cover' | 'contain' | 'fill' | 'repeat';
+  opacity: number; // 0-100
+  blur: number; // 0-20px
+  brightness: number; // 0-200%
+  contrast: number; // 0-200%
+  saturation: number; // 0-200%
+  overlay: boolean;
+  overlayColor: string;
+  overlayOpacity: number; // 0-100
+}
+
+export interface BackgroundSettings {
+  type: 'color' | 'gradient' | 'local' | 'unsplash';
+  
+  // 纯色背景设置
+  color: string;
+  colorHistory: string[]; // 最近使用的颜色
+  
+  // 渐变背景设置
+  gradient: {
+    type: 'linear' | 'radial';
+    direction: number; // 线性渐变角度 0-360
+    colors: Array<{
+      color: string;
+      position: number; // 0-100
+    }>;
+    radialPosition: {
+      x: number; // 0-100
+      y: number; // 0-100
+    };
+  };
+  gradientPresets: Array<{
+    id: string;
+    name: string;
+    gradient: BackgroundSettings['gradient'];
+  }>;
+  
+  // 本地图片设置
+  localImages: LocalBackgroundImage[];
+  currentLocalImage?: string; // 当前选中的本地图片ID
+  
+  // Unsplash设置
+  unsplash: UnsplashSettings;
+  currentUnsplashImage?: {
+    id: string;
+    url: string;
+    author: string;
+    authorUrl: string;
+    downloadUrl: string;
+  };
+  
+  // 显示效果设置
+  display: BackgroundDisplaySettings;
 }
 
 export interface SyncSettings {
@@ -135,13 +200,107 @@ export const DEFAULT_SETTINGS: AppSettings = {
     },
   },
   background: {
-    type: 'unsplash',
-    unsplashCategory: 'nature',
-    refreshInterval: 24,
-    showAttribution: true,
-    solidColor: '#4F46E5',
-    blurLevel: 0,
-    opacity: 100,
+    type: 'gradient',
+    color: '#4F46E5',
+    colorHistory: ['#4F46E5', '#EC4899', '#10B981', '#F59E0B'],
+    gradient: {
+      type: 'linear',
+      direction: 135,
+      colors: [
+        { color: '#667eea', position: 0 },
+        { color: '#764ba2', position: 100 }
+      ],
+      radialPosition: { x: 50, y: 50 }
+    },
+    gradientPresets: [
+      {
+        id: 'ocean-blue',
+        name: '海洋蓝',
+        gradient: {
+          type: 'linear',
+          direction: 135,
+          colors: [
+            { color: '#667eea', position: 0 },
+            { color: '#764ba2', position: 100 }
+          ],
+          radialPosition: { x: 50, y: 50 }
+        }
+      },
+      {
+        id: 'sunset-orange',
+        name: '日落橙',
+        gradient: {
+          type: 'linear',
+          direction: 45,
+          colors: [
+            { color: '#f093fb', position: 0 },
+            { color: '#f5576c', position: 100 }
+          ],
+          radialPosition: { x: 50, y: 50 }
+        }
+      },
+      {
+        id: 'forest-green',
+        name: '森林绿',
+        gradient: {
+          type: 'linear',
+          direction: 225,
+          colors: [
+            { color: '#43e97b', position: 0 },
+            { color: '#38d9a9', position: 100 }
+          ],
+          radialPosition: { x: 50, y: 50 }
+        }
+      },
+      {
+        id: 'royal-purple',
+        name: '皇家紫',
+        gradient: {
+          type: 'linear',
+          direction: 90,
+          colors: [
+            { color: '#667eea', position: 0 },
+            { color: '#764ba2', position: 50 },
+            { color: '#f093fb', position: 100 }
+          ],
+          radialPosition: { x: 50, y: 50 }
+        }
+      },
+      {
+        id: 'cosmic-radial',
+        name: '宇宙径向',
+        gradient: {
+          type: 'radial',
+          direction: 0,
+          colors: [
+            { color: '#667eea', position: 0 },
+            { color: '#764ba2', position: 60 },
+            { color: '#f093fb', position: 100 }
+          ],
+          radialPosition: { x: 30, y: 40 }
+        }
+      }
+    ],
+    localImages: [],
+    unsplash: {
+      category: 'nature',
+      refreshInterval: 24,
+      showAttribution: true,
+      collections: [],
+      featured: true,
+      orientation: 'landscape',
+    },
+    display: {
+      fillMode: 'cover',
+      opacity: 100,
+      blur: 0,
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+      overlay: false,
+      overlayColor: '#000000',
+      overlayOpacity: 20,
+    },
   },
   sync: {
     webdavEnabled: false,

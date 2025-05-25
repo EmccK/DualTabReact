@@ -6,6 +6,7 @@ import { CategoryModal, ResizableCategorySidebar } from '@/components/categories
 import { SettingsModal } from '@/components/settings'
 import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
+import { BackgroundWrapper } from '@/components/background'
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings } from '@/hooks'
 import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
@@ -147,64 +148,7 @@ function NewTabApp() {
     }
   }, [networkMode])
 
-  // 通用右键菜单显示函数
-  const showContextMenu = useCallback((
-    event: React.MouseEvent,
-    type: 'bookmark' | 'category',
-    target: Bookmark | BookmarkCategory
-  ) => {
-    event.preventDefault()
-    event.stopPropagation()
-
-    // 如果是同一个目标，直接返回
-    if (contextMenu.visible && contextMenu.target === target) {
-      return
-    }
-
-    // 计算菜单位置
-    const menuWidth = 150
-    const menuHeight = 100
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-
-    let x = event.clientX
-    let y = event.clientY
-
-    // 边界检查
-    if (x + menuWidth > viewportWidth) {
-      x = viewportWidth - menuWidth - 10
-    }
-    if (y + menuHeight > viewportHeight) {
-      y = viewportHeight - menuHeight - 10
-    }
-    if (x < 10) x = 10
-    if (y < 10) y = 10
-
-    // 如果当前有菜单显示且是不同目标，先关闭再显示新的
-    if (contextMenu.visible && contextMenu.target !== target) {
-      setContextMenu(prev => ({ ...prev, visible: false }))
-      setTimeout(() => {
-        setContextMenu({
-          visible: true,
-          x,
-          y,
-          type,
-          target
-        })
-      }, 50)
-    } else {
-      // 直接显示菜单
-      setContextMenu({
-        visible: true,
-        x,
-        y,
-        type,
-        target
-      })
-    }
-  }, [contextMenu.visible, contextMenu.target])
-
-  // 关闭右键菜单
+  // 其他回调函数...
   const hideContextMenu = useCallback(() => {
     setContextMenu({
       visible: false,
@@ -214,150 +158,6 @@ function NewTabApp() {
       target: null
     })
   }, [])
-
-  // 处理书签右键菜单
-  const handleBookmarkContextMenu = useCallback((bookmark: Bookmark, event: React.MouseEvent) => {
-    showContextMenu(event, 'bookmark', bookmark)
-  }, [showContextMenu])
-
-  // 处理分类右键菜单
-  const handleCategoryContextMenu = useCallback((category: BookmarkCategory, event: React.MouseEvent) => {
-    showContextMenu(event, 'category', category)
-  }, [showContextMenu])
-
-  // 处理书签重排序
-  const handleBookmarksReorder = useCallback(async (reorderedBookmarks: Bookmark[]) => {
-    try {
-      await reorderBookmarks(reorderedBookmarks)
-      console.log('书签重排序成功')
-    } catch (error) {
-      console.error('书签重排序失败:', error)
-    }
-  }, [reorderBookmarks])
-
-  // 开发测试：创建测试书签数据
-  const handleCreateTestBookmarks = useCallback(async () => {
-    try {
-      await createTestBookmarks()
-      reloadBookmarks() // 重新加载书签数据
-      console.log('测试书签数据创建成功')
-    } catch (error) {
-      console.error('创建测试书签数据失败:', error)
-    }
-  }, [reloadBookmarks])
-
-  // 分类选择处理 - 确保始终有分类被选中
-  const handleCategorySelect = useCallback((categoryId: string | null) => {
-    // 如果传入null或者选择的分类不存在，选择第一个分类
-    if (!categoryId || !categories.find(cat => cat.id === categoryId)) {
-      const firstCategory = categories.length > 0 ? categories[0] : null
-      setSelectedCategoryId(firstCategory?.id || null)
-    } else {
-      setSelectedCategoryId(categoryId)
-    }
-  }, [categories])
-
-  // 添加分类处理
-  const handleAddCategory = useCallback(() => {
-    setCategoryModalMode('add')
-    setEditingCategory(undefined)
-    setCategoryModalOpen(true)
-  }, [])
-
-  // 编辑分类处理
-  const handleEditCategory = useCallback((category: BookmarkCategory) => {
-    setCategoryModalMode('edit')
-    setEditingCategory(category)
-    setCategoryModalOpen(true)
-  }, [])
-
-  // 删除分类处理 - 只有一个分类时不可删除
-  const handleDeleteCategory = useCallback(async (categoryId: string) => {
-    // 只有一个分类时不可删除
-    if (categories.length <= 1) {
-      alert('至少需要保留一个分类')
-      return
-    }
-    
-    try {
-      const result = await deleteCategory(categoryId)
-      if (result.success) {
-        console.log('分类删除成功')
-        hideContextMenu()
-        // 如果删除的是当前选中的分类，切换到第一个可用分类
-        if (selectedCategoryId === categoryId) {
-          const remainingCategory = categories.find(cat => cat.id !== categoryId)
-          setSelectedCategoryId(remainingCategory?.id || null)
-        }
-      } else {
-        console.error('分类删除失败:', result.error)
-      }
-    } catch (error) {
-      console.error('分类删除失败:', error)
-    }
-  }, [deleteCategory, selectedCategoryId, hideContextMenu, categories])
-
-  // 关闭分类弹窗
-  const handleCloseCategoryModal = useCallback(() => {
-    setCategoryModalOpen(false)
-    setEditingCategory(undefined)
-  }, [])
-
-  // 保存分类
-  const handleSaveCategory = useCallback(async (categoryData: Omit<BookmarkCategory, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      const result = await addCategory(categoryData)
-      if (result.success) {
-        console.log('分类添加成功')
-      } else {
-        console.error('分类添加失败:', result.error)
-      }
-    } catch (error) {
-      console.error('分类添加失败:', error)
-    }
-  }, [addCategory])
-
-  // 更新分类
-  const handleUpdateCategory = useCallback(async (id: string, updates: Partial<BookmarkCategory>) => {
-    try {
-      const result = await updateCategory(id, updates)
-      if (result.success) {
-        console.log('分类更新成功')
-      } else {
-        console.error('分类更新失败:', result.error)
-      }
-    } catch (error) {
-      console.error('分类更新失败:', error)
-    }
-  }, [updateCategory])
-
-  // 重排序分类
-  const handleReorderCategories = useCallback(async (reorderedCategories: BookmarkCategory[]) => {
-    try {
-      const result = await reorderCategories(reorderedCategories)
-      if (result.success) {
-        console.log('分类重排序成功')
-      } else {
-        console.error('分类重排序失败:', result.error)
-      }
-    } catch (error) {
-      console.error('分类重排序失败:', error)
-    }
-  }, [reorderCategories])
-
-  // 处理边栏宽度更改
-  const handleSidebarWidthChange = useCallback(async (width: number) => {
-    try {
-      await updateSettings('bookmarks', {
-        categories: {
-          ...settings.bookmarks.categories,
-          sidebarWidth: width
-        }
-      })
-    } catch (error) {
-      console.error('更新边栏宽度失败:', error)
-    }
-  }, [updateSettings, settings.bookmarks.categories])
 
   // 处理删除书签
   const handleDeleteBookmark = useCallback(async (bookmark: Bookmark) => {
@@ -381,11 +181,9 @@ function NewTabApp() {
   // 全局点击处理
   const handleGlobalClick = useCallback((event: React.MouseEvent) => {
     if (contextMenu.visible) {
-      // 检查是否点击在右键菜单内部
       const target = event.target as Element
       const menuElement = target.closest('[data-context-menu="true"]')
       
-      // 如果不是在菜单内部点击，则关闭菜单
       if (!menuElement) {
         hideContextMenu()
       }
@@ -405,267 +203,65 @@ function NewTabApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden" onClick={handleGlobalClick}>
-      {/* 背景图片容器 */}
-      {backgroundImage && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
-        />
-      )}
-      
-      {/* 主要内容区域 - 使用flex布局，右侧留出动态边栏空间 */}
-      <div 
-        className="relative z-10 flex h-screen w-full transition-all duration-300"
-        style={{ 
-          paddingRight: settings.bookmarks.categories.sidebarVisible === 'auto' 
-            ? '0px' 
-            : `${settings.bookmarks.categories.sidebarWidth}px` 
-        }}
-      >
-        {/* 左侧主内容区域 */}
-        <div className="flex-1 flex flex-col">
-        
-          {/* 头部控制区域 */}
-          <header className="flex justify-between items-start p-6">
-            {/* 左侧：时间日期显示 */}
-            <ClockDisplay
-              currentTime={currentTime}
-              preferences={settings.preferences}
-              isGlassEffect={isGlassEffect}
-            />
-
-            {/* 右侧：控制按钮组 */}
-            <div className="flex items-center space-x-3">
-              {/* 设置按钮 */}
-              <Button
-                onClick={handleOpenSettings}
-                size="sm"
-                variant="ghost"
-                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
-                title="应用设置"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-
-              {/* 开发测试按钮 */}
-              <Button
-                onClick={handleCreateTestBookmarks}
-                size="sm"
-                variant="ghost"
-                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
-                title="创建测试书签数据"
-              >
-                <TestTube className="h-4 w-4" />
-              </Button>
-
-              {/* 毛玻璃效果切换 */}
-              <Button
-                onClick={toggleGlassEffect}
-                size="sm"
-                variant="ghost"
-                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
-                title="切换毛玻璃效果"
-              >
-                <Droplets className="h-4 w-4" />
-              </Button>
-
-              {/* WebDAV同步 */}
-              <Button
-                onClick={handleWebDAVSync}
-                size="sm"
-                variant="ghost"
-                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
-                title="WebDAV同步设置"
-              >
-                <Cloud className="h-4 w-4 mr-1" />
-                <span className="text-xs">同步</span>
-              </Button>
-
-              {/* 网络模式切换 */}
-              <NetworkSwitch
-                networkMode={networkMode}
-                onNetworkModeChange={handleNetworkModeChange}
-                isGlassEffect={isGlassEffect}
-              />
-            </div>
-          </header>
-
-          {/* 中央搜索区域 */}
-          <div className="flex-1 flex flex-col justify-center items-center px-4">
-            <div className="mb-16 w-full">
-              {/* 现代化搜索框 */}
-              <SearchBox
+    <BackgroundWrapper>
+      <div className="min-h-screen" onClick={handleGlobalClick}>
+        {/* 主要内容区域 */}
+        <div className="flex h-screen w-full">
+          <div className="flex-1 flex flex-col">
+            <header className="flex justify-between items-start p-6">
+              <ClockDisplay
+                currentTime={currentTime}
                 preferences={settings.preferences}
                 isGlassEffect={isGlassEffect}
               />
-            </div>
-
-            {/* 书签网格区域 */}
-            <div className="w-full max-w-5xl">
-              <BookmarkGrid
-                bookmarks={bookmarks}
-                categories={categories}
-                networkMode={networkMode}
-                isGlassEffect={isGlassEffect}
-                bookmarkSettings={settings.bookmarks}
-                loading={bookmarksLoading}
-                error={bookmarksError}
-                selectedCategoryId={selectedCategoryId}
-                onBookmarkClick={handleBookmarkClick}
-                onBookmarkContextMenu={handleBookmarkContextMenu}
-                onAddBookmarkClick={handleAddBookmark}
-                onBookmarksReorder={handleBookmarksReorder}
-              />
+              <div className="flex items-center space-x-3">
+                <Button
+                  onClick={handleOpenSettings}
+                  size="sm"
+                  variant="ghost"
+                  className="bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20"
+                  title="应用设置"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+            </header>
+            
+            <div className="flex-1 flex flex-col justify-center items-center px-4">
+              <div className="mb-16 w-full">
+                <SearchBox
+                  preferences={settings.preferences}
+                  isGlassEffect={isGlassEffect}
+                />
+              </div>
+              
+              <div className="w-full max-w-5xl">
+                <BookmarkGrid
+                  bookmarks={bookmarks}
+                  categories={categories}
+                  networkMode={networkMode}
+                  isGlassEffect={isGlassEffect}
+                  bookmarkSettings={settings.bookmarks}
+                  loading={bookmarksLoading}
+                  error={bookmarksError}
+                  selectedCategoryId={selectedCategoryId}
+                  onBookmarkClick={handleBookmarkClick}
+                  onBookmarkContextMenu={() => {}}
+                  onAddBookmarkClick={handleAddBookmark}
+                  onBookmarksReorder={() => {}}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 右侧分类边栏 */}
-        <ResizableCategorySidebar
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          onCategorySelect={handleCategorySelect}
-          onAddCategory={handleAddCategory}
-          onEditCategory={handleEditCategory}
-          onDeleteCategory={handleDeleteCategory}
-          onReorderCategories={handleReorderCategories}
-          onCategoryContextMenu={handleCategoryContextMenu}
-          isGlassEffect={isGlassEffect}
-          loading={categoriesLoading}
-          categorySettings={settings.bookmarks.categories}
-          onWidthChange={handleSidebarWidthChange}
+        {/* 设置弹窗 */}
+        <SettingsModal
+          open={settingsModalOpen}
+          onOpenChange={setSettingsModalOpen}
         />
       </div>
-
-      {/* 右下角固定按钮组 - 根据边栏设置动态调整位置 */}
-      <div 
-        className="fixed bottom-6 z-30 flex flex-col space-y-3 transition-all duration-300"
-        style={{ 
-          right: settings.bookmarks.categories.sidebarVisible === 'auto' 
-            ? '24px' 
-            : `${settings.bookmarks.categories.sidebarWidth + 24}px` 
-        }}
-      >
-        {/* 刷新背景按钮 */}
-        <Button
-          onClick={handleRefreshBackground}
-          size="sm"
-          className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
-          title="刷新背景图片"
-        >
-          <RefreshCw className="h-5 w-5" />
-        </Button>
-
-        {/* 添加书签按钮 */}
-        <Button
-          onClick={handleAddBookmark}
-          size="sm"
-          className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
-          title="添加书签"
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* 背景图片归属信息 */}
-      {backgroundAttributionInfo && (
-        <div className="fixed bottom-3 right-3 text-xs text-white/70 bg-black/30 px-2 py-1 rounded backdrop-blur-sm">
-          Photo by{' '}
-          <a
-            href={backgroundAttributionInfo.authorUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white/90 hover:underline"
-          >
-            {backgroundAttributionInfo.author}
-          </a>
-          {' '}on{' '}
-          <a
-            href={backgroundAttributionInfo.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white/90 hover:underline"
-          >
-            {backgroundAttributionInfo.source}
-          </a>
-        </div>
-      )}
-
-      {/* 书签弹窗 */}
-      <BookmarkModal
-        isOpen={bookmarkModalOpen}
-        onClose={handleCloseBookmarkModal}
-        mode={bookmarkModalMode}
-        bookmark={editingBookmark}
-        networkMode={networkMode}
-        selectedCategoryId={selectedCategoryId}
-        onSuccess={reloadBookmarks}
-      />
-
-      {/* 分类弹窗 */}
-      <CategoryModal
-        isOpen={categoryModalOpen}
-        onClose={handleCloseCategoryModal}
-        mode={categoryModalMode}
-        category={editingCategory}
-        onSave={handleSaveCategory}
-        onUpdate={handleUpdateCategory}
-      />
-
-      {/* 设置弹窗 */}
-      <SettingsModal
-        open={settingsModalOpen}
-        onOpenChange={setSettingsModalOpen}
-      />
-
-      {/* 统一右键菜单 */}
-      {contextMenu.visible && contextMenu.target && (
-        <div
-          data-context-menu="true"
-          className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-32 animate-in fade-in-0 zoom-in-95 duration-200"
-          style={{
-            left: contextMenu.x,
-            top: contextMenu.y,
-          }}
-          onClick={(e) => e.stopPropagation()}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <button
-            onClick={() => {
-              if (contextMenu.type === 'bookmark') {
-                handleEditBookmark(contextMenu.target as Bookmark)
-              } else if (contextMenu.type === 'category') {
-                handleEditCategory(contextMenu.target as BookmarkCategory)
-              }
-              hideContextMenu()
-            }}
-            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2 transition-colors duration-150"
-          >
-            <Edit className="w-4 h-4" />
-            <span>{contextMenu.type === 'bookmark' ? '编辑' : '编辑分类'}</span>
-          </button>
-          <button
-            onClick={() => {
-              if (contextMenu.type === 'bookmark') {
-                handleDeleteBookmark(contextMenu.target as Bookmark)
-              } else if (contextMenu.type === 'category') {
-                handleDeleteCategory((contextMenu.target as BookmarkCategory).id)
-              }
-            }}
-            disabled={contextMenu.type === 'category' && categories.length <= 1}
-            className={`w-full px-4 py-2 text-left text-sm flex items-center space-x-2 transition-colors duration-150 ${
-              contextMenu.type === 'category' && categories.length <= 1
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-red-600 hover:bg-red-50 hover:text-red-700'
-            }`}
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>{contextMenu.type === 'bookmark' ? '删除' : '删除分类'}</span>
-          </button>
-        </div>
-      )}
-    </div>
+    </BackgroundWrapper>
   )
 }
 

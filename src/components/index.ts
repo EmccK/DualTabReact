@@ -24,3 +24,6 @@ export * from './search'
 
 // Clock Components
 export * from './clock'
+
+// Background Components
+export * from './background'
