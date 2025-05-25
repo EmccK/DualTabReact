@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -25,12 +25,19 @@ interface SettingsModalProps {
  * 提供完整的应用设置管理界面
  */
 export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('preferences');
+  // 直接从localStorage读取初始activeTab
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
+    const saved = localStorage.getItem('settingsLastActiveTab') as SettingsTab;
+    return saved && ['preferences', 'bookmarks', 'background', 'sync'].includes(saved) 
+      ? saved 
+      : 'preferences';
+  });
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const { settings, updateSettings, resetSettings, isLoading, isDirty } = useSettings();
 
   const handleTabChange = (tab: SettingsTab) => {
     setActiveTab(tab);
+    localStorage.setItem('settingsLastActiveTab', tab);
   };
 
   const handleSave = async () => {
@@ -160,7 +167,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
           </div>
 
           {/* 底部按钮栏 */}
-          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
             <div className="flex items-center space-x-3">
               <Button
                 variant="outline"

@@ -55,6 +55,15 @@ const TABS: TabItem[] = [
  * 提供现代化的标签页切换界面
  */
 export function SettingsTabs({ activeTab, onTabChange, className }: SettingsTabsProps) {
+  const activeTabRef = React.useRef<HTMLButtonElement>(null);
+  
+  // 确保活动Tab获得焦点，而不是第一个Tab
+  React.useEffect(() => {
+    if (activeTabRef.current) {
+      activeTabRef.current.focus();
+    }
+  }, [activeTab]);
+
   return (
     <div className={cn('bg-gray-50 p-1 rounded-xl border border-gray-200', className)}>
       <nav className="flex space-x-1" aria-label="Settings navigation">
@@ -65,14 +74,15 @@ export function SettingsTabs({ activeTab, onTabChange, className }: SettingsTabs
           return (
             <button
               key={tab.id}
+              ref={isActive ? activeTabRef : null}
               onClick={() => onTabChange(tab.id)}
               className={cn(
                 'group relative flex flex-col items-center justify-center px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200',
-                'focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500',
                 'min-w-0 flex-1',
+                // 分离焦点样式和激活样式
                 isActive
-                  ? 'bg-white text-indigo-700 shadow-sm border border-gray-200'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                  ? 'bg-white text-indigo-700 shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-1'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-gray-400/50 focus:ring-offset-1'
               )}
               title={tab.description}
             >
