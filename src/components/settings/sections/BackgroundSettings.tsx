@@ -80,45 +80,45 @@ export function BackgroundSettings() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* 背景类型选择 - 紧凑设计 */}
+    <div className="space-y-3">
+      {/* 主要背景设置 */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Palette className="w-4 h-4 text-indigo-600" />
             背景设置
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {/* 背景类型标签 */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="gradient" className="flex items-center gap-1 text-xs">
+            <TabsList className="grid w-full grid-cols-3 h-8">
+              <TabsTrigger value="gradient" className="flex items-center gap-1 text-xs px-2">
                 <Palette className="w-3 h-3" />
                 渐变色
                 {backgroundSettings.type === 'gradient' && (
-                  <Badge variant="secondary" className="ml-1 text-xs scale-75">当前</Badge>
+                  <Badge variant="secondary" className="ml-1 text-xs scale-75">●</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="image" className="flex items-center gap-1 text-xs">
+              <TabsTrigger value="image" className="flex items-center gap-1 text-xs px-2">
                 <Image className="w-3 h-3" />
                 本地图片
                 {backgroundSettings.type === 'image' && (
-                  <Badge variant="secondary" className="ml-1 text-xs scale-75">当前</Badge>
+                  <Badge variant="secondary" className="ml-1 text-xs scale-75">●</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="unsplash" className="flex items-center gap-1 text-xs">
+              <TabsTrigger value="unsplash" className="flex items-center gap-1 text-xs px-2">
                 <Globe className="w-3 h-3" />
                 Unsplash
                 {backgroundSettings.type === 'unsplash' && (
-                  <Badge variant="secondary" className="ml-1 text-xs scale-75">当前</Badge>
+                  <Badge variant="secondary" className="ml-1 text-xs scale-75">●</Badge>
                 )}
               </TabsTrigger>
             </TabsList>
 
             {/* 渐变背景设置 */}
-            <TabsContent value="gradient" className="mt-4">
-              <div className="bg-gray-50 rounded-lg p-3">
+            <TabsContent value="gradient" className="mt-3">
+              <div className="bg-gray-50 rounded-lg p-2">
                 <GradientPicker
                   value={backgroundSettings.gradient}
                   onChange={handleGradientChange}
@@ -127,8 +127,8 @@ export function BackgroundSettings() {
             </TabsContent>
 
             {/* 本地图片设置 */}
-            <TabsContent value="image" className="mt-4">
-              <div className="bg-gray-50 rounded-lg p-3">
+            <TabsContent value="image" className="mt-3">
+              <div className="bg-gray-50 rounded-lg p-2">
                 <ImageUploader
                   value={backgroundSettings.image}
                   onChange={handleImageChange}
@@ -137,9 +137,9 @@ export function BackgroundSettings() {
             </TabsContent>
 
             {/* Unsplash设置 */}
-            <TabsContent value="unsplash" className="mt-4">
+            <TabsContent value="unsplash" className="mt-3">
               <div className="bg-gray-50 rounded-lg p-1">
-                <div className="h-80">
+                <div className="h-56">
                   <UnsplashGallery
                     onSelectImage={handleUnsplashSelect}
                     selectedImageId={backgroundSettings.type === 'unsplash' ? backgroundSettings.unsplashPhoto?.id : undefined}
@@ -150,19 +150,13 @@ export function BackgroundSettings() {
             </TabsContent>
           </Tabs>
 
-          {/* 显示效果设置 - 紧凑布局 */}
-          <div className="space-y-3 pt-2 border-t">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-gray-800">显示效果</h4>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-xs">
+          {/* 显示效果设置 - 更紧凑的网格 */}
+          <div className="pt-2 border-t">
+            <h4 className="text-sm font-medium text-gray-800 mb-2">显示效果</h4>
+            <div className="grid grid-cols-2 gap-2 text-xs">
               {/* 填充模式 */}
-              <SettingItem
-                label="填充模式"
-                description=""
-                className="mb-0"
-              >
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">填充模式</span>
                 <SelectControl
                   value={backgroundSettings.display.fillMode}
                   onValueChange={(fillMode) => updateDisplaySettings({ fillMode })}
@@ -172,16 +166,13 @@ export function BackgroundSettings() {
                     { value: 'stretch', label: 'Stretch' },
                     { value: 'center', label: 'Center' }
                   ]}
-                  className="w-24 text-xs"
+                  className="w-20 h-7 text-xs"
                 />
-              </SettingItem>
+              </div>
 
               {/* 不透明度 */}
-              <SettingItem
-                label="不透明度"
-                description=""
-                className="mb-0"
-              >
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">不透明度</span>
                 <SliderControl
                   value={backgroundSettings.display.opacity}
                   onChange={(opacity) => updateDisplaySettings({ opacity })}
@@ -189,16 +180,13 @@ export function BackgroundSettings() {
                   max={100}
                   step={5}
                   suffix="%"
-                  className="w-24"
+                  className="w-20 h-7"
                 />
-              </SettingItem>
+              </div>
 
               {/* 模糊程度 */}
-              <SettingItem
-                label="模糊程度"
-                description=""
-                className="mb-0"
-              >
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">模糊程度</span>
                 <SliderControl
                   value={backgroundSettings.display.blur}
                   onChange={(blur) => updateDisplaySettings({ blur })}
@@ -206,16 +194,13 @@ export function BackgroundSettings() {
                   max={20}
                   step={1}
                   suffix="px"
-                  className="w-24"
+                  className="w-20 h-7"
                 />
-              </SettingItem>
+              </div>
 
               {/* 亮度调节 */}
-              <SettingItem
-                label="亮度调节"
-                description=""
-                className="mb-0"
-              >
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">亮度调节</span>
                 <SliderControl
                   value={backgroundSettings.display.brightness}
                   onChange={(brightness) => updateDisplaySettings({ brightness })}
@@ -223,9 +208,9 @@ export function BackgroundSettings() {
                   max={150}
                   step={5}
                   suffix="%"
-                  className="w-24"
+                  className="w-20 h-7"
                 />
-              </SettingItem>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -233,12 +218,12 @@ export function BackgroundSettings() {
 
       {/* 高级设置切换 */}
       <Card>
-        <CardContent className="p-3">
+        <CardContent className="p-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-between text-sm"
+            className="w-full flex items-center justify-between text-sm h-8"
           >
             <div className="flex items-center gap-2">
               <Settings className="w-4 h-4 text-indigo-600" />
@@ -254,64 +239,69 @@ export function BackgroundSettings() {
 
       {/* 高级设置内容 */}
       {showAdvanced && (
-        <div className="space-y-4">
-          {/* Unsplash高级设置标签 */}
-          <Tabs defaultValue="api" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="api" className="flex items-center gap-1 text-xs">
-                <Key className="w-3 h-3" />
-                API密钥
-              </TabsTrigger>
-              <TabsTrigger value="preferences" className="flex items-center gap-1 text-xs">
-                <Settings className="w-3 h-3" />
-                偏好设置
-              </TabsTrigger>
-              <TabsTrigger value="cache" className="flex items-center gap-1 text-xs">
-                <HardDrive className="w-3 h-3" />
-                缓存管理
-              </TabsTrigger>
-              <TabsTrigger value="autoswitch" className="flex items-center gap-1 text-xs">
-                <Timer className="w-3 h-3" />
-                自动切换
-              </TabsTrigger>
-            </TabsList>
+        <div className="space-y-3">
+          <Card>
+            <CardContent className="p-3">
+              {/* Unsplash高级设置标签 */}
+              <Tabs defaultValue="api" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-8">
+                  <TabsTrigger value="api" className="flex items-center gap-1 text-xs px-2">
+                    <Key className="w-3 h-3" />
+                    API
+                  </TabsTrigger>
+                  <TabsTrigger value="preferences" className="flex items-center gap-1 text-xs px-2">
+                    <Settings className="w-3 h-3" />
+                    偏好
+                  </TabsTrigger>
+                  <TabsTrigger value="cache" className="flex items-center gap-1 text-xs px-2">
+                    <HardDrive className="w-3 h-3" />
+                    缓存
+                  </TabsTrigger>
+                  <TabsTrigger value="autoswitch" className="flex items-center gap-1 text-xs px-2">
+                    <Timer className="w-3 h-3" />
+                    自动
+                  </TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="api" className="mt-4">
-              <UnsplashAPISettings />
-            </TabsContent>
+                <div className="mt-3">
+                  <TabsContent value="api" className="mt-0">
+                    <UnsplashAPISettings />
+                  </TabsContent>
 
-            <TabsContent value="preferences" className="mt-4">
-              <UnsplashPreferences />
-            </TabsContent>
+                  <TabsContent value="preferences" className="mt-0">
+                    <UnsplashPreferences />
+                  </TabsContent>
 
-            <TabsContent value="cache" className="mt-4">
-              <CacheManagement />
-            </TabsContent>
+                  <TabsContent value="cache" className="mt-0">
+                    <CacheManagement />
+                  </TabsContent>
 
-            <TabsContent value="autoswitch" className="mt-4">
-              <AutoSwitchSettings />
-            </TabsContent>
-          </Tabs>
+                  <TabsContent value="autoswitch" className="mt-0">
+                    <AutoSwitchSettings />
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* 使用提示 - 精简版 */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-2">
+              <div className="flex items-start gap-2">
+                <div className="text-blue-600 mt-0.5 text-sm">💡</div>
+                <div className="text-xs text-blue-800">
+                  <p className="font-medium mb-1">使用提示：</p>
+                  <ul className="text-xs space-y-0.5 text-blue-700">
+                    <li>• <strong>渐变色</strong>：现代化视觉效果，快速加载</li>
+                    <li>• <strong>本地图片</strong>：个性化定制，建议高分辨率图片</li>
+                    <li>• <strong>Unsplash</strong>：专业摄影作品，配置API密钥获得更好体验</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
-
-      {/* 使用提示 - 精简版 */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-3">
-          <div className="flex items-start gap-2">
-            <div className="text-blue-600 mt-0.5 text-sm">💡</div>
-            <div className="text-xs text-blue-800">
-              <p className="font-medium mb-1">背景设置小贴士：</p>
-              <ul className="text-xs space-y-0.5 text-blue-700">
-                <li>• <strong>渐变色</strong>：现代化视觉效果，快速加载</li>
-                <li>• <strong>本地图片</strong>：个性化定制，建议高分辨率图片</li>
-                <li>• <strong>Unsplash</strong>：专业摄影作品，点击高级设置配置API密钥</li>
-                <li>• <strong>显示效果</strong>：调整模糊和亮度可提升内容可读性</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
