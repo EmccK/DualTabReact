@@ -11,7 +11,8 @@ import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useUnsplash, useImageCache } from '../../hooks';
-import { UnsplashPhoto, UNSPLASH_CATEGORIES, UnsplashCategoryId } from '../../services/unsplash';
+import { UNSPLASH_CATEGORIES } from '../../services/unsplash';
+import type { UnsplashPhoto, UnsplashCategoryId } from '../../services/unsplash';
 
 interface UnsplashGalleryProps {
   onSelectImage: (photo: UnsplashPhoto, imageUrl: string) => void;

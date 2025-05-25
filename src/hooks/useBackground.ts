@@ -8,6 +8,8 @@ import { useSettings } from '@/hooks/useSettings';
 import { generateGradientCSS } from '@/utils/gradientUtils';
 import type { BackgroundSettings } from '@/types/settings';
 import type { UnsplashPhoto } from '@/services/unsplash';
+import type { Attribution } from '@/types/attribution';
+import { createUnsplashAttribution } from '@/utils/attribution';
 
 export interface BackgroundStyles {
   backgroundImage?: string;
@@ -195,8 +197,51 @@ export function useBackground() {
   };
 
   /**
-   * 重置背景设置
+   * 获取当前背景的归属信息
    */
+  const currentAttribution = useMemo((): Attribution | null => {
+    const { type, unsplashPhoto, image } = backgroundSettings;
+    
+    switch (type) {
+      case 'unsplash':
+        if (unsplashPhoto) {
+          return createUnsplashAttribution({
+            id: unsplashPhoto.id,
+            urls: {
+              regular: unsplashPhoto.url,
+              full: unsplashPhoto.url
+            },
+            user: {
+              name: unsplashPhoto.photographer,
+              username: unsplashPhoto.photographer.toLowerCase().replace(/\s+/g, ''),
+              links: {
+                html: unsplashPhoto.photographerUrl
+              }
+            },
+            links: {
+              html: unsplashPhoto.photographerUrl,
+              download: unsplashPhoto.downloadLocation || '',
+              download_location: unsplashPhoto.downloadLocation || ''
+            }
+          });
+        }
+        break;
+      
+      case 'image':
+        if (image?.url) {
+          return {
+            id: 'local-' + Date.now(),
+            source: 'local',
+            authorName: image.name || '本地图片',
+            fileName: image.name,
+            uploadDate: new Date().toISOString()
+          };
+        }
+        break;
+    }
+    
+    return null;
+  }, [backgroundSettings]);
   const resetBackground = async () => {
     await updateSettings('background', {
       type: 'gradient',
@@ -218,6 +263,9 @@ export function useBackground() {
     // 样式相关
     backgroundStyles,
     backgroundStyleString,
+    
+    // 归属信息
+    currentAttribution,
     
     // 更新方法
     updateBackground,

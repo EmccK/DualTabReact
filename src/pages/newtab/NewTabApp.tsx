@@ -6,6 +6,7 @@ import { CategoryModal, ResizableCategorySidebar } from '@/components/categories
 import { SettingsModal } from '@/components/settings'
 import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
+import { AttributionOverlay } from '@/components/background'
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
 import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
@@ -18,7 +19,7 @@ function NewTabApp() {
   const { settings, updateSettings, isLoading: settingsLoading } = useSettings()
   
   // 背景管理Hook
-  const { backgroundStyles } = useBackground()
+  const { backgroundStyles, currentAttribution } = useBackground()
   
   // 使用设置数据的其他Hooks
   const { currentTime } = useClock(settings.preferences)
@@ -83,13 +84,6 @@ function NewTabApp() {
     type: null,
     target: null
   })
-
-  const backgroundAttributionInfo = settings.background.type === 'unsplash' ? {
-    author: "示例作者",
-    authorUrl: "https://unsplash.com/@author",
-    source: "Unsplash",
-    sourceUrl: "https://unsplash.com"
-  } : undefined
 
   // 网络模式切换处理
   const handleNetworkModeChange = useCallback(async (mode: NetworkMode) => {
@@ -568,29 +562,17 @@ function NewTabApp() {
         </Button>
       </div>
 
-      {/* 背景图片归属信息 */}
-      {backgroundAttributionInfo && (
-        <div className="fixed bottom-3 right-3 text-xs text-white/70 bg-black/30 px-2 py-1 rounded backdrop-blur-sm">
-          Photo by{' '}
-          <a
-            href={backgroundAttributionInfo.authorUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white/90 hover:underline"
-          >
-            {backgroundAttributionInfo.author}
-          </a>
-          {' '}on{' '}
-          <a
-            href={backgroundAttributionInfo.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white/90 hover:underline"
-          >
-            {backgroundAttributionInfo.source}
-          </a>
-        </div>
-      )}
+      {/* 背景图片归属信息覆盖层 */}
+      <AttributionOverlay
+        attribution={currentAttribution}
+        config={{
+          show: true,
+          position: 'bottom-right',
+          style: 'compact',
+          autoHide: false,
+          opacity: 0.8
+        }}
+      />
 
       {/* 书签弹窗 */}
       <BookmarkModal

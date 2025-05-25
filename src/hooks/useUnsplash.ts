@@ -4,8 +4,10 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { unsplashService, UnsplashPhoto, UnsplashCategoryId, UNSPLASH_CATEGORIES } from '../services/unsplash';
-import { imageCacheManager, CachedImage, CacheStats } from '../utils/imageCache';
+import { unsplashService, UNSPLASH_CATEGORIES } from '../services/unsplash';
+import type { UnsplashPhoto, UnsplashCategoryId } from '../services/unsplash';
+import { imageCacheManager } from '../utils/imageCache';
+import type { CachedImage, CacheStats } from '../utils/imageCache';
 
 export interface UseUnsplashOptions {
   category?: UnsplashCategoryId;
