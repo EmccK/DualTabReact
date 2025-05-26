@@ -120,7 +120,7 @@ export class CacheManagerService {
       const categorySize: Record<string, number> = {};
 
       Object.keys(result).forEach(key => {
-        if (key.startsWith('unsplash_cache_')) {
+        if (key.startsWith('image_cache_')) {
           const data = result[key];
           if (data && data.imageData) {
             const sizeInMB = this.calculateSize(data.imageData) / (1024 * 1024);
@@ -177,7 +177,7 @@ export class CacheManagerService {
 
       // 收集所有缓存键
       Object.keys(result).forEach(key => {
-        if (key.startsWith('unsplash_cache_')) {
+        if (key.startsWith('image_cache_')) {
           const data = result[key];
           if (data) {
             cacheKeys.push({

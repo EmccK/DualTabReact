@@ -62,7 +62,6 @@ export interface AppSettings {
     username: string;
     password: string;
   };
-  splash_api_key?: string;
   [key: string]: any;
 }
 

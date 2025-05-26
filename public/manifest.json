@@ -18,7 +18,6 @@
         }
     },
     "host_permissions": [
-        "https://api.unsplash.com/*",
         "*://*/"
     ],
     "web_accessible_resources": [

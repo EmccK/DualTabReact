@@ -20,8 +20,6 @@ export const STORAGE_KEYS = {
   CATEGORIES: 'categories', 
   NETWORK_MODE: 'networkMode',
   SETTINGS: 'settings',
-  SPLASH_API_KEY: 'splash_api_key',
-  SPLASH_API_LIMITS: 'splash_api_limits',
 } as const;
 
 // 内存缓存，减少Chrome API调用
@@ -408,67 +406,7 @@ export async function saveSettings(settings: Partial<AppSettings>): Promise<Oper
   return chromeStorageSet(mergedSettings);
 }
 
-/**
- * 加载Unsplash API密钥
- */
-export async function loadSplashApiKey(): Promise<OperationResult<string>> {
-  const result = await chromeStorageGet<string>(STORAGE_KEYS.SPLASH_API_KEY);
-  
-  if (!result.success) {
-    return { success: true, data: '' };
-  }
 
-  const apiKey = result.data?.[STORAGE_KEYS.SPLASH_API_KEY] || '';
-  return { success: true, data: apiKey };
-}
-
-/**
- * 保存Unsplash API密钥
- */
-export async function saveSplashApiKey(apiKey: string): Promise<OperationResult<void>> {
-  return chromeStorageSet({ [STORAGE_KEYS.SPLASH_API_KEY]: apiKey });
-}
-
-/**
- * 加载API限制信息
- */
-export async function loadSplashApiLimits(): Promise<OperationResult<ApiLimits | null>> {
-  const result = await chromeStorageGet<ApiLimits>(STORAGE_KEYS.SPLASH_API_LIMITS);
-  
-  if (!result.success) {
-    return { success: true, data: null };
-  }
-
-  const limits = result.data?.[STORAGE_KEYS.SPLASH_API_LIMITS];
-  
-  // 验证数据格式
-  if (limits && typeof limits === 'object' && 
-      typeof limits.limit === 'number' && 
-      typeof limits.remaining === 'number' && 
-      typeof limits.reset === 'number') {
-    return { success: true, data: limits };
-  }
-
-  return { success: true, data: null };
-}
-
-/**
- * 保存API限制信息
- */
-export async function saveSplashApiLimits(limits: ApiLimits): Promise<OperationResult<void>> {
-  // 数据验证
-  if (!limits || 
-      typeof limits.limit !== 'number' || 
-      typeof limits.remaining !== 'number' || 
-      typeof limits.reset !== 'number') {
-    return {
-      success: false,
-      error: 'API限制信息格式无效'
-    };
-  }
-
-  return chromeStorageSet({ [STORAGE_KEYS.SPLASH_API_LIMITS]: limits });
-}
 
 /**
  * 备份所有数据

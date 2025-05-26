@@ -3,4 +3,3 @@
  */
 
 export { AttributionOverlay } from './AttributionOverlay';
-export { UnsplashAttribution } from './UnsplashAttribution';

@@ -1,6 +1,5 @@
 import React from 'react';
 import type { Attribution, AttributionDisplayConfig } from '@/types/attribution';
-import { UnsplashAttribution } from './UnsplashAttribution';
 import { useAttributionDisplay } from '@/hooks/attribution';
 
 interface AttributionOverlayProps {
@@ -84,15 +83,6 @@ export const AttributionOverlay: React.FC<AttributionOverlayProps> = ({
    */
   const renderAttributionContent = () => {
     switch (state.current.source) {
-      case 'unsplash':
-        return (
-          <UnsplashAttribution
-            attribution={state.current as any}
-            style={fullConfig.style}
-            onLinkClick={handleLinkClick}
-          />
-        );
-      
       case 'local':
       case 'upload':
         return (

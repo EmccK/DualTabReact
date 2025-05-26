@@ -1,6 +1,6 @@
 /**
  * 图片缓存管理器
- * 负责Unsplash图片的本地缓存和管理
+ * 负责图片的本地缓存和管理
  * 使用Chrome storage API实现持久化存储
  */
 
@@ -41,9 +41,9 @@ export interface CacheConfig {
  * 图片缓存管理器类
  */
 export class ImageCacheManager {
-  private readonly CACHE_KEY = 'unsplash_image_cache';
-  private readonly STATS_KEY = 'unsplash_cache_stats';
-  private readonly CONFIG_KEY = 'unsplash_cache_config';
+  private readonly CACHE_KEY = 'image_cache';
+  private readonly STATS_KEY = 'image_cache_stats';
+  private readonly CONFIG_KEY = 'image_cache_config';
   
   private config: CacheConfig;
   private stats: CacheStats;

@@ -40,7 +40,7 @@ const TABS: TabItem[] = [
     id: 'background',
     label: '背景图片',
     icon: Image,
-    description: '背景类型、Unsplash设置、刷新频率',
+    description: '背景类型、渐变设置、随机图片',
   },
   {
     id: 'sync',

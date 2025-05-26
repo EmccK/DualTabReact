@@ -54,7 +54,7 @@ export interface AutoSwitchState {
     timestamp: number;
     imageId: string;
     category: string;
-    source: 'unsplash' | 'local' | 'gradient';
+    source: 'local' | 'gradient';
   }>;
   /** 切换统计 */
   stats: {
@@ -68,7 +68,7 @@ export interface AutoSwitchState {
 export interface SwitchResult {
   success: boolean;
   imageId?: string;
-  source?: 'unsplash' | 'local' | 'gradient';
+  source?: 'local' | 'gradient';
   error?: string;
   nextScheduledTime?: number;
 }

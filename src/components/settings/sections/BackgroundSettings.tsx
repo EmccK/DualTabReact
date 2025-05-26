@@ -63,14 +63,8 @@ export function BackgroundSettings() {
       // 当用户选择渐变色时，自动应用当前渐变设置
       await setGradientBackground(backgroundSettings.gradient);
     } else if (type === 'random') {
-      // 当用户选择随机图片时，如果已经有随机图片，则直接应用
-      if (backgroundSettings.unsplashPhoto?.cachedUrl) {
-        // 如果已经有随机图片，直接切换类型
-        await updateBackground({ type: 'random' });
-      } else {
-        // 如果没有随机图片，也要先切换类型，让刷新按钮显示
-        await updateBackground({ type: 'random' });
-      }
+      // 当用户选择随机图片时，切换到随机图片类型
+      await updateBackground({ type: 'random' });
     }
   };
 
@@ -123,19 +117,17 @@ export function BackgroundSettings() {
           {/* 随机图片设置 */}
           {selectedType === 'random' && (
             <div className="space-y-2">
-              {!backgroundSettings.unsplashPhoto?.cachedUrl && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-                  <p className="text-xs text-blue-800">
-                    已选择随机图片模式，可以点击右下角的刷新按钮获取随机背景图片，或在下方设置分类。
-                  </p>
-                </div>
-              )}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                <p className="text-xs text-blue-800">
+                  已选择随机图片模式，可以点击右下角的刷新按钮获取随机背景图片，或在下方设置分类。
+                </p>
+              </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <UniversalImageGallery
                   onSelect={handleRandomImageSelect}
                   initialSource="random"
-                  initialCategory="nature"
-                  initialTheme="all"
+                  initialCategory={backgroundSettings.randomImageCategory || "all"}
+                  initialTheme={backgroundSettings.randomImageTheme || "all"}
                   maxHistory={8}
                 />
               </div>

@@ -5,8 +5,6 @@
 export {
   formatAuthorName,
   formatCopyrightText,
-  generateUnsplashUrl,
   isAttributionComplete,
-  createUnsplashAttribution,
   createCompactAttributionText
 } from './attributionFormatter';

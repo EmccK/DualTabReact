@@ -9,7 +9,6 @@ import { generateGradientCSS } from '@/utils/gradientUtils';
 import type { BackgroundSettings } from '@/types/settings';
 import type { BackgroundImage } from '@/types/background';
 import type { Attribution } from '@/types/attribution';
-import { createUnsplashAttribution } from '@/utils/attribution';
 
 export interface BackgroundStyles {
   backgroundImage?: string;
@@ -65,10 +64,10 @@ export function useBackground() {
           styles.backgroundImage = generateGradientCSS(gradient);
           break;
         case 'random':
-          if (backgroundSettings.unsplashPhoto?.cachedUrl) {
-            styles.backgroundImage = `url(${backgroundSettings.unsplashPhoto.cachedUrl})`;
+          if (image?.url) {
+            styles.backgroundImage = `url("${image.url}")`;
           } else {
-            // 回退到渐变
+            // 如果没有图片，回退到渐变
             styles.backgroundImage = generateGradientCSS(gradient);
           }
           break;
@@ -125,54 +124,28 @@ export function useBackground() {
    * 设置在线图片背景（统一接口）
    */
   const setOnlineImageBackground = async (image: BackgroundImage, cachedUrl: string) => {
-    const onlinePhoto = {
-      id: image.id,
-      url: image.url,
-      cachedUrl,
-      photographer: image.author?.name || '未知作者',
-      photographerUrl: image.author?.profileUrl || '',
-      description: image.description || '',
-      width: image.width,
-      height: image.height,
-      downloadLocation: '', // 在线图片可能没有下载位置
-      source: image.source
-    };
-
-    await updateBackground({
-      type: 'random', // 统一使用random类型
-      unsplashPhoto: onlinePhoto
-    });
-  };
-
-  /**
-   * 设置Unsplash背景（保持向后兼容）
-   * @deprecated 建议使用 setOnlineImageBackground
-   */
-  const setUnsplashBackground = async (imageOrPhoto: BackgroundImage | any, cachedUrl: string) => {
-    // 检查是否是新的BackgroundImage格式
-    if ('source' in imageOrPhoto) {
-      return setOnlineImageBackground(imageOrPhoto as BackgroundImage, cachedUrl);
+    try {
+      await updateBackground({
+        type: 'random',
+        image: {
+          id: image.id,
+          url: cachedUrl,
+          originalUrl: image.url,
+          width: image.width,
+          height: image.height,
+          description: image.description,
+          keywords: image.keywords,
+          category: image.category,
+          source: image.source,
+          createdAt: image.createdAt,
+          updatedAt: image.updatedAt
+        }
+      });
+      console.log('随机图片背景设置成功:', image.id);
+    } catch (error) {
+      console.error('设置在线图片背景失败:', error);
+      throw error;
     }
-    
-    // 处理旧的UnsplashPhoto格式
-    const photo = imageOrPhoto as any;
-    const onlinePhoto = {
-      id: photo.id || photo.udId?.toString(),
-      url: photo.urls?.regular || photo.url,
-      cachedUrl,
-      photographer: photo.user?.name || photo.udId?.toString() || '未知作者',
-      photographerUrl: photo.user?.links?.html || '',
-      description: photo.alt_description || photo.description || photo.keyword || '',
-      width: photo.width,
-      height: photo.height,
-      downloadLocation: photo.links?.download_location || '',
-      source: photo.source || 'random'
-    };
-
-    await updateBackground({
-      type: 'random',
-      unsplashPhoto: onlinePhoto
-    });
   };
 
   /**
@@ -191,34 +164,7 @@ export function useBackground() {
    * 获取当前背景的归属信息
    */
   const currentAttribution = useMemo((): Attribution | null => {
-    const { type, unsplashPhoto } = backgroundSettings;
-    
-    switch (type) {
-      case 'random':
-        if (unsplashPhoto) {
-          return createUnsplashAttribution({
-            id: unsplashPhoto.id,
-            urls: {
-              regular: unsplashPhoto.url,
-              full: unsplashPhoto.url
-            },
-            user: {
-              name: unsplashPhoto.photographer,
-              username: unsplashPhoto.photographer.toLowerCase().replace(/\s+/g, ''),
-              links: {
-                html: unsplashPhoto.photographerUrl
-              }
-            },
-            links: {
-              html: unsplashPhoto.photographerUrl,
-              download: unsplashPhoto.downloadLocation || '',
-              download_location: unsplashPhoto.downloadLocation || ''
-            }
-          });
-        }
-        break;
-    }
-    
+    // 暂时不支持在线图片归属信息
     return null;
   }, [backgroundSettings]);
   const resetBackground = async () => {
@@ -250,7 +196,6 @@ export function useBackground() {
     updateBackground,
     setGradientBackground,
     setOnlineImageBackground, // 新的统一接口
-    setUnsplashBackground, // 保持向后兼容
     updateDisplaySettings,
     resetBackground,
   };

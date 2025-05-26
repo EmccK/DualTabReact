@@ -319,7 +319,7 @@ export class AutoSwitchService {
           timestamp: now,
           imageId: imageResult.imageId,
           category: imageResult.category || 'unknown',
-          source: imageResult.source || 'unsplash'
+          source: imageResult.source || 'local'
         },
         ...state.history.slice(0, 49) // 保留最近50条记录
       ];
@@ -360,7 +360,7 @@ export class AutoSwitchService {
     success: boolean;
     imageId?: string;
     category?: string;
-    source?: 'unsplash' | 'local' | 'gradient';
+    source?: 'local' | 'gradient';
     error?: string;
   }> {
     try {
@@ -373,7 +373,7 @@ export class AutoSwitchService {
         success: true,
         imageId: `mock_${Date.now()}`,
         category: randomCategory,
-        source: 'unsplash'
+        source: 'local'
       };
     } catch (error) {
       return {

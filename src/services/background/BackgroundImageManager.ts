@@ -5,7 +5,6 @@
 
 import { BackgroundImageService } from './BackgroundImageService';
 import { RandomImageAdapter } from './RandomImageAdapter';
-import { UnsplashAdapter } from './UnsplashAdapter';
 import type {
   BackgroundImage,
   BackgroundImageMetadata,
@@ -20,7 +19,6 @@ export class BackgroundImageManager {
   constructor() {
     // 注册适配器
     this.registerAdapter('random', new RandomImageAdapter());
-    this.registerAdapter('unsplash', new UnsplashAdapter());
   }
 
   /**

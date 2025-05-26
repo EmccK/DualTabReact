@@ -16,10 +16,6 @@ import {
   saveNetworkMode,
   loadSettings,
   saveSettings,
-  loadSplashApiKey,
-  saveSplashApiKey,
-  loadSplashApiLimits,
-  saveSplashApiLimits,
   backupData,
   restoreFromBackup
 } from '../utils/storage';

@@ -64,7 +64,7 @@ export function UniversalImageGallery({
   const { settings, updateSettings } = useSettings();
   const [selectedSource, setSelectedSource] = useState<BackgroundImageSource>(initialSource);
   const [selectedCategory, setSelectedCategory] = useState(settings.background.randomImageCategory || initialCategory);
-  const [selectedTheme, setSelectedTheme] = useState(initialTheme);
+  const [selectedTheme, setSelectedTheme] = useState(settings.background.randomImageTheme || initialTheme);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   const [state, setState] = useState<GalleryState>({
@@ -235,28 +235,53 @@ export function UniversalImageGallery({
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* 分类选择 */}
-          <div className="space-y-1">
-            <label className="text-xs text-gray-600">图片分类</label>
-            <Select value={selectedCategory} onValueChange={(value) => {
-              setSelectedCategory(value);
-              // 保存选择的分类到设置中
-              updateSettings('background', {
-                ...settings.background,
-                randomImageCategory: value
-              });
-            }}>
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RANDOM_IMAGE_CATEGORIES.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* 筛选选项 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-600">分类</label>
+              <Select value={selectedCategory} onValueChange={(value) => {
+                setSelectedCategory(value);
+                // 保存选择的分类到设置中
+                updateSettings('background', {
+                  ...settings.background,
+                  randomImageCategory: value
+                });
+              }}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RANDOM_IMAGE_CATEGORIES.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-600">主题</label>
+              <Select value={selectedTheme} onValueChange={(value) => {
+                setSelectedTheme(value);
+                // 保存选择的主题到设置中
+                updateSettings('background', {
+                  ...settings.background,
+                  randomImageTheme: value
+                });
+              }}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RANDOM_IMAGE_THEMES.map((theme) => (
+                    <SelectItem key={theme.id} value={theme.id}>
+                      {theme.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>

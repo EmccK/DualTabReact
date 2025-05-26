@@ -109,7 +109,7 @@ export function useAttributionDisplay(
    * 点击归属信息处理
    */
   const handleAttributionClick = useCallback((linkType: 'profile' | 'photo' | 'download' = 'profile') => {
-    if (!attribution || attribution.source !== 'unsplash') return;
+    if (!attribution) return;
     
     // 这里将在组件中处理链接跳转
     return { attribution, linkType };

@@ -72,21 +72,8 @@ export interface BackgroundSettings {
   
   
   // 随机图片设置
-  unsplashPhoto?: {
-    id: string;
-    url: string;
-    cachedUrl: string;
-    photographer: string;
-    photographerUrl: string;
-    description: string;
-    width: number;
-    height: number;
-    downloadLocation: string;
-    source?: string;
-  };
-  
-  // 随机图片分类设置
   randomImageCategory?: string;
+  randomImageTheme?: string;
   
   // 显示效果设置
   display: {

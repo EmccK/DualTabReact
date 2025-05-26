@@ -4,7 +4,6 @@
 
 export type {
   BaseAttribution,
-  UnsplashAttribution,
   LocalAttribution,
   Attribution,
   AttributionDisplayConfig,

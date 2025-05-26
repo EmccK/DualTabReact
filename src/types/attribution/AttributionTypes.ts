@@ -18,27 +18,7 @@ export interface BaseAttribution {
   /** 版权说明文本 */
   copyrightText?: string;
   /** 图片来源平台 */
-  source: 'unsplash' | 'local' | 'upload' | 'other';
-}
-
-/**
- * Unsplash图片归属信息
- * 包含Unsplash平台特有的归属字段
- */
-export interface UnsplashAttribution extends BaseAttribution {
-  source: 'unsplash';
-  /** Unsplash用户名 */
-  username: string;
-  /** 用户个人主页URL */
-  userProfileUrl: string;
-  /** 图片下载页面URL */
-  downloadUrl: string;
-  /** 图片详情页面URL */
-  imageUrl: string;
-  /** UTM参数标识 */
-  utmSource?: string;
-  utmMedium?: string;
-  utmCampaign?: string;
+  source: 'local' | 'upload' | 'other';
 }
 
 /**
@@ -57,7 +37,7 @@ export interface LocalAttribution extends BaseAttribution {
 /**
  * 归属信息联合类型
  */
-export type Attribution = UnsplashAttribution | LocalAttribution;
+export type Attribution = LocalAttribution;
 
 /**
  * 归属信息显示配置
