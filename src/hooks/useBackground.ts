@@ -64,14 +64,7 @@ export function useBackground() {
         case 'gradient':
           styles.backgroundImage = generateGradientCSS(gradient);
           break;
-        case 'image':
-          if (image?.url) {
-            styles.backgroundImage = `url(${image.url})`;
-          } else {
-            styles.backgroundImage = generateGradientCSS(gradient);
-          }
-          break;
-        case 'unsplash':
+        case 'random':
           if (backgroundSettings.unsplashPhoto?.cachedUrl) {
             styles.backgroundImage = `url(${backgroundSettings.unsplashPhoto.cachedUrl})`;
           } else {
@@ -127,40 +120,6 @@ export function useBackground() {
     });
   };
 
-  /**
-   * 设置图片背景
-   */
-  const setImageBackground = async (imageFile: File) => {
-    return new Promise<void>((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = async (e) => {
-        const url = e.target?.result as string;
-        const image = {
-          url,
-          name: imageFile.name,
-          size: imageFile.size,
-          type: imageFile.type
-        };
-        
-        try {
-          await updateBackground({
-            type: 'image',
-            image
-          });
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('Failed to read image file'));
-      };
-      
-      reader.readAsDataURL(imageFile);
-    });
-  };
 
   /**
    * 设置在线图片背景（统一接口）
@@ -180,7 +139,7 @@ export function useBackground() {
     };
 
     await updateBackground({
-      type: 'unsplash', // 保持类型兼容性，实际上是在线图片
+      type: 'random', // 统一使用random类型
       unsplashPhoto: onlinePhoto
     });
   };
@@ -211,7 +170,7 @@ export function useBackground() {
     };
 
     await updateBackground({
-      type: 'unsplash',
+      type: 'random',
       unsplashPhoto: onlinePhoto
     });
   };
@@ -232,10 +191,10 @@ export function useBackground() {
    * 获取当前背景的归属信息
    */
   const currentAttribution = useMemo((): Attribution | null => {
-    const { type, unsplashPhoto, image } = backgroundSettings;
+    const { type, unsplashPhoto } = backgroundSettings;
     
     switch (type) {
-      case 'unsplash':
+      case 'random':
         if (unsplashPhoto) {
           return createUnsplashAttribution({
             id: unsplashPhoto.id,
@@ -256,18 +215,6 @@ export function useBackground() {
               download_location: unsplashPhoto.downloadLocation || ''
             }
           });
-        }
-        break;
-      
-      case 'image':
-        if (image?.url) {
-          return {
-            id: 'local-' + Date.now(),
-            source: 'local',
-            authorName: image.name || '本地图片',
-            fileName: image.name,
-            uploadDate: new Date().toISOString()
-          };
         }
         break;
     }
@@ -302,7 +249,6 @@ export function useBackground() {
     // 更新方法
     updateBackground,
     setGradientBackground,
-    setImageBackground,
     setOnlineImageBackground, // 新的统一接口
     setUnsplashBackground, // 保持向后兼容
     updateDisplaySettings,

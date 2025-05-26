@@ -19,24 +19,17 @@ import {
 import { 
   Plus, 
   RotateCcw, 
-  Save, 
-  Palette,
-  Shuffle,
-  Eye,
-  EyeOff
+  Save
 } from 'lucide-react';
 
 import { ColorStopNode } from './ColorStopNode';
-import { GradientPreview } from './GradientPreview';
 import type { CustomGradient, ColorStop, GradientEditorState } from '@/types/gradient';
 import { 
   createDefaultCustomGradient,
   createColorStop,
-  generateCustomGradientCSS,
   generateRandomColor,
   validateCustomGradient,
-  sortColorStops,
-  CUSTOM_GRADIENT_TEMPLATES
+  sortColorStops
 } from '@/utils/gradient';
 
 interface CustomGradientEditorProps {
@@ -59,7 +52,7 @@ export function CustomGradientEditor({
     previewMode: false
   }));
 
-  const { gradient, selectedStopId, previewMode } = editorState;
+  const { gradient, selectedStopId } = editorState;
 
   // 更新渐变状态
   const updateGradient = useCallback((updates: Partial<CustomGradient>) => {
@@ -163,24 +156,6 @@ export function CustomGradientEditor({
     onChange(defaultGradient);
   }, [onChange]);
 
-  // 应用模板
-  const applyTemplate = useCallback((template: Partial<CustomGradient>) => {
-    const newGradient = {
-      ...gradient,
-      ...template,
-      id: gradient.id,
-      createdAt: gradient.createdAt,
-      updatedAt: Date.now()
-    } as CustomGradient;
-    
-    setEditorState(prev => ({
-      ...prev,
-      gradient: newGradient,
-      selectedStopId: null
-    }));
-    
-    onChange(newGradient);
-  }, [gradient, onChange]);
 
   // 保存渐变
   const handleSave = useCallback(() => {
@@ -199,88 +174,43 @@ export function CustomGradientEditor({
   const canSave = validationErrors.length === 0;
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* 预览区域 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Palette className="w-4 h-4 text-indigo-600" />
-              渐变预览
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setEditorState(prev => ({ ...prev, previewMode: !previewMode }))}
-                className="h-7 px-2"
-              >
-                {previewMode ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                <span className="ml-1 text-xs">
-                  {previewMode ? '编辑' : '预览'}
-                </span>
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <GradientPreview 
-            gradient={gradient} 
-            showActions={previewMode}
-          />
-        </CardContent>
-      </Card>
-
-      {!previewMode && (
-        <>
-          {/* 基础设置 */}
+    <div className={`space-y-2 ${className}`}>
+      {/* 基础设置 */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">基础设置</CardTitle>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs">基础设置</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {/* 渐变名称 */}
-              <div className="space-y-1">
-                <Label htmlFor="gradient-name" className="text-xs">渐变名称</Label>
-                <Input
-                  id="gradient-name"
-                  value={gradient.name}
-                  onChange={(e) => updateGradient({ name: e.target.value })}
-                  placeholder="输入渐变名称"
-                  className="h-8 text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            <CardContent className="space-y-2 p-3">
+              <div className="grid grid-cols-3 gap-2">
                 {/* 渐变类型 */}
                 <div className="space-y-1">
-                  <Label className="text-xs">渐变类型</Label>
+                  <Label className="text-xs">类型</Label>
                   <Select
                     value={gradient.type}
                     onValueChange={(type: 'linear' | 'radial') => updateGradient({ type })}
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-7 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="linear">线性渐变</SelectItem>
-                      <SelectItem value="radial">径向渐变</SelectItem>
+                      <SelectItem value="linear">线性</SelectItem>
+                      <SelectItem value="radial">径向</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* 渐变方向/形状 */}
                 {gradient.type === 'linear' ? (
-                  <div className="space-y-1">
-                    <Label className="text-xs">角度 ({gradient.direction}°)</Label>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs">角度: {gradient.direction}°</Label>
                     <Input
                       type="range"
                       min="0"
                       max="360"
-                      step="1"
+                      step="15"
                       value={gradient.direction}
                       onChange={(e) => updateGradient({ direction: parseInt(e.target.value) })}
-                      className="h-8"
+                      className="h-7"
                     />
                   </div>
                 ) : (
@@ -292,7 +222,7 @@ export function CustomGradientEditor({
                         updateGradient({ radialShape })
                       }
                     >
-                      <SelectTrigger className="h-8 text-sm">
+                      <SelectTrigger className="h-7 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -308,11 +238,11 @@ export function CustomGradientEditor({
 
           {/* 颜色节点管理 */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-1">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-xs flex items-center gap-1">
                   颜色节点
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-xs scale-75">
                     {gradient.colorStops.length}
                   </Badge>
                 </CardTitle>
@@ -320,15 +250,15 @@ export function CustomGradientEditor({
                   variant="outline"
                   size="sm"
                   onClick={addColorStop}
-                  className="h-7 px-2"
+                  className="h-6 px-2 text-xs"
                 >
                   <Plus className="w-3 h-3 mr-1" />
                   添加
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+            <CardContent className="p-2">
+              <div className="space-y-1 max-h-32 overflow-y-auto">
                 {sortColorStops(gradient.colorStops).map((colorStop) => (
                   <ColorStopNode
                     key={colorStop.id}
@@ -345,42 +275,13 @@ export function CustomGradientEditor({
             </CardContent>
           </Card>
 
-          {/* 快速模板 */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">快速模板</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-2">
-                {CUSTOM_GRADIENT_TEMPLATES.map((template, index) => (
-                  <Button
-                    key={index}
-                    variant="ghost"
-                    onClick={() => applyTemplate(template)}
-                    className="h-8 justify-start text-sm"
-                  >
-                    <div 
-                      className="w-4 h-4 rounded border mr-2"
-                      style={{
-                        background: generateCustomGradientCSS({
-                          ...gradient,
-                          ...template
-                        } as CustomGradient)
-                      }}
-                    />
-                    {template.name}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
           {/* 操作按钮 */}
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <Button
               variant="outline"
               onClick={resetGradient}
-              className="flex-1 h-8"
+              className="flex-1 h-7 text-xs"
             >
               <RotateCcw className="w-3 h-3 mr-1" />
               重置
@@ -389,7 +290,7 @@ export function CustomGradientEditor({
               <Button
                 onClick={handleSave}
                 disabled={!canSave}
-                className="flex-1 h-8"
+                className="flex-1 h-7 text-xs"
               >
                 <Save className="w-3 h-3 mr-1" />
                 保存
@@ -411,9 +312,7 @@ export function CustomGradientEditor({
                 </div>
               </CardContent>
             </Card>
-          )}
-        </>
-      )}
+        )}
     </div>
   );
 }

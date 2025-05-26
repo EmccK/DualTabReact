@@ -8,6 +8,8 @@ import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
 import { AttributionOverlay } from '@/components/background'
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
+import { backgroundImageManager } from '@/services/background'
+import type { BackgroundImageFilters } from '@/types/background'
 import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import { createTestBookmarks } from '@/utils/test-data'
@@ -19,7 +21,7 @@ function NewTabApp() {
   const { settings, updateSettings, isLoading: settingsLoading } = useSettings()
   
   // 背景管理Hook
-  const { backgroundStyles, currentAttribution } = useBackground()
+  const { backgroundStyles, currentAttribution, setOnlineImageBackground } = useBackground()
   
   // 使用设置数据的其他Hooks
   const { currentTime } = useClock(settings.preferences)
@@ -107,10 +109,47 @@ function NewTabApp() {
     setSettingsModalOpen(true)
   }, [])
 
-  const handleRefreshBackground = useCallback(() => {
+  const handleRefreshBackground = useCallback(async () => {
     console.log('刷新背景图片')
-    // TODO: 实现背景图片刷新功能
-  }, [])
+    
+    // 只有在随机图片模式下才刷新
+    if (settings.background.type !== 'random') {
+      console.log('当前不是随机图片模式，跳过刷新')
+      return
+    }
+    
+    try {
+      // 从设置中获取当前的分类设置，默认为'nature'
+      const currentCategory = settings.background.randomImageCategory || 'nature'
+      
+      const filters: BackgroundImageFilters = {
+        category: currentCategory !== 'all' ? currentCategory : undefined
+      }
+      
+      // 获取随机图片
+      const image = await backgroundImageManager.getRandomImageFromSource('random', filters)
+      
+      // 验证图片
+      if (!backgroundImageManager.isValidBackgroundImage(image)) {
+        throw new Error('获取到的图片不适合作为背景')
+      }
+      
+      // 预加载图片
+      const preloadSuccess = await backgroundImageManager.preloadImage(image)
+      if (!preloadSuccess) {
+        throw new Error('图片预加载失败')
+      }
+      
+      // 设置为背景
+      const imageUrl = backgroundImageManager.getImageUrl(image, 'large')
+      await setOnlineImageBackground(image, imageUrl)
+      
+      console.log('背景图片刷新成功:', image.id)
+    } catch (error) {
+      console.error('刷新背景图片失败:', error)
+      // 可以在这里显示错误提示给用户
+    }
+  }, [settings.background.type, settings.background.randomImageCategory, setOnlineImageBackground])
 
   // 书签弹窗处理函数
   const handleAddBookmark = useCallback(() => {
@@ -541,15 +580,17 @@ function NewTabApp() {
             : `${settings.bookmarks.categories.sidebarWidth + 24}px` 
         }}
       >
-        {/* 刷新背景按钮 */}
-        <Button
-          onClick={handleRefreshBackground}
-          size="sm"
-          className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
-          title="刷新背景图片"
-        >
-          <RefreshCw className="h-5 w-5" />
-        </Button>
+        {/* 刷新背景按钮 - 只在随机图片模式下显示 */}
+        {settings.background.type === 'random' && (
+          <Button
+            onClick={handleRefreshBackground}
+            size="sm"
+            className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
+            title="刷新背景图片"
+          >
+            <RefreshCw className="h-5 w-5" />
+          </Button>
+        )}
 
         {/* 添加书签按钮 */}
         <Button

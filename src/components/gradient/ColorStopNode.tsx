@@ -43,10 +43,10 @@ export function ColorStopNode({
   return (
     <div 
       className={`
-        relative flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all
+        relative flex items-center gap-2 p-2 rounded border cursor-pointer transition-all
         ${isSelected 
-          ? 'border-blue-500 bg-blue-50 shadow-md' 
-          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+          ? 'border-blue-500 bg-blue-50' 
+          : 'border-gray-200 hover:border-gray-300'
         }
       `}
       onClick={() => onSelect(colorStop.id)}
@@ -54,7 +54,7 @@ export function ColorStopNode({
       {/* 颜色预览和选择 */}
       <div className="relative">
         <div 
-          className="w-8 h-8 rounded-lg border border-gray-300 shadow-inner"
+          className="w-6 h-6 rounded border border-gray-300"
           style={{ backgroundColor: colorStop.color }}
         />
         <input
@@ -67,7 +67,7 @@ export function ColorStopNode({
       </div>
 
       {/* 颜色信息 */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -78,11 +78,11 @@ export function ColorStopNode({
                 onColorChange(colorStop.id, color);
               }
             }}
-            className="text-sm font-mono bg-transparent border-none outline-none w-20"
+            className="text-xs font-mono bg-transparent border-none outline-none w-16"
             placeholder="#FFFFFF"
           />
-          <span className="text-xs text-gray-500">
-            {colorStop.position.toFixed(1)}%
+          <span className="text-xs text-gray-500 min-w-0">
+            {colorStop.position.toFixed(0)}%
           </span>
         </div>
         
@@ -91,10 +91,10 @@ export function ColorStopNode({
           type="range"
           min="0"
           max="100"
-          step="0.1"
+          step="1"
           value={colorStop.position}
           onChange={handlePositionChange}
-          className="w-full mt-1 h-1 slider"
+          className="w-full h-1 slider"
         />
       </div>
 
@@ -107,7 +107,7 @@ export function ColorStopNode({
             e.stopPropagation();
             onRemove(colorStop.id);
           }}
-          className="p-1 h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+          className="p-0 h-5 w-5 text-red-500 hover:text-red-700 hover:bg-red-50"
         >
           <X className="w-3 h-3" />
         </Button>

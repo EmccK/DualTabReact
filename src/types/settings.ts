@@ -54,7 +54,7 @@ export interface BookmarkSettings {
 }
 
 export interface BackgroundSettings {
-  type: 'gradient' | 'image' | 'unsplash';
+  type: 'gradient' | 'random';
   
   // 渐变设置
   gradient: {
@@ -70,15 +70,8 @@ export interface BackgroundSettings {
     size?: 'closest-side' | 'closest-corner' | 'farthest-side' | 'farthest-corner'; // 径向渐变大小
   };
   
-  // 图片设置
-  image: {
-    url: string;
-    name: string;
-    size: number;
-    type: string;
-  } | null;
   
-  // Unsplash图片设置
+  // 随机图片设置
   unsplashPhoto?: {
     id: string;
     url: string;
@@ -89,7 +82,11 @@ export interface BackgroundSettings {
     width: number;
     height: number;
     downloadLocation: string;
+    source?: string;
   };
+  
+  // 随机图片分类设置
+  randomImageCategory?: string;
   
   // 显示效果设置
   display: {
@@ -185,7 +182,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
       shape: 'ellipse',
       size: 'farthest-corner',
     },
-    image: null,
     display: {
       fillMode: 'cover',
       opacity: 100,

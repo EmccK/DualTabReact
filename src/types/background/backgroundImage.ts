@@ -34,7 +34,7 @@ export interface BackgroundImageUrls {
   blur?: string;
 }
 
-export type BackgroundImageSource = 'unsplash' | 'random' | 'local' | 'custom';
+export type BackgroundImageSource = 'random' | 'local' | 'custom';
 
 export interface BackgroundImageMetadata {
   id: string;
