@@ -367,16 +367,6 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
         ))}
       </div>
 
-      {/* 书签统计信息 */}
-      <div className="mt-6 text-center">
-        <div className="text-white/60 text-sm">
-          共 {sortedBookmarks.length} 个书签
-          {selectedCategoryId && categories.find(cat => cat.id === selectedCategoryId) && 
-           ` (${categories.find(cat => cat.id === selectedCategoryId)?.name})`}
-          {networkMode === 'internal' && ' - 内网模式'}
-          {networkMode === 'external' && ' - 外网模式'}
-        </div>
-      </div>
     </div>
   )
 }
