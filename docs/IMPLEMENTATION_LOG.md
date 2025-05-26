@@ -63,7 +63,7 @@ src/components/settings/sections/background/
 - **限制监控**：API使用率警告、重置时间显示、配额管理
 
 **UnsplashSettingsService服务**：
-- **密钥验证逻辑**：调用Unsplash /me端点验证密钥有效性
+- **密钥验证逻辑**：调用Unsplash /photos/random端点验证密钥有效性
 - **使用统计追踪**：自动记录和统计API调用次数
 - **限制检查机制**：实时检查是否超出API使用限制
 - **安全存储管理**：使用Chrome Storage API安全存储敏感数据

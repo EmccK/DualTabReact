@@ -9,7 +9,7 @@ import type {
   CacheStats, 
   CacheOperationResult 
 } from '@/types/background/cacheSettings';
-import { CacheManagerService } from '@/services/background';
+import { CacheManagerService } from '@/services/background/cacheManagerService';
 
 export function useCacheManager() {
   const [settings, setSettings] = useState<CacheSettings | null>(null);

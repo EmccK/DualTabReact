@@ -83,6 +83,7 @@ export class UnsplashSettingsService {
 
   /**
    * 验证API密钥
+   * 使用/photos/random接口进行验证
    */
   static async validateApiKey(apiKey: string): Promise<{
     isValid: boolean;
@@ -90,7 +91,7 @@ export class UnsplashSettingsService {
     userInfo?: any;
   }> {
     try {
-      const response = await fetch('https://api.unsplash.com/me', {
+      const response = await fetch('https://api.unsplash.com/photos/random?count=1', {
         headers: {
           'Authorization': `Client-ID ${apiKey}`,
           'Accept-Version': 'v1'
@@ -98,14 +99,14 @@ export class UnsplashSettingsService {
       });
 
       if (response.ok) {
-        const userInfo = await response.json();
+        const photoData = await response.json();
         
         // 更新验证状态
         await this.updateApiValidation(apiKey, true);
         
         return {
           isValid: true,
-          userInfo
+          userInfo: { photoTest: true } // 简化的验证结果
         };
       } else {
         const errorData = await response.json();

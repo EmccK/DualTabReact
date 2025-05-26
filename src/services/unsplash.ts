@@ -308,6 +308,7 @@ export class UnsplashService {
 
   /**
    * 检查API密钥是否有效
+   * 使用/photos/random接口进行验证
    */
   async validateApiKey(apiKey?: string): Promise<boolean> {
     const originalKey = this.config.apiKey;
@@ -317,8 +318,8 @@ export class UnsplashService {
         this.config.apiKey = apiKey;
       }
       
-      // 尝试获取一张随机图片来验证API密钥
-      await this.getRandomPhotos({ count: 1 });
+      // 直接使用/photos/random接口验证API密钥
+      await this.request<UnsplashPhoto>('/photos/random', { count: 1 });
       return true;
     } catch (error) {
       return false;

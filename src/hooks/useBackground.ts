@@ -7,7 +7,7 @@ import { useMemo } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import { generateGradientCSS } from '@/utils/gradientUtils';
 import type { BackgroundSettings } from '@/types/settings';
-import type { UnsplashPhoto } from '@/services/unsplash';
+import type { BackgroundImage } from '@/types/background';
 import type { Attribution } from '@/types/attribution';
 import { createUnsplashAttribution } from '@/utils/attribution';
 
@@ -163,24 +163,56 @@ export function useBackground() {
   };
 
   /**
-   * 设置Unsplash背景
+   * 设置在线图片背景（统一接口）
    */
-  const setUnsplashBackground = async (photo: UnsplashPhoto, cachedUrl: string) => {
-    const unsplashPhoto = {
-      id: photo.id,
-      url: photo.urls.regular,
+  const setOnlineImageBackground = async (image: BackgroundImage, cachedUrl: string) => {
+    const onlinePhoto = {
+      id: image.id,
+      url: image.url,
       cachedUrl,
-      photographer: photo.user.name,
-      photographerUrl: photo.user.links.html,
-      description: photo.alt_description || photo.description || '',
+      photographer: image.author?.name || '未知作者',
+      photographerUrl: image.author?.profileUrl || '',
+      description: image.description || '',
+      width: image.width,
+      height: image.height,
+      downloadLocation: '', // 在线图片可能没有下载位置
+      source: image.source
+    };
+
+    await updateBackground({
+      type: 'unsplash', // 保持类型兼容性，实际上是在线图片
+      unsplashPhoto: onlinePhoto
+    });
+  };
+
+  /**
+   * 设置Unsplash背景（保持向后兼容）
+   * @deprecated 建议使用 setOnlineImageBackground
+   */
+  const setUnsplashBackground = async (imageOrPhoto: BackgroundImage | any, cachedUrl: string) => {
+    // 检查是否是新的BackgroundImage格式
+    if ('source' in imageOrPhoto) {
+      return setOnlineImageBackground(imageOrPhoto as BackgroundImage, cachedUrl);
+    }
+    
+    // 处理旧的UnsplashPhoto格式
+    const photo = imageOrPhoto as any;
+    const onlinePhoto = {
+      id: photo.id || photo.udId?.toString(),
+      url: photo.urls?.regular || photo.url,
+      cachedUrl,
+      photographer: photo.user?.name || photo.udId?.toString() || '未知作者',
+      photographerUrl: photo.user?.links?.html || '',
+      description: photo.alt_description || photo.description || photo.keyword || '',
       width: photo.width,
       height: photo.height,
-      downloadLocation: photo.links.download_location
+      downloadLocation: photo.links?.download_location || '',
+      source: photo.source || 'random'
     };
 
     await updateBackground({
       type: 'unsplash',
-      unsplashPhoto
+      unsplashPhoto: onlinePhoto
     });
   };
 
@@ -271,7 +303,8 @@ export function useBackground() {
     updateBackground,
     setGradientBackground,
     setImageBackground,
-    setUnsplashBackground,
+    setOnlineImageBackground, // 新的统一接口
+    setUnsplashBackground, // 保持向后兼容
     updateDisplaySettings,
     resetBackground,
   };

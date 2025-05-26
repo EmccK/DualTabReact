@@ -10,7 +10,7 @@ import type {
   UnsplashPreferences,
   APIUsageStats 
 } from '@/types/background/unsplashSettings';
-import { UnsplashSettingsService } from '@/services/background';
+import { UnsplashSettingsService } from '@/services/background/unsplashSettingsService';
 
 export function useUnsplashSettings() {
   const [settings, setSettings] = useState<UnsplashSettings | null>(null);

@@ -9,7 +9,7 @@ import type {
   AutoSwitchState, 
   SwitchResult 
 } from '@/types/background/autoSwitchSettings';
-import { AutoSwitchService } from '@/services/background';
+import { AutoSwitchService } from '@/services/background/autoSwitchService';
 
 export function useAutoSwitch() {
   const [settings, setSettings] = useState<AutoSwitchSettings | null>(null);

@@ -1,12 +1,8 @@
 /**
- * 背景服务统一导出
+ * 背景图片服务导出
  */
 
-export * from './unsplashSettingsService';
-export * from './cacheManagerService';
-export * from './autoSwitchService';
-
-// 重新导出主要服务类
-export { UnsplashSettingsService } from './unsplashSettingsService';
-export { CacheManagerService } from './cacheManagerService';
-export { AutoSwitchService } from './autoSwitchService';
+export { BackgroundImageService } from './BackgroundImageService';
+export { RandomImageAdapter, randomImageAdapter } from './RandomImageAdapter';
+export { UnsplashAdapter, unsplashAdapter } from './UnsplashAdapter';
+export { BackgroundImageManager, backgroundImageManager } from './BackgroundImageManager';

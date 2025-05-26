@@ -1,6 +1,6 @@
 /**
  * 渐变选择器组件
- * 支持预设渐变选择
+ * 支持预设渐变选择和自定义渐变编辑
  */
 
 import React, { useState } from 'react';
@@ -13,7 +13,10 @@ import {
   generateGradientCSS,
   getGradientsByCategory 
 } from '@/utils/gradientUtils';
+import { CustomGradientEditor } from '@/components/gradient';
+import { createDefaultCustomGradient, generateCustomGradientCSS } from '@/utils/gradient';
 import type { BackgroundSettings } from '@/types/settings';
+import type { CustomGradient } from '@/types/gradient';
 
 interface GradientPickerProps {
   value: BackgroundSettings['gradient'];
@@ -30,6 +33,43 @@ export function GradientPicker({ value, onChange, className }: GradientPickerPro
 
   const handlePresetSelect = (preset: typeof GRADIENT_PRESETS[0]) => {
     onChange(preset.gradient);
+  };
+
+  // 将自定义渐变转换为背景设置格式
+  const convertCustomGradientToBackground = (customGradient: CustomGradient): BackgroundSettings['gradient'] => {
+    return {
+      type: customGradient.type,
+      direction: customGradient.direction,
+      colors: customGradient.colorStops.map(stop => ({
+        color: stop.color,
+        position: stop.position
+      }))
+    };
+  };
+
+  // 将背景设置格式转换为自定义渐变
+  const convertBackgroundToCustomGradient = (): CustomGradient => {
+    const now = Date.now();
+    return {
+      id: `custom-${now}`,
+      name: '自定义渐变',
+      type: value.type,
+      direction: value.direction,
+      radialShape: 'circle',
+      radialPosition: 'center',
+      colorStops: value.colors.map((color, index) => ({
+        id: `stop-${index}`,
+        color: color.color,
+        position: color.position
+      })),
+      createdAt: now,
+      updatedAt: now
+    };
+  };
+
+  const handleCustomGradientChange = (customGradient: CustomGradient) => {
+    const backgroundGradient = convertCustomGradientToBackground(customGradient);
+    onChange(backgroundGradient);
   };
 
   return (
@@ -126,14 +166,11 @@ export function GradientPicker({ value, onChange, className }: GradientPickerPro
       ) : (
         // 自定义渐变编辑器
         <div className="space-y-4">
-          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-            <p className="text-sm text-gray-600 text-center">
-              🚧 自定义渐变编辑器即将推出
-            </p>
-            <p className="text-xs text-gray-500 text-center mt-1">
-              目前可以使用预设渐变，后续版本将支持完全自定义
-            </p>
-          </div>
+          <CustomGradientEditor
+            initialGradient={convertBackgroundToCustomGradient()}
+            onChange={handleCustomGradientChange}
+            className="bg-gray-50 rounded-lg p-3"
+          />
         </div>
       )}
 

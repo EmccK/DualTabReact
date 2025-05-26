@@ -49,7 +49,11 @@ const LANGUAGE_OPTIONS = [
   { value: 'zh', label: '中文' }
 ];
 
-export function UnsplashPreferences() {
+interface UnsplashPreferencesProps {
+  showCategoryOnly?: boolean;
+}
+
+export function UnsplashPreferences({ showCategoryOnly = false }: UnsplashPreferencesProps = {}) {
   const {
     settings,
     loading,
@@ -95,6 +99,29 @@ export function UnsplashPreferences() {
       <div className="flex items-center justify-center py-8">
         <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
         <span className="ml-2 text-gray-600">加载设置中...</span>
+      </div>
+    );
+  }
+
+  // 如果只显示分类选择，返回精简版本
+  if (showCategoryOnly) {
+    return (
+      <div className="space-y-3">
+        <SettingItem
+          label="默认分类"
+          description="选择您喜欢的Unsplash图片分类"
+        >
+          <SelectOption
+            value={preferences?.defaultCategory || 'nature'}
+            onValueChange={handleCategoryChange}
+            options={CATEGORY_OPTIONS}
+            className="w-40"
+          />
+        </SettingItem>
+        
+        <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
+          💡 提示：在高级设置中可配置更多 Unsplash 选项
+        </div>
       </div>
     );
   }

@@ -21,11 +21,9 @@ import {
 } from 'lucide-react';
 
 import { SettingItem } from '../components/SettingItem';
-import { SliderControl } from '../components/SliderControl';
-import { SelectOption as SelectControl } from '../components/SelectOption';
 import { GradientPicker } from '@/components/background/GradientPicker';
 import { ImageUploader } from '@/components/background/ImageUploader';
-import { UnsplashGallery } from '@/components/background/UnsplashGallery';
+import { UniversalImageGallery } from '@/components/background/UniversalImageGallery';
 import { 
   UnsplashAPISettings,
   UnsplashPreferences,
@@ -33,14 +31,14 @@ import {
   AutoSwitchSettings
 } from './background';
 import { useBackground } from '@/hooks/useBackground';
-import type { UnsplashPhoto } from '@/services/unsplash';
+import type { BackgroundImage } from '@/types/background';
 
 export function BackgroundSettings() {
   const { 
     backgroundSettings, 
     setGradientBackground, 
     setImageBackground, 
-    setUnsplashBackground,
+    setOnlineImageBackground,
     updateDisplaySettings 
   } = useBackground();
   
@@ -65,18 +63,22 @@ export function BackgroundSettings() {
     }
   };
 
-  const handleUnsplashSelect = async (photo: UnsplashPhoto, imageUrl: string) => {
+  const handleRandomImageSelect = async (image: BackgroundImage, imageUrl: string) => {
     try {
-      await setUnsplashBackground(photo, imageUrl);
-      console.log('Unsplash背景设置成功:', photo.user.name);
+      await setOnlineImageBackground(image, imageUrl);
+      console.log('随机图片背景设置成功:', image.id);
     } catch (error) {
-      console.error('Failed to set Unsplash background:', error);
-      alert('设置Unsplash背景失败，请重试');
+      console.error('Failed to set random image background:', error);
+      alert('设置随机图片背景失败，请重试');
     }
   };
 
   const handleTabChange = (tab: typeof activeTab) => {
     setActiveTab(tab);
+    // 切换到非Unsplash标签时自动关闭高级设置
+    if (tab !== 'unsplash') {
+      setShowAdvanced(false);
+    }
   };
 
   return (
@@ -109,7 +111,7 @@ export function BackgroundSettings() {
               </TabsTrigger>
               <TabsTrigger value="unsplash" className="flex items-center gap-1 text-xs px-2">
                 <Globe className="w-3 h-3" />
-                Unsplash
+                随机图片
                 {backgroundSettings.type === 'unsplash' && (
                   <Badge variant="secondary" className="ml-1 text-xs scale-75">●</Badge>
                 )}
@@ -136,109 +138,49 @@ export function BackgroundSettings() {
               </div>
             </TabsContent>
 
-            {/* Unsplash设置 */}
+            {/* 随机图片设置 */}
             <TabsContent value="unsplash" className="mt-3">
-              <div className="bg-gray-50 rounded-lg p-1">
-                <div className="h-56">
-                  <UnsplashGallery
-                    onSelectImage={handleUnsplashSelect}
-                    selectedImageId={backgroundSettings.type === 'unsplash' ? backgroundSettings.unsplashPhoto?.id : undefined}
-                    className="h-full"
-                  />
-                </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <UniversalImageGallery
+                  onSelect={handleRandomImageSelect}
+                  initialSource="random"
+                  initialCategory="nature"
+                  initialTheme="all"
+                  maxHistory={8}
+                />
               </div>
             </TabsContent>
           </Tabs>
 
-          {/* 显示效果设置 - 更紧凑的网格 */}
-          <div className="pt-2 border-t">
-            <h4 className="text-sm font-medium text-gray-800 mb-2">显示效果</h4>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {/* 填充模式 */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-600">填充模式</span>
-                <SelectControl
-                  value={backgroundSettings.display.fillMode}
-                  onValueChange={(fillMode) => updateDisplaySettings({ fillMode })}
-                  options={[
-                    { value: 'cover', label: 'Cover' },
-                    { value: 'contain', label: 'Contain' },
-                    { value: 'stretch', label: 'Stretch' },
-                    { value: 'center', label: 'Center' }
-                  ]}
-                  className="w-20 h-7 text-xs"
-                />
-              </div>
 
-              {/* 不透明度 */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-600">不透明度</span>
-                <SliderControl
-                  value={backgroundSettings.display.opacity}
-                  onChange={(opacity) => updateDisplaySettings({ opacity })}
-                  min={10}
-                  max={100}
-                  step={5}
-                  suffix="%"
-                  className="w-20 h-7"
-                />
-              </div>
-
-              {/* 模糊程度 */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-600">模糊程度</span>
-                <SliderControl
-                  value={backgroundSettings.display.blur}
-                  onChange={(blur) => updateDisplaySettings({ blur })}
-                  min={0}
-                  max={20}
-                  step={1}
-                  suffix="px"
-                  className="w-20 h-7"
-                />
-              </div>
-
-              {/* 亮度调节 */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-600">亮度调节</span>
-                <SliderControl
-                  value={backgroundSettings.display.brightness}
-                  onChange={(brightness) => updateDisplaySettings({ brightness })}
-                  min={50}
-                  max={150}
-                  step={5}
-                  suffix="%"
-                  className="w-20 h-7"
-                />
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
-      {/* 高级设置切换 */}
-      <Card>
-        <CardContent className="p-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-between text-sm h-8"
-          >
-            <div className="flex items-center gap-2">
-              <Settings className="w-4 h-4 text-indigo-600" />
-              <span>高级背景设置</span>
-            </div>
-            {showAdvanced ? 
-              <ChevronUp className="w-4 h-4" /> : 
-              <ChevronDown className="w-4 h-4" />
-            }
-          </Button>
-        </CardContent>
-      </Card>
+      {/* 高级设置切换 - 只在Unsplash相关时显示 */}
+      {(activeTab === 'unsplash' || backgroundSettings.type === 'unsplash') && (
+        <Card>
+          <CardContent className="p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full flex items-center justify-between text-sm h-8"
+            >
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-indigo-600" />
+                <span>随机图片高级设置</span>
+              </div>
+              {showAdvanced ? 
+                <ChevronUp className="w-4 h-4" /> : 
+                <ChevronDown className="w-4 h-4" />
+              }
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* 高级设置内容 */}
-      {showAdvanced && (
+      {/* 高级设置内容 - 只在Unsplash相关时显示 */}
+      {showAdvanced && (activeTab === 'unsplash' || backgroundSettings.type === 'unsplash') && (
         <div className="space-y-3">
           <Card>
             <CardContent className="p-3">
@@ -263,7 +205,7 @@ export function BackgroundSettings() {
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="mt-3">
+                <div className="mt-3 max-h-60 overflow-y-auto">
                   <TabsContent value="api" className="mt-0">
                     <UnsplashAPISettings />
                   </TabsContent>
@@ -294,7 +236,7 @@ export function BackgroundSettings() {
                   <ul className="text-xs space-y-0.5 text-blue-700">
                     <li>• <strong>渐变色</strong>：现代化视觉效果，快速加载</li>
                     <li>• <strong>本地图片</strong>：个性化定制，建议高分辨率图片</li>
-                    <li>• <strong>Unsplash</strong>：专业摄影作品，配置API密钥获得更好体验</li>
+                    <li>• <strong>随机图片</strong>：高质量壁纸，支持分类和主题筛选</li>
                   </ul>
                 </div>
               </div>
