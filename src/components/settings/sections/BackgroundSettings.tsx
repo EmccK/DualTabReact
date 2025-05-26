@@ -5,11 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { 
   Palette, 
-  Image, 
   Globe
 } from 'lucide-react';
 
@@ -17,25 +15,27 @@ import { GradientPicker } from '@/components/background/GradientPicker';
 import { UniversalImageGallery } from '@/components/background/UniversalImageGallery';
 import { useBackground } from '@/hooks/useBackground';
 import type { BackgroundImage } from '@/types/background';
+import type { BackgroundSettings } from '@/types/settings';
 
 export function BackgroundSettings() {
   const { 
     backgroundSettings, 
     setGradientBackground, 
     setOnlineImageBackground,
+    updateBackground,
     updateDisplaySettings 
   } = useBackground();
   
-  // 监听背景类型变化，同步标签选择
+  // 监听背景类型变化，同步选项选择
   useEffect(() => {
     if (backgroundSettings.type === 'random') {
-      setActiveTab('random');
+      setSelectedType('random');
     } else if (backgroundSettings.type === 'gradient') {
-      setActiveTab('gradient');
+      setSelectedType('gradient');
     }
   }, [backgroundSettings.type]);
   
-  const [activeTab, setActiveTab] = useState<'gradient' | 'random'>(
+  const [selectedType, setSelectedType] = useState<'gradient' | 'random'>(
     backgroundSettings.type === 'random' ? 'random' : 'gradient'
   );
 
@@ -47,8 +47,8 @@ export function BackgroundSettings() {
   const handleRandomImageSelect = async (image: BackgroundImage, imageUrl: string) => {
     try {
       await setOnlineImageBackground(image, imageUrl);
-      // 自动切换到随机图片标签
-      setActiveTab('random');
+      // 自动切换到随机图片类型
+      setSelectedType('random');
       console.log('随机图片背景设置成功:', image.id);
     } catch (error) {
       console.error('Failed to set random image background:', error);
@@ -56,12 +56,21 @@ export function BackgroundSettings() {
     }
   };
 
-  const handleTabChange = (tab: typeof activeTab) => {
-    setActiveTab(tab);
-    // 当用户手动切换标签时，如果切换到渐变色，可以考虑自动应用默认渐变
-    if (tab === 'gradient' && backgroundSettings.type !== 'gradient') {
-      // 如果需要，可以在这里自动应用默认渐变
-      // setGradientBackground(backgroundSettings.gradient);
+  const handleTypeChange = async (type: 'gradient' | 'random') => {
+    setSelectedType(type);
+    
+    if (type === 'gradient') {
+      // 当用户选择渐变色时，自动应用当前渐变设置
+      await setGradientBackground(backgroundSettings.gradient);
+    } else if (type === 'random') {
+      // 当用户选择随机图片时，如果已经有随机图片，则直接应用
+      if (backgroundSettings.unsplashPhoto?.cachedUrl) {
+        // 如果已经有随机图片，直接切换类型
+        await updateBackground({ type: 'random' });
+      } else {
+        // 如果没有随机图片，也要先切换类型，让刷新按钮显示
+        await updateBackground({ type: 'random' });
+      }
     }
   };
 
@@ -76,37 +85,51 @@ export function BackgroundSettings() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* 背景类型标签 */}
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-8">
-              <TabsTrigger value="gradient" className="flex items-center gap-1 text-xs px-2">
+          {/* 背景类型选择 */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">背景类型</label>
+            <div className="flex gap-2">
+              <Button
+                variant={selectedType === 'gradient' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleTypeChange('gradient')}
+                className="flex items-center gap-2 h-8"
+              >
                 <Palette className="w-3 h-3" />
                 渐变色
-                {backgroundSettings.type === 'gradient' && (
-                  <Badge variant="secondary" className="ml-1 text-xs scale-75">●</Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="random" className="flex items-center gap-1 text-xs px-2">
+              </Button>
+              <Button
+                variant={selectedType === 'random' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleTypeChange('random')}
+                className="flex items-center gap-2 h-8"
+              >
                 <Globe className="w-3 h-3" />
                 随机图片
-                {backgroundSettings.type === 'random' && (
-                  <Badge variant="secondary" className="ml-1 text-xs scale-75">●</Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
+              </Button>
+            </div>
+          </div>
 
-            {/* 渐变背景设置 */}
-            <TabsContent value="gradient" className="mt-3">
-              <div className="bg-gray-50 rounded-lg p-2">
-                <GradientPicker
-                  value={backgroundSettings.gradient}
-                  onChange={handleGradientChange}
-                />
-              </div>
-            </TabsContent>
+          {/* 渐变背景设置 */}
+          {selectedType === 'gradient' && (
+            <div className="bg-gray-50 rounded-lg p-2">
+              <GradientPicker
+                value={backgroundSettings.gradient}
+                onChange={handleGradientChange}
+              />
+            </div>
+          )}
 
-            {/* 随机图片设置 */}
-            <TabsContent value="random" className="mt-3">
+          {/* 随机图片设置 */}
+          {selectedType === 'random' && (
+            <div className="space-y-2">
+              {!backgroundSettings.unsplashPhoto?.cachedUrl && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                  <p className="text-xs text-blue-800">
+                    已选择随机图片模式，可以点击右下角的刷新按钮获取随机背景图片，或在下方设置分类。
+                  </p>
+                </div>
+              )}
               <div className="bg-gray-50 rounded-lg p-3">
                 <UniversalImageGallery
                   onSelect={handleRandomImageSelect}
@@ -116,8 +139,8 @@ export function BackgroundSettings() {
                   maxHistory={8}
                 />
               </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
 
 
         </CardContent>
