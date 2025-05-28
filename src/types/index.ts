@@ -93,3 +93,6 @@ export interface OperationResult<T = any> {
   data?: T;
   error?: string;
 }
+
+// WebDAV相关类型
+export * from './webdav';
