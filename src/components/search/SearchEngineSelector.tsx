@@ -48,7 +48,7 @@ export function SearchEngineSelector({
   };
 
   return (
-    <div className="relative overflow-visible" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef}>
       <button
         ref={buttonRef}
         onClick={handleToggleDropdown}

@@ -504,7 +504,7 @@ function NewTabApp() {
           </header>
 
           {/* 中央搜索区域 */}
-          <div className="flex-1 flex flex-col justify-center items-center px-4">
+          <div className="flex-1 flex flex-col justify-center items-center px-4 relative z-40">
             <div className="mb-16 w-full">
               {/* 现代化搜索框 */}
               <SearchBox
@@ -514,7 +514,7 @@ function NewTabApp() {
             </div>
 
             {/* 书签网格区域 */}
-            <div className="w-full max-w-5xl">
+            <div className="w-full max-w-5xl relative z-10">
               <BookmarkGrid
                 bookmarks={bookmarks}
                 categories={categories}

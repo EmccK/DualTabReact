@@ -49,7 +49,7 @@ export function SearchBox({ preferences, isGlassEffect = true, className = '' }:
   };
 
   return (
-    <div className={`w-full max-w-3xl mx-auto relative ${className}`}>
+    <div className={`w-full max-w-3xl mx-auto relative z-50 ${className}`}>
       <div 
         className={`${
           isGlassEffect ? 'bg-white/90 backdrop-blur-md' : 'bg-white/95'
