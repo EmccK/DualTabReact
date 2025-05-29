@@ -3,6 +3,6 @@
  */
 
 export { WebDAVSettings } from './webdav-settings';
-export { ConnectionTest } from './connection-test';
+export { ConnectionStatus } from './connection-status';
 export { SyncStatus } from './sync-status';
 export { WebDAVPage } from './webdav-page';

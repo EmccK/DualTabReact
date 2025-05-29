@@ -1,5 +1,5 @@
 /**
- * WebDAV连接测试组件
+ * WebDAV连接状态组件
  */
 
 import React, { useState } from 'react';
@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import type { WebDAVConfig, WebDAVConnectionStatus } from '../../../types/webdav';
 
-interface ConnectionTestProps {
+interface ConnectionStatusProps {
   config: WebDAVConfig;
   onTest: (config: WebDAVConfig) => Promise<{
     success: boolean;
@@ -33,7 +33,7 @@ interface ConnectionTestProps {
   }>;
 }
 
-export function ConnectionTest({ config, onTest }: ConnectionTestProps) {
+export function ConnectionStatus({ config, onTest }: ConnectionStatusProps) {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{
     success: boolean;
@@ -68,7 +68,7 @@ export function ConnectionTest({ config, onTest }: ConnectionTestProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wifi className="h-5 w-5" />
-          连接测试
+          连接状态
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -100,14 +100,14 @@ export function ConnectionTest({ config, onTest }: ConnectionTestProps) {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  连接测试成功！WebDAV服务器响应正常。
+                  连接状态成功！WebDAV服务器响应正常。
                 </AlertDescription>
               </Alert>
             ) : (
               <Alert className="border-red-200 bg-red-50">
                 <XCircle className="h-4 w-4 text-red-600" />
                 <AlertDescription className="text-red-800">
-                  连接测试失败：{testResult.error}
+                  连接状态失败：{testResult.error}
                 </AlertDescription>
               </Alert>
             )}

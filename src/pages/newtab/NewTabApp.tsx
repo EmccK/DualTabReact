@@ -10,9 +10,8 @@ import { AttributionOverlay } from '@/components/background'
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
 import { backgroundImageManager } from '@/services/background'
 import type { BackgroundImageFilters } from '@/types/background'
-import { Plus, RefreshCw, Settings, Cloud, Droplets, TestTube, Edit, Trash2 } from 'lucide-react'
+import { Plus, RefreshCw, Settings, Cloud, Droplets, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
-import { createTestBookmarks } from '@/utils/test-data'
 import { safeOpenUrl } from '@/utils/url-utils'
 import './newtab.css'
 
@@ -270,16 +269,6 @@ function NewTabApp() {
     }
   }, [reorderBookmarks])
 
-  // 开发测试：创建测试书签数据
-  const handleCreateTestBookmarks = useCallback(async () => {
-    try {
-      await createTestBookmarks()
-      reloadBookmarks() // 重新加载书签数据
-      console.log('测试书签数据创建成功')
-    } catch (error) {
-      console.error('创建测试书签数据失败:', error)
-    }
-  }, [reloadBookmarks])
 
   // 分类选择处理 - 确保始终有分类被选中
   const handleCategorySelect = useCallback((categoryId: string | null) => {
@@ -481,16 +470,6 @@ function NewTabApp() {
                 <Settings className="h-4 w-4" />
               </Button>
 
-              {/* 开发测试按钮 */}
-              <Button
-                onClick={handleCreateTestBookmarks}
-                size="sm"
-                variant="ghost"
-                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
-                title="创建测试书签数据"
-              >
-                <TestTube className="h-4 w-4" />
-              </Button>
 
               {/* 毛玻璃效果切换 */}
               <Button
