@@ -1,5 +1,8 @@
 import React, { useRef, useEffect } from 'react';
+import { SearchEngineSelector } from './SearchEngineSelector';
+import { useSearchEngine } from '@/hooks/useSearchEngine';
 import type { AppPreferences } from '@/types/settings';
+import type { SearchEngineId } from '@/types/search';
 
 interface SearchBoxProps {
   preferences: AppPreferences;
@@ -9,34 +12,11 @@ interface SearchBoxProps {
 
 /**
  * 搜索框组件
- * 支持多种搜索引擎和自动聚焦设置
+ * 支持多种搜索引擎切换和自动聚焦设置
  */
 export function SearchBox({ preferences, isGlassEffect = true, className = '' }: SearchBoxProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // 搜索引擎配置
-  const searchEngines = {
-    google: {
-      name: 'Google',
-      logo: './images/google-logo.png',
-      url: 'https://www.google.com/search',
-      param: 'q',
-    },
-    baidu: {
-      name: '百度',
-      logo: './images/baidu-logo.svg',
-      url: 'https://www.baidu.com/s',
-      param: 'wd',
-    },
-    bing: {
-      name: 'Bing',
-      logo: './images/bing-logo.svg',
-      url: 'https://www.bing.com/search',
-      param: 'q',
-    },
-  };
-
-  const currentEngine = searchEngines[preferences.searchEngine];
+  const { currentEngine, switchSearchEngine, performSearch } = useSearchEngine();
 
   // 自动聚焦功能
   useEffect(() => {
@@ -49,17 +29,14 @@ export function SearchBox({ preferences, isGlassEffect = true, className = '' }:
     }
   }, [preferences.autoFocusSearch]);
 
+  // 处理搜索引擎切换
+  const handleEngineChange = (engineId: SearchEngineId) => {
+    switchSearchEngine(engineId);
+  };
+
   // 处理搜索
   const handleSearch = (query: string) => {
-    if (query.trim()) {
-      const searchUrl = `${currentEngine.url}?${currentEngine.param}=${encodeURIComponent(query)}`;
-      
-      if (preferences.openInNewTab) {
-        window.open(searchUrl, '_blank');
-      } else {
-        window.location.href = searchUrl;
-      }
-    }
+    performSearch(query);
   };
 
   // 处理键盘事件
@@ -76,27 +53,18 @@ export function SearchBox({ preferences, isGlassEffect = true, className = '' }:
       <div 
         className={`${
           isGlassEffect ? 'bg-white/90 backdrop-blur-md' : 'bg-white/95'
-        } rounded-full shadow-lg border border-white/30 p-5 flex items-center transition-all duration-300 hover:shadow-xl hover:bg-white/95`}
+        } rounded-full shadow-lg border border-white/30 flex items-center transition-all duration-300 hover:shadow-xl hover:bg-white/95`}
       >
-        <img
-          src={currentEngine.logo}
-          alt={currentEngine.name}
-          className="w-8 h-8 mr-4"
-          onError={(e) => {
-            // 如果图标加载失败，使用文字替代
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            const textSpan = document.createElement('span');
-            textSpan.textContent = currentEngine.name;
-            textSpan.className = 'text-sm font-medium text-gray-600 mr-4';
-            target.parentNode?.insertBefore(textSpan, target);
-          }}
+        <SearchEngineSelector
+          currentEngine={currentEngine}
+          onEngineChange={handleEngineChange}
+          isGlassEffect={isGlassEffect}
         />
         <input
           ref={inputRef}
           type="text"
-          placeholder={`在${currentEngine.name}中搜索`}
-          className="flex-1 bg-transparent outline-none text-xl text-gray-700 placeholder-gray-500 font-medium"
+          placeholder={currentEngine.placeholder}
+          className="flex-1 bg-transparent outline-none text-xl text-gray-700 placeholder-gray-500 font-medium pl-2 pr-5 py-4"
           onKeyDown={handleKeyDown}
         />
       </div>

@@ -94,5 +94,8 @@ export interface OperationResult<T = any> {
   error?: string;
 }
 
+// 搜索相关类型
+export * from './search';
+
 // WebDAV相关类型
 export * from './webdav';
