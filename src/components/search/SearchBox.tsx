@@ -49,11 +49,11 @@ export function SearchBox({ preferences, isGlassEffect = true, className = '' }:
   };
 
   return (
-    <div className={`w-full max-w-3xl mx-auto ${className}`}>
+    <div className={`w-full max-w-3xl mx-auto relative ${className}`}>
       <div 
         className={`${
           isGlassEffect ? 'bg-white/90 backdrop-blur-md' : 'bg-white/95'
-        } rounded-full shadow-lg border border-white/30 flex items-center transition-all duration-300 hover:shadow-xl hover:bg-white/95`}
+        } rounded-full shadow-lg border border-white/30 flex items-center transition-all duration-300 hover:shadow-xl hover:bg-white/95 relative overflow-visible`}
       >
         <SearchEngineSelector
           currentEngine={currentEngine}
@@ -64,7 +64,7 @@ export function SearchBox({ preferences, isGlassEffect = true, className = '' }:
           ref={inputRef}
           type="text"
           placeholder={currentEngine.placeholder}
-          className="flex-1 bg-transparent outline-none text-xl text-gray-700 placeholder-gray-500 font-medium pl-2 pr-5 py-4"
+          className="flex-1 bg-transparent outline-none text-xl text-gray-700 placeholder-gray-500 font-medium pl-0 pr-4 py-4"
           onKeyDown={handleKeyDown}
         />
       </div>

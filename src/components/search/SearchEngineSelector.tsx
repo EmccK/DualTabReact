@@ -48,11 +48,11 @@ export function SearchEngineSelector({
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative overflow-visible" ref={dropdownRef}>
       <button
         ref={buttonRef}
         onClick={handleToggleDropdown}
-        className="group flex items-center space-x-1 pl-4 pr-2 py-4 rounded-l-full hover:bg-black/5 transition-colors -mr-2"
+        className="group flex items-center pl-4 py-4 rounded-l-full hover:bg-black/5 transition-colors"
         title="切换搜索引擎"
       >
         <SearchEngineIcon 
@@ -60,7 +60,7 @@ export function SearchEngineSelector({
           size="md"
         />
         <ChevronDown 
-          className={`w-4 h-4 text-gray-500 transition-all duration-200 ${
+          className={`w-4 h-4 text-gray-500 transition-all duration-200 ml-0 ${
             isOpen ? 'rotate-180 opacity-100' : 'opacity-0 group-hover:opacity-100'
           }`} 
         />
@@ -68,7 +68,7 @@ export function SearchEngineSelector({
 
       {isOpen && (
         <div 
-          className={`absolute top-full left-0 mt-2 py-2 min-w-36 rounded-lg shadow-lg border z-50 ${
+          className={`absolute top-full left-0 mt-2 py-2 min-w-36 rounded-lg shadow-lg border z-[9999] ${
             isGlassEffect 
               ? 'bg-white/95 backdrop-blur-md border-white/30' 
               : 'bg-white border-gray-200'
