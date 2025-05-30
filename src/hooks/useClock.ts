@@ -16,25 +16,20 @@ export function useClock(preferences?: AppPreferences) {
     return () => clearInterval(timer)
   }, [])
 
-  // 格式化时间显示
+  // 格式化时间显示 - 始终显示秒数
   const formatTime = (time: Date) => {
     const options: Intl.DateTimeFormatOptions = {
       hour12: preferences?.timeFormat === '12h',
       hour: '2-digit',
       minute: '2-digit',
-    }
-
-    // 根据设置决定是否显示秒数
-    if (preferences?.showSeconds) {
-      options.second = '2-digit'
+      second: '2-digit', // 始终显示秒数
     }
 
     return time.toLocaleTimeString('zh-CN', options)
   }
 
-  // 格式化日期显示
+  // 格式化日期显示 - 始终使用中文格式
   const formatDate = (time: Date) => {
-    const locale = preferences?.dateFormat || 'zh-CN'
     const options: Intl.DateTimeFormatOptions = {
       year: 'numeric',
       month: 'long',
@@ -42,7 +37,7 @@ export function useClock(preferences?: AppPreferences) {
       weekday: 'long'
     }
 
-    return time.toLocaleDateString(locale, options)
+    return time.toLocaleDateString('zh-CN', options)
   }
 
   return {

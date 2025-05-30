@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AppSettings, SettingsContextType } from '@/types/settings';
 import { DEFAULT_SETTINGS } from '@/types/settings';
 import { chromeStorageGet, chromeStorageSet } from '@/utils/storage';
+import { migrateSettings, needsMigration, createMigrationReport } from '@/utils/settings-migration';
 
 const SETTINGS_KEY = 'app_settings';
 
@@ -21,9 +22,33 @@ export function useSettings(): SettingsContextType {
       const result = await chromeStorageGet<AppSettings>(SETTINGS_KEY);
       
       if (result.success && result.data?.[SETTINGS_KEY]) {
-        // 合并默认设置和保存的设置，确保新增的设置项有默认值
-        const mergedSettings = mergeWithDefaults(result.data[SETTINGS_KEY], DEFAULT_SETTINGS);
-        setSettings(mergedSettings);
+        const rawSettings = result.data[SETTINGS_KEY];
+        
+        // 检查是否需要迁移
+        if (needsMigration(rawSettings)) {
+          console.log('检测到旧版本设置，开始迁移...');
+          
+          // 执行迁移
+          const migratedSettings = migrateSettings(rawSettings);
+          
+          // 创建迁移报告
+          const report = createMigrationReport(rawSettings, migratedSettings);
+          console.log('设置迁移报告:', report);
+          
+          // 保存迁移后的设置
+          await chromeStorageSet({ [SETTINGS_KEY]: migratedSettings });
+          
+          setSettings(migratedSettings);
+          
+          // 可以在这里显示迁移通知给用户
+          if (report.removed.length > 0) {
+            console.log(`已移除 ${report.removed.length} 个过时的设置项，这些功能现在有更好的默认行为`);
+          }
+        } else {
+          // 不需要迁移，直接合并默认设置
+          const mergedSettings = mergeWithDefaults(rawSettings, DEFAULT_SETTINGS);
+          setSettings(mergedSettings);
+        }
       }
     } catch (error) {
       console.error('Failed to load settings:', error);

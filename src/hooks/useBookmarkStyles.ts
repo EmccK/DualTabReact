@@ -37,15 +37,11 @@ export function useBookmarkStyles(settings: BookmarkSettings) {
       aspectRatio: settings.grid.aspectRatio,
       minWidth: `${settings.grid.minCardWidth}px`,
       maxWidth: `${settings.grid.maxCardWidth}px`,
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease', // 始终启用过渡效果
     };
 
-    // 悬停效果
-    if (settings.behavior.enableHover) {
-      styles.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-    }
-
     return styles;
-  }, [settings.display, settings.grid, settings.behavior]);
+  }, [settings.display, settings.grid]);
 
   // 生成图标样式
   const iconStyles = useMemo(() => ({
@@ -76,19 +72,15 @@ export function useBookmarkStyles(settings: BookmarkSettings) {
   const cardClasses = useMemo(() => {
     const classes = ['bookmark-card'];
     
-    if (settings.behavior.enableHover) {
-      classes.push('hover-enabled');
-    }
-    
-    if (settings.behavior.clickAnimation) {
-      classes.push('click-animation');
-    }
+    // 始终启用悬停和点击动画
+    classes.push('hover-enabled');
+    classes.push('click-animation');
     
     return classes.join(' ');
-  }, [settings.behavior]);
+  }, []);
 
-  // 悬停缩放值
-  const hoverScale = settings.behavior.enableHover ? settings.behavior.hoverScale : 1;
+  // 悬停缩放值 - 悬停效果始终启用
+  const hoverScale = settings.behavior.hoverScale;
 
   return {
     gridStyles,
@@ -100,7 +92,7 @@ export function useBookmarkStyles(settings: BookmarkSettings) {
     showTitle: settings.display.showTitle,
     showFavicons: settings.display.showFavicons,
     showDescriptions: settings.display.showDescriptions,
-    enableDrag: settings.behavior.enableDrag,
+    enableDragSort: true, // 拖拽排序始终启用
     openIn: settings.behavior.openIn,
   };
 }
@@ -110,24 +102,18 @@ export function useBookmarkStyles(settings: BookmarkSettings) {
  */
 export function useCategoryLayoutStyles(settings: BookmarkSettings) {
   const layoutStyles = useMemo(() => {
-    if (settings.categories.layout === 'sidebar') {
-      return {
-        sidebarWidth: settings.categories.sidebarWidth,
-        mainWidth: `calc(100% - ${settings.categories.sidebarWidth + 24}px)`, // 24px为间距
-      };
-    }
+    // 分类布局始终为右侧边栏
     return {
-      sidebarWidth: 0,
-      mainWidth: '100%',
+      sidebarWidth: settings.categories.sidebarWidth,
+      mainWidth: `calc(100% - ${settings.categories.sidebarWidth + 24}px)`, // 24px为间距
     };
   }, [settings.categories]);
 
   return {
     ...layoutStyles,
-    layout: settings.categories.layout,
-    style: settings.categories.style,
-    showEmpty: settings.categories.showEmpty,
-    enableSort: settings.categories.enableSort,
-    tabPosition: settings.categories.tabPosition,
+    layout: 'sidebar', // 始终为右侧边栏
+    style: 'simple', // 始终为简单样式
+    showEmpty: true, // 始终显示空分类
+    enableSort: true, // 始终启用分类排序
   };
 }

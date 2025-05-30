@@ -6,12 +6,11 @@ import type { NetworkMode } from '@/types'
 interface NetworkSwitchProps {
   networkMode: NetworkMode
   onNetworkModeChange: (mode: NetworkMode) => void
-  isGlassEffect?: boolean
   className?: string
 }
 
 const NetworkSwitch: React.FC<NetworkSwitchProps> = ({
-  networkMode, onNetworkModeChange, isGlassEffect = true, className = ''
+  networkMode, onNetworkModeChange, className = ''
 }) => {
   const [isAnimating, setIsAnimating] = useState(false)
 
@@ -37,12 +36,7 @@ const NetworkSwitch: React.FC<NetworkSwitchProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      <div className={`
-        ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} 
-        rounded-lg px-3 py-2 flex items-center space-x-2 border border-white/20
-        transition-all duration-300 hover:bg-white/20 hover:border-white/40
-        ${isAnimating ? 'scale-105' : 'scale-100'}
-      `}>
+      <div className="bg-white/10 backdrop-blur-md rounded-lg px-3 py-2 flex items-center space-x-2 border border-white/20 transition-all duration-300 hover:bg-white/20 hover:border-white/40">
         <span className="text-white text-xs">网络：</span>        
         <Button
           onClick={handleToggle}

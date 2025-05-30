@@ -5,10 +5,7 @@
 export interface AppPreferences {
   searchEngine: 'google' | 'baidu' | 'bing';
   timeFormat: '12h' | '24h';
-  dateFormat: 'zh-CN' | 'en-US';
-  autoFocusSearch: boolean;
   openInNewTab: boolean;
-  showSeconds: boolean;
 }
 
 export interface BookmarkSettings {
@@ -26,10 +23,7 @@ export interface BookmarkSettings {
   // 行为设置
   behavior: {
     openIn: 'current' | 'new';  // 打开方式
-    enableDrag: boolean;        // 拖拽排序
-    enableHover: boolean;       // 悬停效果
     hoverScale: number;         // 悬停缩放比例 1.0-1.2
-    clickAnimation: boolean;    // 点击动画效果
   };
   
   // 网格布局设置
@@ -43,11 +37,6 @@ export interface BookmarkSettings {
   
   // 分类设置
   categories: {
-    layout: 'tabs' | 'sidebar'; // 分类布局位置
-    style: 'simple' | 'badge';  // 标签样式
-    showEmpty: boolean;         // 显示空分类
-    enableSort: boolean;        // 分类排序
-    tabPosition: 'top' | 'bottom'; // 标签位置（当layout为tabs时）
     sidebarWidth: number;       // 边栏宽度 200-400px
     sidebarVisible: 'always' | 'auto'; // 边栏显示模式
   };
@@ -116,10 +105,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   preferences: {
     searchEngine: 'google',
     timeFormat: '24h',
-    dateFormat: 'zh-CN',
-    autoFocusSearch: true,
     openInNewTab: false,
-    showSeconds: true,
   },
   bookmarks: {
     display: {
@@ -133,10 +119,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     },
     behavior: {
       openIn: 'current',
-      enableDrag: true,
-      enableHover: true,
       hoverScale: 1.05,
-      clickAnimation: true,
     },
     grid: {
       columns: 'auto',
@@ -146,11 +129,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
       maxCardWidth: 200,
     },
     categories: {
-      layout: 'sidebar',
-      style: 'badge',
-      showEmpty: false,
-      enableSort: true,
-      tabPosition: 'top',
       sidebarWidth: 280,
       sidebarVisible: 'always',
     },

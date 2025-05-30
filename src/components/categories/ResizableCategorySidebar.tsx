@@ -13,7 +13,6 @@ interface ResizableCategorySidebarProps {
   onDeleteCategory: (categoryId: string) => void
   onReorderCategories: (reorderedCategories: BookmarkCategory[]) => void
   onCategoryContextMenu?: (category: BookmarkCategory, event: React.MouseEvent) => void
-  isGlassEffect?: boolean
   loading?: boolean
   categorySettings: BookmarkSettings['categories']
   onWidthChange: (width: number) => void
@@ -28,7 +27,6 @@ export function ResizableCategorySidebar({
   onDeleteCategory,
   onReorderCategories,
   onCategoryContextMenu,
-  isGlassEffect = true,
   loading = false,
   categorySettings,
   onWidthChange
@@ -157,21 +155,11 @@ export function ResizableCategorySidebar({
         <div
           ref={resizeHandleRef}
           onMouseDown={handleMouseDown}
-          className={`
-            w-1 h-full cursor-ew-resize group relative
-            ${isGlassEffect ? 'bg-white/10 hover:bg-white/20' : 'bg-black/20 hover:bg-black/30'}
-            transition-all duration-200
-            ${isResizing ? 'bg-blue-500/50' : ''}
-          `}
+          className="w-1 h-full cursor-ew-resize group relative bg-white/10 hover:bg-white/20 transition-all duration-200"
           title="拖拽调整边栏宽度"
         >
           {/* 拖拽指示器 */}
-          <div className={`
-            absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
-            w-6 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100
-            transition-opacity duration-200 pointer-events-none
-            ${isGlassEffect ? 'bg-white/20 backdrop-blur-sm' : 'bg-black/40'}
-          `}>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none bg-white/20 backdrop-blur-sm">
             <div className="flex space-x-0.5">
               <div className="w-0.5 h-4 bg-white/60 rounded-full"></div>
               <div className="w-0.5 h-4 bg-white/60 rounded-full"></div>
@@ -180,11 +168,7 @@ export function ResizableCategorySidebar({
 
           {/* 宽度数值显示（调整时） */}
           {isResizing && (
-            <div className={`
-              absolute top-4 left-8 px-2 py-1 rounded text-xs text-white font-medium
-              ${isGlassEffect ? 'bg-blue-500/80 backdrop-blur-sm' : 'bg-blue-600'}
-              border border-blue-400/30
-            `}>
+            <div className="absolute top-4 left-8 px-2 py-1 rounded text-xs text-white font-medium bg-blue-500/80 backdrop-blur-sm border border-blue-400/30">
               {categorySettings.sidebarWidth}px
             </div>
           )}
@@ -201,7 +185,6 @@ export function ResizableCategorySidebar({
             onDeleteCategory={onDeleteCategory}
             onReorderCategories={onReorderCategories}
             onCategoryContextMenu={onCategoryContextMenu}
-            isGlassEffect={isGlassEffect}
             loading={loading}
             categorySettings={categorySettings}
           />
@@ -211,14 +194,7 @@ export function ResizableCategorySidebar({
       {/* 自动隐藏模式的显示/隐藏指示器 */}
       {categorySettings.sidebarVisible === 'auto' && (
         <div
-          className={`
-            fixed right-2 top-1/2 transform -translate-y-1/2 z-40
-            w-8 h-8 rounded-full flex items-center justify-center cursor-pointer
-            transition-all duration-300
-            ${isGlassEffect ? 'bg-white/10 backdrop-blur-md hover:bg-white/20' : 'bg-black/20 hover:bg-black/30'}
-            border border-white/20 text-white/70 hover:text-white
-            ${isVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}
-          `}
+          className={`fixed right-2 top-1/2 transform -translate-y-1/2 z-40 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 text-white/70 hover:text-white ${isVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
           onClick={() => setIsVisible(true)}
           title="显示分类边栏"
         >

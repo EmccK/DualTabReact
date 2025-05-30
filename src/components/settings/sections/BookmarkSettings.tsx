@@ -51,28 +51,10 @@ export function BookmarkSettings({ settings, onUpdate }: BookmarkSettingsProps) 
     { value: 'new', label: '新标签' },
   ];
 
-  // 分类布局选项
-  const layoutOptions = [
-    { value: 'sidebar', label: '右侧边栏' },
-    { value: 'tabs', label: '顶部标签' },
-  ];
-
-  // 分类样式选项
-  const styleOptions = [
-    { value: 'simple', label: '简单' },
-    { value: 'badge', label: '徽章' },
-  ];
-
   // 边栏显示模式选项
   const sidebarVisibleOptions = [
     { value: 'always', label: '始终显示' },
     { value: 'auto', label: '自动隐藏' },
-  ];
-
-  // 标签位置选项
-  const tabPositionOptions = [
-    { value: 'top', label: '顶部' },
-    { value: 'bottom', label: '底部' },
   ];
 
   // 格式化函数
@@ -222,30 +204,6 @@ export function BookmarkSettings({ settings, onUpdate }: BookmarkSettingsProps) 
             </SettingItem>
 
             <SettingItem
-              title="启用拖拽排序"
-              description="允许通过拖拽重新排列书签顺序"
-            >
-              <ToggleSwitch
-                checked={settings.behavior.enableDrag}
-                onCheckedChange={(checked) => onUpdate({ 
-                  behavior: { ...settings.behavior, enableDrag: checked }
-                })}
-              />
-            </SettingItem>
-
-            <SettingItem
-              title="悬停效果"
-              description="鼠标悬停时的视觉效果"
-            >
-              <ToggleSwitch
-                checked={settings.behavior.enableHover}
-                onCheckedChange={(checked) => onUpdate({ 
-                  behavior: { ...settings.behavior, enableHover: checked }
-                })}
-              />
-            </SettingItem>
-
-            <SettingItem
               title="悬停缩放比例"
               description="鼠标悬停时的缩放程度"
             >
@@ -261,18 +219,6 @@ export function BookmarkSettings({ settings, onUpdate }: BookmarkSettingsProps) 
                   valueFormatter={formatScale}
                 />
               </div>
-            </SettingItem>
-
-            <SettingItem
-              title="点击动画"
-              description="点击书签时的动画效果"
-            >
-              <ToggleSwitch
-                checked={settings.behavior.clickAnimation}
-                onCheckedChange={(checked) => onUpdate({ 
-                  behavior: { ...settings.behavior, clickAnimation: checked }
-                })}
-              />
             </SettingItem>
           </div>
         </section>
@@ -376,106 +322,34 @@ export function BookmarkSettings({ settings, onUpdate }: BookmarkSettingsProps) 
           </h3>
           <div className="space-y-0 border border-gray-200 rounded-lg bg-white">
             <SettingItem
-              title="分类布局位置"
-              description="选择分类导航的显示位置"
+              title="边栏宽度"
+              description="设置右侧分类边栏的宽度，也可直接拖拽调整"
             >
-              <SelectOption
-                value={settings.categories.layout}
-                onValueChange={(value) => onUpdate({ 
-                  categories: { ...settings.categories, layout: value as 'tabs' | 'sidebar' }
-                })}
-                options={layoutOptions}
-                className="w-28"
-              />
-            </SettingItem>
-
-            <SettingItem
-              title="分类标签样式"
-              description="选择分类标签的显示样式"
-            >
-              <SelectOption
-                value={settings.categories.style}
-                onValueChange={(value) => onUpdate({ 
-                  categories: { ...settings.categories, style: value as 'simple' | 'badge' }
-                })}
-                options={styleOptions}
-                className="w-28"
-              />
-            </SettingItem>
-
-            {settings.categories.layout === 'tabs' && (
-              <SettingItem
-                title="标签页位置"
-                description="当使用标签布局时的位置"
-              >
-                <SelectOption
-                  value={settings.categories.tabPosition}
+              <div className="w-32">
+                <SliderControl
+                  value={settings.categories.sidebarWidth}
                   onValueChange={(value) => onUpdate({ 
-                    categories: { ...settings.categories, tabPosition: value as 'top' | 'bottom' }
+                    categories: { ...settings.categories, sidebarWidth: value }
                   })}
-                  options={tabPositionOptions}
-                  className="w-24"
+                  min={200}
+                  max={400}
+                  step={20}
+                  valueFormatter={formatWidth}
                 />
-              </SettingItem>
-            )}
-
-            {settings.categories.layout === 'sidebar' && (
-              <>
-                <SettingItem
-                  title="边栏宽度"
-                  description="设置右侧分类边栏的宽度，也可直接拖拽调整"
-                >
-                  <div className="w-32">
-                    <SliderControl
-                      value={settings.categories.sidebarWidth}
-                      onValueChange={(value) => onUpdate({ 
-                        categories: { ...settings.categories, sidebarWidth: value }
-                      })}
-                      min={200}
-                      max={400}
-                      step={20}
-                      valueFormatter={formatWidth}
-                    />
-                  </div>
-                </SettingItem>
-
-                <SettingItem
-                  title="边栏显示模式"
-                  description="控制分类边栏的显示行为"
-                >
-                  <SelectOption
-                    value={settings.categories.sidebarVisible}
-                    onValueChange={(value) => onUpdate({ 
-                      categories: { ...settings.categories, sidebarVisible: value as 'always' | 'auto' }
-                    })}
-                    options={sidebarVisibleOptions}
-                    className="w-28"
-                  />
-                </SettingItem>
-              </>
-            )}
-
-            <SettingItem
-              title="显示空分类"
-              description="显示没有书签的分类"
-            >
-              <ToggleSwitch
-                checked={settings.categories.showEmpty}
-                onCheckedChange={(checked) => onUpdate({ 
-                  categories: { ...settings.categories, showEmpty: checked }
-                })}
-              />
+              </div>
             </SettingItem>
 
             <SettingItem
-              title="启用分类排序"
-              description="允许拖拽重新排列分类顺序"
+              title="边栏显示模式"
+              description="控制分类边栏的显示行为"
             >
-              <ToggleSwitch
-                checked={settings.categories.enableSort}
-                onCheckedChange={(checked) => onUpdate({ 
-                  categories: { ...settings.categories, enableSort: checked }
+              <SelectOption
+                value={settings.categories.sidebarVisible}
+                onValueChange={(value) => onUpdate({ 
+                  categories: { ...settings.categories, sidebarVisible: value as 'always' | 'auto' }
                 })}
+                options={sidebarVisibleOptions}
+                className="w-28"
               />
             </SettingItem>
           </div>

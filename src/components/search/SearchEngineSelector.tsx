@@ -7,16 +7,14 @@ import { ChevronDown } from 'lucide-react';
 interface SearchEngineSelectorProps {
   currentEngine: SearchEngineConfig;
   onEngineChange: (engineId: SearchEngineId) => void;
-  isGlassEffect?: boolean;
 }
 
 /**
- * 搜索引擎选择器组件
+ * 搜索引擎选择器组件，始终使用毛玻璃效果
  */
 export function SearchEngineSelector({ 
   currentEngine, 
-  onEngineChange, 
-  isGlassEffect = true 
+  onEngineChange
 }: SearchEngineSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -67,13 +65,7 @@ export function SearchEngineSelector({
       </button>
 
       {isOpen && (
-        <div 
-          className={`absolute top-full left-0 mt-2 py-2 min-w-36 rounded-lg shadow-lg border z-[9999] ${
-            isGlassEffect 
-              ? 'bg-white/95 backdrop-blur-md border-white/30' 
-              : 'bg-white border-gray-200'
-          }`}
-        >
+        <div className="absolute top-full left-0 mt-2 py-2 min-w-36 rounded-lg shadow-lg border z-[9999] bg-white/95 backdrop-blur-md border-white/30">
           {allEngines.map((engine) => (
             <button
               key={engine.id}

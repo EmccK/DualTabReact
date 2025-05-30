@@ -10,7 +10,7 @@ import { AttributionOverlay } from '@/components/background'
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
 import { backgroundImageManager } from '@/services/background'
 import type { BackgroundImageFilters } from '@/types/background'
-import { Plus, RefreshCw, Settings, Cloud, Droplets, Edit, Trash2 } from 'lucide-react'
+import { Plus, RefreshCw, Settings, Cloud, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import { safeOpenUrl } from '@/utils/url-utils'
 import './newtab.css'
@@ -25,7 +25,8 @@ function NewTabApp() {
   // 使用设置数据的其他Hooks
   const { currentTime } = useClock(settings.preferences)
   const { networkMode, setNetworkMode, loading: networkLoading } = useNetworkMode()
-  const [isGlassEffect, setIsGlassEffect] = useState(true)
+  // 毛玻璃效果始终启用
+  const isGlassEffect = true
   
   // 书签弹窗状态
   const [bookmarkModalOpen, setBookmarkModalOpen] = useState(false)
@@ -95,10 +96,6 @@ function NewTabApp() {
       console.error('网络模式切换失败:', error)
     }
   }, [setNetworkMode])
-
-  const toggleGlassEffect = useCallback(() => {
-    setIsGlassEffect(!isGlassEffect)
-  }, [isGlassEffect])
 
   const handleWebDAVSync = useCallback(() => {
     console.log('WebDAV同步')
@@ -454,7 +451,6 @@ function NewTabApp() {
             <ClockDisplay
               currentTime={currentTime}
               preferences={settings.preferences}
-              isGlassEffect={isGlassEffect}
             />
 
             {/* 右侧：控制按钮组 */}
@@ -464,22 +460,10 @@ function NewTabApp() {
                 onClick={handleOpenSettings}
                 size="sm"
                 variant="ghost"
-                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
+                className="bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20"
                 title="应用设置"
               >
                 <Settings className="h-4 w-4" />
-              </Button>
-
-
-              {/* 毛玻璃效果切换 */}
-              <Button
-                onClick={toggleGlassEffect}
-                size="sm"
-                variant="ghost"
-                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
-                title="切换毛玻璃效果"
-              >
-                <Droplets className="h-4 w-4" />
               </Button>
 
               {/* WebDAV同步 */}
@@ -487,7 +471,7 @@ function NewTabApp() {
                 onClick={handleWebDAVSync}
                 size="sm"
                 variant="ghost"
-                className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20`}
+                className="bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20"
                 title="WebDAV同步设置"
               >
                 <Cloud className="h-4 w-4 mr-1" />
@@ -498,7 +482,6 @@ function NewTabApp() {
               <NetworkSwitch
                 networkMode={networkMode}
                 onNetworkModeChange={handleNetworkModeChange}
-                isGlassEffect={isGlassEffect}
               />
             </div>
           </header>
@@ -509,7 +492,6 @@ function NewTabApp() {
               {/* 现代化搜索框 */}
               <SearchBox
                 preferences={settings.preferences}
-                isGlassEffect={isGlassEffect}
               />
             </div>
 
@@ -519,7 +501,6 @@ function NewTabApp() {
                 bookmarks={bookmarks}
                 categories={categories}
                 networkMode={networkMode}
-                isGlassEffect={isGlassEffect}
                 bookmarkSettings={settings.bookmarks}
                 loading={bookmarksLoading}
                 error={bookmarksError}
@@ -543,7 +524,6 @@ function NewTabApp() {
           onDeleteCategory={handleDeleteCategory}
           onReorderCategories={handleReorderCategories}
           onCategoryContextMenu={handleCategoryContextMenu}
-          isGlassEffect={isGlassEffect}
           loading={categoriesLoading}
           categorySettings={settings.bookmarks.categories}
           onWidthChange={handleSidebarWidthChange}
@@ -564,7 +544,7 @@ function NewTabApp() {
           <Button
             onClick={handleRefreshBackground}
             size="sm"
-            className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
+            className="bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0"
             title="刷新背景图片"
           >
             <RefreshCw className="h-5 w-5" />
@@ -575,7 +555,7 @@ function NewTabApp() {
         <Button
           onClick={handleAddBookmark}
           size="sm"
-          className={`${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0`}
+          className="bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20 w-12 h-12 rounded-full p-0"
           title="添加书签"
         >
           <Plus className="h-5 w-5" />

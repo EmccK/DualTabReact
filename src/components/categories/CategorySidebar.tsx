@@ -12,7 +12,6 @@ interface CategorySidebarProps {
   onDeleteCategory: (categoryId: string) => void
   onReorderCategories: (reorderedCategories: BookmarkCategory[]) => void
   onCategoryContextMenu?: (category: BookmarkCategory, event: React.MouseEvent) => void
-  isGlassEffect?: boolean
   loading?: boolean
   categorySettings?: BookmarkSettings['categories']
 }
@@ -26,7 +25,6 @@ export function CategorySidebar({
   onDeleteCategory,
   onReorderCategories,
   onCategoryContextMenu,
-  isGlassEffect = true,
   loading = false,
   categorySettings
 }: CategorySidebarProps) {
@@ -36,17 +34,12 @@ export function CategorySidebar({
   const dropTargetIndexRef = useRef<number>(-1)
 
   const handleDragStart = useCallback((e: React.DragEvent, categoryId: string) => {
-    // 检查是否启用拖拽排序
-    if (!categorySettings?.enableSort) {
-      e.preventDefault()
-      return
-    }
-    
+    // 分类排序始终启用
     setDraggedCategoryId(categoryId)
     draggedIndexRef.current = categories.findIndex(cat => cat.id === categoryId)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', categoryId)
-  }, [categories, categorySettings?.enableSort])
+  }, [categories])
 
   const handleDragEnd = useCallback(() => {
     setDraggedCategoryId(null)
@@ -56,8 +49,6 @@ export function CategorySidebar({
   }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent, categoryId: string) => {
-    if (!categorySettings?.enableSort) return
-    
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     
@@ -65,7 +56,7 @@ export function CategorySidebar({
       setDragOverCategoryId(categoryId)
       dropTargetIndexRef.current = categories.findIndex(cat => cat.id === categoryId)
     }
-  }, [draggedCategoryId, categories, categorySettings?.enableSort])
+  }, [draggedCategoryId, categories])
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
@@ -133,7 +124,7 @@ export function CategorySidebar({
 
   if (loading) {
     return (
-      <div className={`w-full h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'}`}>
+      <div className="w-full h-full bg-white/10 backdrop-blur-md">
         <div className="space-y-1">
           <div className="h-12 bg-white/20 animate-pulse" />
           <div className="h-12 bg-white/20 animate-pulse" />
@@ -141,21 +132,22 @@ export function CategorySidebar({
         </div>
       </div>
     )
-  }  return (
-    <div className={`w-full h-full ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'} flex flex-col`}>
+  }
+
+  return (
+    <div className="w-full h-full bg-white/10 backdrop-blur-md flex flex-col">
       {/* 分类列表 */}
       <div className="flex-1 flex flex-col justify-center space-y-1 overflow-y-auto">
         {/* 分类项目 */}
         {categories.map((category) => {
-          // 根据样式设置决定显示方式
-          const isBadgeStyle = categorySettings?.style === 'badge'
+          // 始终显示徽章样式和书签数量
           const bookmarkCount = category.bookmarks?.length || 0
           
           return (
             <div
               key={category.id}
               data-context-target="category"
-              draggable={categorySettings?.enableSort !== false}
+              draggable={true} // 分类排序始终启用
               onDragStart={(e) => handleDragStart(e, category.id)}
               onDragEnd={handleDragEnd}
               onDragOver={(e) => handleDragOver(e, category.id)}
@@ -170,9 +162,7 @@ export function CategorySidebar({
                 draggedCategoryId === category.id ? 'opacity-50 scale-95' : ''
               } ${
                 dragOverCategoryId === category.id ? 'bg-white/20 scale-105' : ''
-              } ${
-                !categorySettings?.enableSort ? '' : 'hover:cursor-grab active:cursor-grabbing'
-              }`}
+              } hover:cursor-grab active:cursor-grabbing`}
               style={{
                 backgroundColor: selectedCategoryId === category.id ? category.color : undefined
               }}
@@ -180,8 +170,8 @@ export function CategorySidebar({
               <span className="text-lg">{category.icon}</span>
               <span className="text-sm font-medium truncate flex-1">{category.name}</span>
               
-              {/* 徽章样式：显示书签数量 */}
-              {isBadgeStyle && bookmarkCount > 0 && (
+              {/* 徽章样式：始终显示书签数量 */}
+              {bookmarkCount > 0 && (
                 <span className={`
                   px-2 py-0.5 text-xs rounded-full font-medium
                   ${selectedCategoryId === category.id 

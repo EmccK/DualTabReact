@@ -9,7 +9,6 @@ interface BookmarkGridProps {
   bookmarks: Bookmark[]
   categories: BookmarkCategory[]
   networkMode: NetworkMode
-  isGlassEffect: boolean
   bookmarkSettings: BookmarkSettings
   loading?: boolean
   error?: string | null
@@ -24,7 +23,6 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   bookmarks,
   categories,
   networkMode,
-  isGlassEffect,
   bookmarkSettings,
   loading = false,
   error = null,
@@ -54,7 +52,6 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
     showTitle,
     showFavicons,
     showDescriptions,
-    enableDrag,
     openIn,
     hoverScale,
   } = useBookmarkStyles(bookmarkSettings)
@@ -91,13 +88,8 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
     }
   }, [onBookmarkClick, networkMode, openIn])
 
-  // 拖拽开始
+  // 拖拽开始 - 拖拽始终启用
   const handleDragStart = useCallback((bookmarkId: string, event: React.DragEvent) => {
-    if (!enableDrag) {
-      event.preventDefault()
-      return
-    }
-
     try {
       setDraggedBookmarkId(bookmarkId)
       draggedIndexRef.current = sortedBookmarks.findIndex(b => b.id === bookmarkId)
@@ -117,7 +109,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       setDraggedBookmarkId(null)
       draggedIndexRef.current = -1
     }
-  }, [sortedBookmarks, enableDrag])
+  }, [sortedBookmarks])
 
   // 拖拽结束
   const handleDragEnd = useCallback(async (bookmarkId: string, event: React.DragEvent) => {
@@ -130,7 +122,6 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
 
       // 如果有有效的拖拽移动，执行重排序
       if (
-        enableDrag &&
         draggedIndexRef.current !== -1 && 
         dropTargetIndexRef.current !== -1 && 
         draggedIndexRef.current !== dropTargetIndexRef.current &&
@@ -167,12 +158,10 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       draggedIndexRef.current = -1
       dropTargetIndexRef.current = -1
     }
-  }, [sortedBookmarks, onBookmarksReorder, enableDrag])
+  }, [sortedBookmarks, onBookmarksReorder])
 
   // 拖拽悬停
   const handleDragOver = useCallback((bookmarkId: string, event: React.DragEvent) => {
-    if (!enableDrag) return
-    
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
     
@@ -181,22 +170,18 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
     if (targetIndex !== -1) {
       dropTargetIndexRef.current = targetIndex
     }
-  }, [sortedBookmarks, enableDrag])
+  }, [sortedBookmarks])
 
   // 拖拽进入
   const handleDragEnter = useCallback((bookmarkId: string, event: React.DragEvent) => {
-    if (!enableDrag) return
-    
     event.preventDefault()
     if (bookmarkId !== draggedBookmarkId) {
       setDragOverBookmarkId(bookmarkId)
     }
-  }, [draggedBookmarkId, enableDrag])
+  }, [draggedBookmarkId])
 
   // 拖拽离开
   const handleDragLeave = useCallback((bookmarkId: string, event: React.DragEvent) => {
-    if (!enableDrag) return
-    
     event.preventDefault()
     
     // 清除之前的延时
@@ -208,12 +193,10 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
     dragLeaveTimeoutRef.current = setTimeout(() => {
       setDragOverBookmarkId(prev => prev === bookmarkId ? null : prev)
     }, 50)
-  }, [enableDrag])
+  }, [])
 
   // 放置
   const handleDrop = useCallback((bookmarkId: string, event: React.DragEvent) => {
-    if (!enableDrag) return
-    
     event.preventDefault()
     const draggedId = event.dataTransfer.getData('text/plain')
     
@@ -221,7 +204,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       // 拖拽逻辑将在dragEnd中处理
       setDragOverBookmarkId(null)
     }
-  }, [enableDrag])
+  }, [])
 
   // 处理键盘导航（可选功能）
   const handleKeyDown = useCallback((event: React.KeyboardEvent, bookmarkId: string) => {
@@ -256,11 +239,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
           {Array.from({ length: placeholderCount }).map((_, index) => (
             <div
               key={index}
-              className={`
-                rounded-xl text-center animate-pulse
-                ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/30'}
-                border border-white/20
-              `}
+              className="rounded-xl text-center animate-pulse bg-white/10 backdrop-blur-md border border-white/20"
               style={cardStyles}
             >
               <div 
@@ -281,10 +260,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   if (error) {
     return (
       <div className="w-full max-w-6xl">
-        <div className={`
-          p-8 rounded-xl text-center border border-red-400/30
-          ${isGlassEffect ? 'bg-red-500/10 backdrop-blur-md' : 'bg-red-500/20'}
-        `}>
+        <div className="p-8 rounded-xl text-center border border-red-400/30 bg-red-500/10 backdrop-blur-md">
           <div className="text-red-300 text-lg mb-2">加载书签时出错</div>
           <div className="text-red-200 text-sm">{error}</div>
         </div>
@@ -297,10 +273,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
     return (
       <div className="w-full max-w-6xl">
         <div className="text-center">
-          <div className={`
-            p-8 rounded-xl text-white border border-white/20 
-            ${isGlassEffect ? 'bg-white/10 backdrop-blur-md' : 'bg-black/20'}
-          `}>
+          <div className="p-8 rounded-xl text-white border border-white/20 bg-white/10 backdrop-blur-md">
             <div className="mb-4">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
                 <Plus className="w-8 h-8 text-white/60" />
@@ -313,11 +286,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
             {onAddBookmarkClick && (
               <button
                 onClick={onAddBookmarkClick}
-                className={`
-                  px-6 py-2 rounded-lg text-white font-medium transition-all duration-200
-                  ${isGlassEffect ? 'bg-white/20 hover:bg-white/30' : 'bg-blue-600 hover:bg-blue-700'}
-                  border border-white/20 hover:border-white/40
-                `}
+                className="px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 bg-white/20 hover:bg-white/30 border border-white/20 hover:border-white/40"
               >
                 {selectedCategoryId ? '为此分类添加书签' : '添加第一个书签'}
               </button>
@@ -334,11 +303,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
       {/* 重排序提示 */}
       {isReordering && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
-          <div className={`
-            px-4 py-2 rounded-lg text-white text-sm font-medium
-            ${isGlassEffect ? 'bg-blue-500/80 backdrop-blur-md' : 'bg-blue-600'}
-            border border-blue-400/30 shadow-lg
-          `}>
+          <div className="px-4 py-2 rounded-lg text-white text-sm font-medium bg-blue-500/80 backdrop-blur-md border border-blue-400/30 shadow-lg">
             正在保存书签顺序...
           </div>
         </div>
@@ -351,7 +316,6 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
             key={bookmark.id}
             bookmark={bookmark}
             networkMode={networkMode}
-            isGlassEffect={isGlassEffect}
             bookmarkSettings={bookmarkSettings}
             isDragging={draggedBookmarkId === bookmark.id}
             isDragOver={dragOverBookmarkId === bookmark.id}
