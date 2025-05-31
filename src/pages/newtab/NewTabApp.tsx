@@ -485,17 +485,19 @@ function NewTabApp() {
             </div>
           </header>
 
-          {/* 中央搜索区域 */}
-          <div className="flex-1 flex flex-col justify-center items-center px-4 relative z-40">
-            <div className="mb-16 w-full">
+          {/* 固定位置的搜索区域 */}
+          <div className="pt-16 px-4 relative z-40">
+            <div className="w-full">
               {/* 现代化搜索框 */}
               <SearchBox
                 preferences={settings.preferences}
               />
             </div>
+          </div>
 
-            {/* 书签网格区域 */}
-            <div className="w-full max-w-5xl relative z-10">
+          {/* 书签网格区域 */}
+          <div className="flex-1 flex items-start justify-center pt-16 px-4 relative z-10">
+            <div className="w-full max-w-5xl">
               <BookmarkGridV3
                 bookmarks={bookmarks.filter(bookmark => 
                   !selectedCategoryId || bookmark.categoryId === selectedCategoryId

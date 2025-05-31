@@ -149,15 +149,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   }, [bookmarks, onBookmarkReorder]);
 
   if (bookmarks.length === 0) {
-    return (
-      <div className={`flex items-center justify-center h-48 ${className}`}>
-        <div className="text-center text-gray-400">
-          <div className="text-lg mb-2">📚</div>
-          <div>暂无书签</div>
-          <div className="text-sm mt-1">点击右上角添加按钮来添加书签</div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
