@@ -45,6 +45,12 @@ export function BookmarkSettings({ settings, onUpdate }: BookmarkSettingsProps) 
     { value: '16/9', label: '16:9' },
   ];
 
+  // 显示样式选项
+  const displayStyleOptions = [
+    { value: 'detailed', label: '详细样式' },
+    { value: 'compact', label: '紧凑样式' },
+  ];
+
   // 打开方式选项
   const openInOptions = [
     { value: 'current', label: '当前标签' },
@@ -73,6 +79,38 @@ export function BookmarkSettings({ settings, onUpdate }: BookmarkSettingsProps) 
             显示设置
           </h3>
           <div className="space-y-0 border border-gray-200 rounded-lg bg-white">
+            <SettingItem
+              title="显示样式"
+              description="选择书签卡片的显示风格"
+            >
+              <SelectOption
+                value={settings.display.style || 'detailed'}
+                onValueChange={(value) => onUpdate({ 
+                  display: { ...settings.display, style: value as 'detailed' | 'compact' }
+                })}
+                options={displayStyleOptions}
+                className="w-28"
+              />
+            </SettingItem>
+
+            <SettingItem
+              title="圆角大小"
+              description="调整书签卡片的圆角程度"
+            >
+              <div className="w-32">
+                <SliderControl
+                  value={settings.display.borderRadius || 8}
+                  onValueChange={(value) => onUpdate({ 
+                    display: { ...settings.display, borderRadius: value }
+                  })}
+                  min={0}
+                  max={20}
+                  step={2}
+                  valueFormatter={formatPixels}
+                />
+              </div>
+            </SettingItem>
+
             <SettingItem
               title="书签图标大小"
               description="调整书签卡片中图标的显示大小"

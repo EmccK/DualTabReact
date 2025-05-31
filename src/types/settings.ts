@@ -11,6 +11,8 @@ export interface AppPreferences {
 export interface BookmarkSettings {
   // 显示设置
   display: {
+    style?: 'detailed' | 'compact'; // 显示样式
+    borderRadius?: number;      // 圆角大小 0-20px
     iconSize: number;           // 图标大小 16-48px
     showTitle: boolean;         // 显示书签标题
     itemsPerRow: 'auto' | number; // 每行书签数量，auto为自适应
@@ -108,6 +110,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   bookmarks: {
     display: {
+      style: 'detailed',
+      borderRadius: 8,
       iconSize: 32,
       showTitle: true,
       itemsPerRow: 'auto',

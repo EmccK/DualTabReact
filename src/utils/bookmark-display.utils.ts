@@ -4,7 +4,6 @@
 
 import type { Bookmark, NetworkMode } from '@/types';
 import type { BookmarkDisplayStyle } from '@/types/bookmark-display.types';
-import type { BookmarkSettings } from '@/types/settings';
 import { BOOKMARK_DISPLAY_STYLES, DISPLAY_STYLE_LABELS } from '@/constants';
 
 /**

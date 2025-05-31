@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Upload, Type, Globe, Image } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { themeClasses } from '@/styles/theme'
+import { getFaviconUrl } from '@/utils/icon-utils'
 import type { IconType } from '@/types'
 
 interface IconSelectorProps {
@@ -12,6 +13,7 @@ interface IconSelectorProps {
   iconText?: string
   iconData?: string
   backgroundColor?: string
+  url?: string  // 添加URL参数用于获取favicon
   onIconTypeChange: (type: IconType) => void
   onIconTextChange: (text: string) => void
   onIconUpload: (data: string) => void
@@ -23,12 +25,14 @@ export function IconSelector({
   iconText = '',
   iconData,
   backgroundColor = 'transparent',
+  url = '',
   onIconTypeChange,
   onIconTextChange,
   onIconUpload,
   className
 }: IconSelectorProps) {
   const [uploadFileName, setUploadFileName] = useState<string>('')
+  const [faviconError, setFaviconError] = useState<boolean>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleIconTypeSelect = useCallback((type: IconType) => {
@@ -69,6 +73,11 @@ export function IconSelector({
     fileInputRef.current?.click()
   }, [])
 
+  // 当URL改变时重置favicon错误状态
+  useEffect(() => {
+    setFaviconError(false)
+  }, [url])
+
   // 渲染图标预览
   const renderIconPreview = () => {
     const previewStyle = {
@@ -78,14 +87,30 @@ export function IconSelector({
 
     switch (iconType) {
       case 'official':
-        return (
-          <div 
-            className={cn("w-16 h-16 rounded-xl flex items-center justify-center", themeClasses.iconSelector.preview)}
-            style={previewStyle}
-          >
-            <Globe className="w-8 h-8 text-gray-400" />
-          </div>
-        )
+        // 如果有URL，显示实际的favicon，否则显示默认图标
+        if (url && !faviconError) {
+          const faviconUrl = getFaviconUrl(url, 64); // 使用64px获取更清晰的图标
+          return (
+            <div className="w-16 h-16 rounded-xl overflow-hidden border shadow-lg bg-white flex items-center justify-center">
+              <img 
+                src={faviconUrl} 
+                alt="网站图标" 
+                className="w-12 h-12 object-contain"
+                onError={() => setFaviconError(true)}
+                onLoad={() => setFaviconError(false)}
+              />
+            </div>
+          );
+        } else {
+          return (
+            <div 
+              className={cn("w-16 h-16 rounded-xl flex items-center justify-center", themeClasses.iconSelector.preview)}
+              style={previewStyle}
+            >
+              <Globe className="w-8 h-8 text-gray-400" />
+            </div>
+          );
+        }
       case 'text':
         return (
           <div 

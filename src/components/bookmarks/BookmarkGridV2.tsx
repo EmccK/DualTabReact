@@ -5,7 +5,6 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import BookmarkCardV2 from './BookmarkCardV2';
-import { useBookmarkDisplay } from '@/hooks/bookmarks';
 import { calculateGridLayout, generateGridStyles } from '@/utils/style-calculator.utils';
 import { filterAndSortBookmarks } from '@/utils/bookmark-display.utils';
 import { BOOKMARK_DISPLAY_STYLES } from '@/constants';
@@ -120,7 +119,7 @@ const BookmarkGridV2: React.FC<BookmarkGridV2Props> = ({
     setDragState(prev => ({ ...prev, dragOverId: bookmarkId }));
   }, []);
 
-  const handleDragLeave = useCallback((bookmarkId: string, event: React.DragEvent) => {
+  const handleDragLeave = useCallback((bookmarkId: string, _event: React.DragEvent) => {
     // 只有当离开的是当前dragOver的元素时才清除
     if (dragState.dragOverId === bookmarkId) {
       setDragState(prev => ({ ...prev, dragOverId: null }));

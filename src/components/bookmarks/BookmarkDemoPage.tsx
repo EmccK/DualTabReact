@@ -10,13 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookmarkGridV2, BookmarkAppearancePage, DisplayStyleSelector } from '@/components/bookmarks';
+import { BookmarkGridV2, BookmarkAppearancePage } from '@/components/bookmarks';
 import { useBookmarkManager } from '@/hooks/bookmarks';
-import { BOOKMARK_DISPLAY_STYLES, DEFAULT_CARD_SIZES } from '@/constants';
+import { BOOKMARK_DISPLAY_STYLES } from '@/constants';
 import type { Bookmark, NetworkMode } from '@/types';
 import type { BookmarkSettings } from '@/types/settings';
 import type { BookmarkDisplayStyle } from '@/types/bookmark-display.types';
-import { Eye, Settings, Grid, List, Search, Filter, BarChart3 } from 'lucide-react';
+import { Eye, Settings, Grid, Search, BarChart3 } from 'lucide-react';
 
 // 模拟的书签设置
 const mockBookmarkSettings: BookmarkSettings = {

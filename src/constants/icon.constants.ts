@@ -95,6 +95,8 @@ export const OBJECT_FIT_OPTIONS = [
 
 // 默认颜色调色板
 export const DEFAULT_COLOR_PALETTE = [
+  '#ffffff', // white
+  '#000000', // black
   '#3b82f6', // blue-500
   '#ef4444', // red-500
   '#10b981', // emerald-500
@@ -111,6 +113,7 @@ export const DEFAULT_COLOR_PALETTE = [
 
 // 预设背景色
 export const PRESET_BACKGROUND_COLORS = [
+  { label: '白色', value: '#ffffff' },
   { label: '蓝色', value: '#3b82f6' },
   { label: '红色', value: '#ef4444' },
   { label: '绿色', value: '#10b981' },

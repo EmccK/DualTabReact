@@ -19,10 +19,6 @@ export * from './icons';
 // 设置组件
 export * from './settings';
 
-// 原有组件 (向后兼容)
-import BookmarkCard from './BookmarkCard';
-export { BookmarkCard };
-export { default as BookmarkGrid } from './BookmarkGrid';
+// 原有组件 (保留使用的)
 export { BookmarkModal } from './BookmarkModal';
 export { IconSelector } from './IconSelector';
-export { ColorPicker } from './ColorPicker';

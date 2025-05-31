@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
+import { BookmarkGridV2, BookmarkModal } from '@/components/bookmarks'
 import { NetworkSwitch } from '@/components/network'
 import { CategoryModal, SimpleCategorySidebar } from '@/components/categories'
 import { SettingsModal } from '@/components/settings'
@@ -474,19 +474,39 @@ function NewTabApp() {
 
             {/* 书签网格区域 */}
             <div className="w-full max-w-5xl relative z-10">
-              <BookmarkGrid
-                bookmarks={bookmarks}
-                categories={categories}
+              <BookmarkGridV2
+                bookmarks={bookmarks.filter(bookmark => 
+                  !selectedCategoryId || bookmark.categoryId === selectedCategoryId
+                )}
                 networkMode={networkMode}
                 bookmarkSettings={settings.bookmarks}
-                loading={bookmarksLoading}
-                error={bookmarksError}
-                selectedCategoryId={selectedCategoryId}
+                displayStyle={settings.bookmarks.display?.style || 'detailed'}
+                borderRadius={settings.bookmarks.display?.borderRadius || 8}
+                categoryId={selectedCategoryId || undefined}
                 onBookmarkClick={handleBookmarkClick}
                 onBookmarkContextMenu={handleBookmarkContextMenu}
-                onAddBookmarkClick={handleAddBookmark}
-                onBookmarksReorder={handleBookmarksReorder}
+                onBookmarkReorder={handleBookmarksReorder}
+                className="min-h-[200px]"
               />
+              
+              {/* 添加书签按钮 - 当没有书签时显示 */}
+              {bookmarks.filter(bookmark => 
+                !selectedCategoryId || bookmark.categoryId === selectedCategoryId
+              ).length === 0 && !bookmarksLoading && (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="text-white/70 text-center">
+                    <div className="text-4xl mb-4">📚</div>
+                    <div className="text-lg font-medium mb-4">暂无书签</div>
+                    <Button
+                      onClick={handleAddBookmark}
+                      className="bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      添加第一个书签
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

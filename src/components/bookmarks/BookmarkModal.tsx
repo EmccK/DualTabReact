@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { IconSelector } from './IconSelector'
-import { ColorPicker } from './ColorPicker'
+import ColorPicker from './settings/ColorPicker'
 import type { Bookmark, IconType, NetworkMode } from '@/types'
 import { useBookmarks, useCategories } from '@/hooks'
 import { themeClasses } from '@/styles/theme'
@@ -55,6 +55,15 @@ export function BookmarkModal({
 
   const { addBookmark, updateBookmark } = useBookmarks()
   const { categories } = useCategories()
+
+  // 获取当前活动的URL（根据当前选择的标签页）
+  const getActiveUrl = useCallback(() => {
+    if (activeTab === 'external') {
+      return formData.externalUrl || ''
+    } else {
+      return formData.internalUrl || ''
+    }
+  }, [activeTab, formData.externalUrl, formData.internalUrl])
 
   // 初始化表单数据
   useEffect(() => {
@@ -279,6 +288,7 @@ export function BookmarkModal({
                 iconText={formData.iconText}
                 iconData={formData.iconData}
                 backgroundColor={formData.backgroundColor}
+                url={getActiveUrl()}
                 onIconTypeChange={handleIconTypeChange}
                 onIconTextChange={handleIconTextChange}
                 onIconUpload={handleIconUpload}
@@ -291,8 +301,9 @@ export function BookmarkModal({
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">背景颜色</Label>
                 <ColorPicker
-                  selectedColor={formData.backgroundColor}
-                  onColorChange={handleColorChange}
+                  value={formData.backgroundColor}
+                  onChange={handleColorChange}
+                  type="background"
                 />
               </div>
 
