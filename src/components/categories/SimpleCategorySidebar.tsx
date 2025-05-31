@@ -208,7 +208,7 @@ export function SimpleCategorySidebar({
       {/* 遮罩层 - 只覆盖左侧区域，不影响边栏 */}
       {categorySettings.sidebarVisible === 'auto' && isVisible && (
         <div
-          className="fixed inset-0 bg-black/5 z-20 transition-opacity duration-300"
+          className="fixed inset-0 bg-transparent z-20 transition-opacity duration-300"
           style={{ right: `${SIDEBAR_WIDTH}px` }}
           onClick={() => {
             setIsPinned(false)

@@ -125,7 +125,7 @@ export function CategorySidebar({
 
   if (loading) {
     return (
-      <div className="w-full h-full bg-white/10 backdrop-blur-md flex flex-col">
+      <div className="w-full h-full bg-gradient-to-l from-black/30 to-black/10 backdrop-blur-md flex flex-col border-l border-white/10">
         <div className="flex-1 flex flex-col justify-center space-y-1 overflow-y-auto">
           <div className="h-12 bg-white/20 animate-pulse mx-3 rounded" />
           <div className="h-12 bg-white/20 animate-pulse mx-3 rounded" />
@@ -136,7 +136,7 @@ export function CategorySidebar({
   }
 
   return (
-    <div className="w-full h-full bg-white/10 backdrop-blur-md flex flex-col">
+    <div className="w-full h-full bg-gradient-to-l from-black/30 to-black/10 backdrop-blur-md flex flex-col border-l border-white/10">
       {/* 分类列表 */}
       <div className="flex-1 flex flex-col justify-center space-y-1 overflow-y-auto">
         {/* 分类项目 */}
