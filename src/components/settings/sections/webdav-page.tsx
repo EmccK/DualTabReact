@@ -29,6 +29,7 @@ export function WebDAVPage({ getLocalData, onDataUpdated }: WebDAVPageProps) {
     saveSettings,
     testConnection,
     resetSettings,
+    mergeRemoteConfig,
   } = useWebDAVConfig();
 
   const {
@@ -37,7 +38,21 @@ export function WebDAVPage({ getLocalData, onDataUpdated }: WebDAVPageProps) {
   } = useWebDAVSync({
     settings,
     getLocalData,
-    onDataUpdated,
+    onDataUpdated: async (data) => {
+      // 处理WebDAV配置同步
+      if (data.settings?.webdav_config) {
+        try {
+          console.log('检测到远程WebDAV配置，开始合并...');
+          await mergeRemoteConfig(data.settings.webdav_config);
+          console.log('WebDAV配置合并完成');
+        } catch (error) {
+          console.error('WebDAV配置合并失败:', error);
+        }
+      }
+      
+      // 调用原始的数据更新回调
+      onDataUpdated?.(data);
+    },
     onSyncComplete: (success, error) => {
       if (success) {
         console.log('同步完成');

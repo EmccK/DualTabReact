@@ -42,6 +42,34 @@ export function useWebDAVConfig() {
     }
   }, []);
 
+  // 合并远程配置（保留本地密码）
+  const mergeRemoteConfig = useCallback(async (remoteConfig: Partial<WebDAVConnectionSettings>) => {
+    try {
+      // 获取当前本地配置
+      const currentResult = await chrome.storage.local.get(['webdavSettings']);
+      const currentSettings = currentResult.webdavSettings || DEFAULT_CONNECTION_SETTINGS;
+      
+      // 合并配置，但保留本地密码
+      const mergedSettings = {
+        ...currentSettings,
+        ...remoteConfig,
+        // 始终保留本地密码，不被远程覆盖
+        password: currentSettings.password || '',
+      };
+      
+      console.log('合并WebDAV配置:', {
+        远程配置: Object.keys(remoteConfig),
+        保留本地密码: !!currentSettings.password,
+      });
+      
+      await saveSettings(mergedSettings);
+      return mergedSettings;
+    } catch (error) {
+      console.error('合并WebDAV配置失败:', error);
+      throw error;
+    }
+  }, [saveSettings]);
+
   // 测试连接
   const testConnection = useCallback(async (config: WebDAVConfig) => {
     try {
@@ -79,5 +107,6 @@ export function useWebDAVConfig() {
     saveSettings,
     testConnection,
     resetSettings,
+    mergeRemoteConfig,
   };
 }

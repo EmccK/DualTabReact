@@ -35,7 +35,7 @@ const BookmarkGridV3: React.FC<BookmarkGridV3Props> = ({
 
   // 提取样式设置
   const styleSettings = useMemo(() => {
-    return extractBookmarkStyleSettings({ bookmarks: bookmarkSettings });
+    return extractBookmarkStyleSettings(bookmarkSettings);
   }, [bookmarkSettings]);
 
   // 处理书签点击 - 将新格式转换回旧格式

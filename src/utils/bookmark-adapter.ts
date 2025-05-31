@@ -57,10 +57,10 @@ export const adaptItemToBookmark = (item: BookmarkItem, originalBookmark?: Bookm
 };
 
 // 从设置中提取BookmarkStyleSettings
-export const extractBookmarkStyleSettings = (settings: any): BookmarkStyleSettings => {
+export const extractBookmarkStyleSettings = (bookmarkSettings: any): BookmarkStyleSettings => {
   return {
-    styleType: settings.bookmarks?.display?.styleType || 'card',
-    borderRadius: settings.bookmarks?.display?.borderRadius ?? 12,
-    hoverScale: settings.bookmarks?.behavior?.hoverScale ?? 1.05,
+    styleType: bookmarkSettings?.display?.styleType || 'card',
+    borderRadius: bookmarkSettings?.display?.borderRadius ?? 12,
+    hoverScale: bookmarkSettings?.behavior?.hoverScale ?? 1.05,
   };
 };

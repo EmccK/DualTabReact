@@ -206,19 +206,33 @@ export function SettingsModal({ open, onOpenChange, onDataUpdated }: SettingsMod
             onUpdate={(updates) => updateSettings('sync', updates)}
             getLocalData={async () => {
               try {
-                // 从Chrome存储中获取实际的本地数据
-                const result = await chrome.storage.local.get(['bookmarks', 'categories']);
+                // 从Chrome存储中获取实际的本地数据，包括WebDAV配置
+                const result = await chrome.storage.local.get(['bookmarks', 'categories', 'webdavSettings']);
+                
+                // 创建完整的设置对象，包含WebDAV配置（但不包含敏感信息）
+                const webdavSettings = result.webdavSettings || {};
+                const settingsWithWebDAV = {
+                  ...settings,
+                  webdav_config: {
+                    serverUrl: webdavSettings.serverUrl || '',
+                    username: webdavSettings.username || '',
+                    basePath: webdavSettings.basePath || '',
+                    // 注意：不同步密码等敏感信息
+                    // password: 不包含
+                  }
+                };
                 
                 console.log('获取本地数据:', {
                   bookmarks: result.bookmarks?.length || 0,
                   categories: result.categories?.length || 0,
-                  hasSettings: !!settings
+                  hasSettings: !!settings,
+                  hasWebDAVConfig: !!result.webdavSettings
                 });
                 
                 return {
                   bookmarks: result.bookmarks || [],
                   categories: result.categories || [],
-                  settings: settings,
+                  settings: settingsWithWebDAV,
                 };
               } catch (error) {
                 console.error('获取本地数据失败:', error);
@@ -264,6 +278,12 @@ export function SettingsModal({ open, onOpenChange, onDataUpdated }: SettingsMod
                 
                 // 使用Promise.all确保所有数据都保存完成
                 const now = Date.now();
+                
+                // 分离WebDAV配置和应用设置
+                const syncedSettings = { ...syncedData.settings };
+                const webdavConfig = syncedSettings.webdav_config || {};
+                delete syncedSettings.webdav_config; // 从应用设置中移除WebDAV配置
+                
                 await Promise.all([
                   chrome.storage.local.set({
                     bookmarks: processedData.bookmarks,
@@ -273,10 +293,21 @@ export function SettingsModal({ open, onOpenChange, onDataUpdated }: SettingsMod
                     categories_modified_time: now,
                   }),
                   chrome.storage.local.set({
-                    app_settings: syncedData.settings,
+                    app_settings: syncedSettings,
                     // 添加设置修改时间标记
                     app_settings_modified_time: now,
-                  })
+                  }),
+                  // 同步WebDAV配置（如果存在且不为空）
+                  ...(webdavConfig.serverUrl ? [
+                    chrome.storage.local.set({
+                      webdavSettings: {
+                        serverUrl: webdavConfig.serverUrl,
+                        username: webdavConfig.username,
+                        basePath: webdavConfig.basePath,
+                        // 注意：这里不会覆盖本地保存的密码
+                      }
+                    })
+                  ] : [])
                 ]);
                 
                 console.log('同步数据已保存到Chrome存储，等待存储操作完成...');
