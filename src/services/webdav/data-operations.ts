@@ -76,13 +76,20 @@ export class WebDAVDataOperations {
    */
   async downloadBookmarks(): Promise<Bookmark[]> {
     try {
+      console.log('开始下载书签数据...');
       const response = await this.fileOps.downloadFile(WEBDAV_PATHS.BOOKMARKS);
+      console.log('书签文件下载响应:', { success: response.success, dataLength: response.data?.length });
+      
       if (response.success) {
-        return safeJsonParse<Bookmark[]>(response.data, []);
+        // response.data 已经是解析后的对象，不需要再次JSON.parse
+        const bookmarks = Array.isArray(response.data) ? response.data : [];
+        console.log('解析后的书签数据:', { count: bookmarks.length, sample: bookmarks.slice(0, 2) });
+        return bookmarks;
       }
     } catch (error) {
       console.warn('下载书签失败:', error);
     }
+    console.log('返回空书签数组');
     return [];
   }
 
@@ -101,13 +108,20 @@ export class WebDAVDataOperations {
    */
   async downloadCategories(): Promise<BookmarkCategory[]> {
     try {
+      console.log('开始下载分类数据...');
       const response = await this.fileOps.downloadFile(WEBDAV_PATHS.CATEGORIES);
+      console.log('分类文件下载响应:', { success: response.success, dataLength: response.data?.length });
+      
       if (response.success) {
-        return safeJsonParse<BookmarkCategory[]>(response.data, []);
+        // response.data 已经是解析后的对象，不需要再次JSON.parse
+        const categories = Array.isArray(response.data) ? response.data : [];
+        console.log('解析后的分类数据:', { count: categories.length, sample: categories.slice(0, 2) });
+        return categories;
       }
     } catch (error) {
       console.warn('下载分类失败:', error);
     }
+    console.log('返回空分类数组');
     return [];
   }
 
@@ -141,8 +155,9 @@ export class WebDAVDataOperations {
     try {
       const response = await this.fileOps.downloadFile(WEBDAV_PATHS.SETTINGS);
       if (response.success) {
-        const rawSettings = safeJsonParse<any>(response.data, null);
-        if (rawSettings) {
+        // response.data 已经是解析后的对象，不需要再次JSON.parse
+        const rawSettings = response.data;
+        if (rawSettings && typeof rawSettings === 'object') {
           // 导入设置迁移函数
           const { migrateSettings, needsMigration } = await import('../../utils/settings-migration');
           

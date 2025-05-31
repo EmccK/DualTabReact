@@ -55,7 +55,8 @@ function NewTabApp() {
     addCategory,
     updateCategory,
     deleteCategory,
-    reorderCategories
+    reorderCategories,
+    reload: reloadCategories
   } = useCategories()
   
   // 分类筛选状态 - 确保始终选中第一个分类
@@ -621,6 +622,29 @@ function NewTabApp() {
       <SettingsModal
         open={settingsModalOpen}
         onOpenChange={setSettingsModalOpen}
+        onDataUpdated={async (syncedData) => {
+          console.log('接收到同步数据更新，正在重新加载应用状态...', {
+            bookmarks: syncedData.bookmarks.length,
+            categories: syncedData.categories.length,
+          });
+          
+          // 同时重新加载书签和分类数据
+          await Promise.all([
+            reloadBookmarks(),
+            reloadCategories()
+          ]);
+          
+          // 重要：同步后重置选中的分类，因为categoryId可能已经改变
+          if (syncedData.categories && syncedData.categories.length > 0) {
+            console.log('重置选中分类为第一个分类:', syncedData.categories[0]);
+            setSelectedCategoryId(syncedData.categories[0].id);
+          } else {
+            setSelectedCategoryId(null);
+          }
+          
+          console.log('应用状态重新加载完成');
+          // 注意：设置数据会通过useSettings自动更新，不需要手动处理
+        }}
       />
 
       {/* 统一右键菜单 */}

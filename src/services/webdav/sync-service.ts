@@ -36,6 +36,24 @@ export class WebDAVSyncService {
   }
 
   /**
+   * 获取设置的修改时间
+   */
+  private async getSettingsModifiedTime(): Promise<Date> {
+    try {
+      // 从Chrome storage获取设置的修改时间
+      // 由于我们无法直接获取storage的修改时间，使用一个保守的策略
+      // 如果本地有设置数据，假设它比较旧（除非明确指定）
+      
+      // 使用当前时间减去1小时作为默认本地修改时间
+      // 这样可以确保如果远程有更新的数据，会被优先下载
+      return new Date(Date.now() - 60 * 60 * 1000);
+    } catch (error) {
+      // 出错时返回更早的时间，优先下载远程数据
+      return new Date(Date.now() - 24 * 60 * 60 * 1000);
+    }
+  }
+
+  /**
    * 生成同步ID
    */
   private generateSyncId(): string {
@@ -120,7 +138,11 @@ export class WebDAVSyncService {
     bookmarks: Bookmark[],
     categories: BookmarkCategory[],
     settings: AppSettings
-  ): Promise<void> {
+  ): Promise<{
+    bookmarks: Bookmark[];
+    categories: BookmarkCategory[];
+    settings: AppSettings;
+  }> {
     console.log('开始WebDAV同步', {
       bookmarksCount: bookmarks.length,
       categoriesCount: categories.length,
@@ -145,13 +167,38 @@ export class WebDAVSyncService {
       await this.dataOps.initializeStructure();
       console.log('目录结构初始化完成');
 
+      // 获取远程文件修改时间和本地设置修改时间
+      console.log('检查远程文件修改时间...');
+      const [bookmarksRemoteModified, categoriesRemoteModified, settingsRemoteModified, settingsLocalModified] = await Promise.all([
+        this.dataOps.getFileLastModified('bookmarks.json'),
+        this.dataOps.getFileLastModified('categories.json'),
+        this.dataOps.getFileLastModified('settings.json'),
+        this.getSettingsModifiedTime(),
+      ]);
+
+      console.log('远程文件修改时间:', {
+        bookmarks: bookmarksRemoteModified,
+        categories: categoriesRemoteModified,
+        settings: settingsRemoteModified,
+      });
+      
+      const localBookmarksModified = this.getLocalModifiedTime(bookmarks);
+      const localCategoriesModified = this.getLocalModifiedTime(categories);
+      
+      console.log('本地数据修改时间:', {
+        bookmarks: localBookmarksModified,
+        categories: localCategoriesModified,
+        settings: settingsLocalModified,
+      });
+
       // 创建同步项目
       const syncItems: SyncItem[] = [
         {
           id: 'bookmarks',
           name: '书签数据',
           type: 'bookmark',
-          localModified: this.getLocalModifiedTime(bookmarks),
+          localModified: localBookmarksModified,
+          remoteModified: bookmarksRemoteModified,
           status: 'pending',
           direction: 'bidirectional',
         },
@@ -159,7 +206,8 @@ export class WebDAVSyncService {
           id: 'categories',
           name: '分类数据',
           type: 'category',
-          localModified: this.getLocalModifiedTime(categories),
+          localModified: localCategoriesModified,
+          remoteModified: categoriesRemoteModified,
           status: 'pending',
           direction: 'bidirectional',
         },
@@ -167,7 +215,8 @@ export class WebDAVSyncService {
           id: 'settings',
           name: '设置数据',
           type: 'settings',
-          localModified: new Date(),
+          localModified: settingsLocalModified,
+          remoteModified: settingsRemoteModified,
           status: 'pending',
           direction: 'bidirectional',
         },
@@ -175,22 +224,30 @@ export class WebDAVSyncService {
 
       const executor = new WebDAVSyncExecutor(this.dataOps);
 
+      // 初始化同步后的数据
+      let syncedBookmarks = bookmarks;
+      let syncedCategories = categories;
+      let syncedSettings = settings;
+
       // 执行同步
+      console.log('开始执行同步，共', syncItems.length, '个项目:', syncItems.map(item => item.name));
+      
       for (let i = 0; i < syncItems.length; i++) {
         const item = syncItems[i];
+        console.log(`开始同步第${i + 1}个项目:`, item.name);
         this.currentProgress.current = `正在同步: ${item.name}`;
         this.currentProgress.completed = i;
 
         let data: any;
         switch (item.type) {
           case 'bookmark':
-            data = bookmarks;
+            data = syncedBookmarks;
             break;
           case 'category':
-            data = categories;
+            data = syncedCategories;
             break;
           case 'settings':
-            data = settings;
+            data = syncedSettings;
             break;
         }
 
@@ -198,6 +255,22 @@ export class WebDAVSyncService {
         
         if (!result.success && result.conflict) {
           this.conflictQueue.push(result.conflict);
+        } else if (result.success && result.updatedData) {
+          // 更新同步后的数据
+          switch (item.type) {
+            case 'bookmark':
+              syncedBookmarks = result.updatedData;
+              console.log('书签数据已更新，数量:', syncedBookmarks.length);
+              break;
+            case 'category':
+              syncedCategories = result.updatedData;
+              console.log('分类数据已更新，数量:', syncedCategories.length);
+              break;
+            case 'settings':
+              syncedSettings = result.updatedData;
+              console.log('设置数据已更新');
+              break;
+          }
         }
       }
 
@@ -215,6 +288,13 @@ export class WebDAVSyncService {
         duration: endTime.getTime() - startTime.getTime(),
         conflictCount: this.conflictQueue.length,
       });
+
+      // 返回同步后的数据
+      return {
+        bookmarks: syncedBookmarks,
+        categories: syncedCategories,
+        settings: syncedSettings,
+      };
 
     } catch (error: any) {
       this.currentProgress.status = 'error';

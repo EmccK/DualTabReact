@@ -15,9 +15,14 @@ interface WebDAVPageProps {
     categories: BookmarkCategory[];
     settings: AppSettings;
   }>;
+  onDataUpdated?: (data: {
+    bookmarks: Bookmark[];
+    categories: BookmarkCategory[];
+    settings: AppSettings;
+  }) => void;
 }
 
-export function WebDAVPage({ getLocalData }: WebDAVPageProps) {
+export function WebDAVPage({ getLocalData, onDataUpdated }: WebDAVPageProps) {
   const {
     settings,
     isLoading,
@@ -32,6 +37,7 @@ export function WebDAVPage({ getLocalData }: WebDAVPageProps) {
   } = useWebDAVSync({
     settings,
     getLocalData,
+    onDataUpdated,
     onSyncComplete: (success, error) => {
       if (success) {
         console.log('同步完成');

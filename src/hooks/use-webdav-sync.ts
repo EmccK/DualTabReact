@@ -25,12 +25,18 @@ interface UseWebDAVSyncOptions {
     categories: BookmarkCategory[];
     settings: AppSettings;
   }>;
+  onDataUpdated?: (data: {
+    bookmarks: Bookmark[];
+    categories: BookmarkCategory[];
+    settings: AppSettings;
+  }) => void;
   onSyncComplete?: (success: boolean, error?: string) => void;
 }
 
 export function useWebDAVSync({ 
   settings, 
   getLocalData, 
+  onDataUpdated,
   onSyncComplete 
 }: UseWebDAVSyncOptions) {
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
@@ -69,11 +75,14 @@ export function useWebDAVSync({
     try {
       const localData = await getLocalData();
       
-      await syncServiceRef.current.startSync(
+      const syncedData = await syncServiceRef.current.startSync(
         localData.bookmarks,
         localData.categories,
         localData.settings
       );
+
+      // 通知数据更新
+      onDataUpdated?.(syncedData);
 
       // 更新状态
       setSyncProgress(syncServiceRef.current.getSyncProgress());
@@ -84,7 +93,7 @@ export function useWebDAVSync({
     } catch (error: any) {
       onSyncComplete?.(false, error.message);
     }
-  }, [initializeSyncService, getLocalData, onSyncComplete]);
+  }, [initializeSyncService, getLocalData, onDataUpdated, onSyncComplete]);
 
   // 切换自动同步
   const toggleAutoSync = useCallback(() => {

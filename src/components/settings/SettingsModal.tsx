@@ -14,17 +14,119 @@ import { BackgroundSettings } from './sections/BackgroundSettings';
 import { SyncSettings } from './sections/SyncSettings';
 import { useSettings } from '@/hooks/useSettings';
 import { Settings, Save, RotateCcw, X } from 'lucide-react';
+import type { Bookmark, BookmarkCategory } from '@/types';
+
+/**
+ * 合并同名分类并更新书签的categoryId引用
+ * 解决不同设备间categoryId不一致的问题
+ */
+async function mergeCategoriesAndUpdateBookmarks(
+  remoteBookmarks: Bookmark[], 
+  remoteCategories: BookmarkCategory[]
+): Promise<{ bookmarks: Bookmark[], categories: BookmarkCategory[] }> {
+  try {
+    // 获取本地现有的分类数据
+    const localData = await chrome.storage.local.get(['categories']);
+    const localCategories: BookmarkCategory[] = localData.categories || [];
+    
+    console.log('开始分类合并:', {
+      本地分类: localCategories.length,
+      远程分类: remoteCategories.length,
+    });
+    
+    // 创建分类名称到最终分类的映射
+    const categoryMapping = new Map<string, string>(); // 远程categoryId -> 最终categoryId
+    const finalCategories: BookmarkCategory[] = [];
+    
+    // 先处理本地分类，建立名称索引
+    const localCategoryByName = new Map<string, BookmarkCategory>();
+    localCategories.forEach(cat => {
+      localCategoryByName.set(cat.name, cat);
+    });
+    
+    // 处理远程分类
+    remoteCategories.forEach(remoteCat => {
+      const localCat = localCategoryByName.get(remoteCat.name);
+      
+      if (localCat) {
+        // 找到同名分类，使用本地分类的ID
+        categoryMapping.set(remoteCat.id, localCat.id);
+        
+        // 检查是否已经添加到最终列表
+        if (!finalCategories.find(c => c.id === localCat.id)) {
+          finalCategories.push(localCat);
+        }
+        
+        console.log(`合并分类: "${remoteCat.name}" ${remoteCat.id} -> ${localCat.id}`);
+      } else {
+        // 新分类，直接使用
+        categoryMapping.set(remoteCat.id, remoteCat.id);
+        finalCategories.push(remoteCat);
+        
+        console.log(`新增分类: "${remoteCat.name}" ${remoteCat.id}`);
+      }
+    });
+    
+    // 添加本地独有的分类
+    localCategories.forEach(localCat => {
+      if (!finalCategories.find(c => c.id === localCat.id)) {
+        finalCategories.push(localCat);
+        console.log(`保留本地分类: "${localCat.name}" ${localCat.id}`);
+      }
+    });
+    
+    // 更新远程书签的categoryId
+    const updatedBookmarks = remoteBookmarks.map(bookmark => {
+      if (bookmark.categoryId && categoryMapping.has(bookmark.categoryId)) {
+        const newCategoryId = categoryMapping.get(bookmark.categoryId)!;
+        
+        if (newCategoryId !== bookmark.categoryId) {
+          console.log(`更新书签分类: "${bookmark.title}" ${bookmark.categoryId} -> ${newCategoryId}`);
+        }
+        
+        return {
+          ...bookmark,
+          categoryId: newCategoryId,
+        };
+      }
+      return bookmark;
+    });
+    
+    console.log('分类合并完成:', {
+      最终分类数: finalCategories.length,
+      更新书签数: updatedBookmarks.length,
+      映射规则: Array.from(categoryMapping.entries()),
+    });
+    
+    return {
+      bookmarks: updatedBookmarks,
+      categories: finalCategories,
+    };
+  } catch (error) {
+    console.error('分类合并失败:', error);
+    // 出错时返回原始数据
+    return {
+      bookmarks: remoteBookmarks,
+      categories: remoteCategories,
+    };
+  }
+}
 
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDataUpdated?: (data: {
+    bookmarks: any[];
+    categories: any[];
+    settings: any;
+  }) => void;
 }
 
 /**
  * 主设置弹窗组件
  * 提供完整的应用设置管理界面
  */
-export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
+export function SettingsModal({ open, onOpenChange, onDataUpdated }: SettingsModalProps) {
   // 直接从localStorage读取初始activeTab
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
     const saved = localStorage.getItem('settingsLastActiveTab') as SettingsTab;
@@ -125,6 +227,64 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
                   categories: [],
                   settings: settings,
                 };
+              }
+            }}
+            onDataUpdated={async (syncedData) => {
+              try {
+                console.log('接收到同步数据:', {
+                  bookmarks: syncedData.bookmarks?.length || 0,
+                  categories: syncedData.categories?.length || 0,
+                  settings: !!syncedData.settings,
+                });
+                
+                // 检查数据是否有效
+                if (!syncedData.bookmarks || !Array.isArray(syncedData.bookmarks)) {
+                  console.error('书签数据无效:', syncedData.bookmarks);
+                  syncedData.bookmarks = [];
+                }
+                
+                if (!syncedData.categories || !Array.isArray(syncedData.categories)) {
+                  console.error('分类数据无效:', syncedData.categories);
+                  syncedData.categories = [];
+                }
+                
+                // 处理分类ID冲突：合并同名分类并更新书签引用
+                const processedData = await mergeCategoriesAndUpdateBookmarks(
+                  syncedData.bookmarks, 
+                  syncedData.categories
+                );
+                
+                console.log('分类合并后的数据:', {
+                  bookmarks: processedData.bookmarks.length,
+                  categories: processedData.categories.length,
+                });
+                
+                // 将处理后的书签和分类数据保存到Chrome存储
+                await chrome.storage.local.set({
+                  bookmarks: processedData.bookmarks,
+                  categories: processedData.categories,
+                });
+                
+                // 设置数据通过useSettings机制更新
+                const settingsKey = 'app_settings';
+                await chrome.storage.local.set({
+                  [settingsKey]: syncedData.settings
+                });
+                
+                console.log('同步数据已保存到Chrome存储', {
+                  bookmarks: processedData.bookmarks.length,
+                  categories: processedData.categories.length,
+                  settings: !!syncedData.settings,
+                });
+                
+                // 通知主应用组件更新状态，使用处理后的数据
+                onDataUpdated?.({
+                  ...syncedData,
+                  bookmarks: processedData.bookmarks,
+                  categories: processedData.categories,
+                });
+              } catch (error) {
+                console.error('保存同步数据失败:', error);
               }
             }}
           />

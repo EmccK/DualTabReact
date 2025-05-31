@@ -31,9 +31,13 @@ export class WebDAVClientHelpers {
     const contentType = response.headers.get('content-type') || '';
     
     if (contentType.includes('application/json')) {
-      return response.json();
+      const jsonData = await response.json();
+      console.log('WebDAV JSON响应:', jsonData);
+      return jsonData;
     } else if (contentType.includes('text/')) {
-      return response.text() as T;
+      const textData = await response.text();
+      console.log('WebDAV文本响应:', { length: textData.length, preview: textData.substring(0, 200) });
+      return textData as T;
     } else {
       return response.arrayBuffer() as T;
     }

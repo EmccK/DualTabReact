@@ -103,7 +103,14 @@ export class WebDAVSyncExecutor {
     } else if (shouldDownload) {
       // 仅下载
       console.log('执行下载操作');
-      return await this.downloadData(item);
+      const downloadedData = await this.downloadData(item);
+      console.log('下载完成，数据:', {
+        type: item.type,
+        isArray: Array.isArray(downloadedData),
+        length: downloadedData?.length,
+        data: downloadedData
+      });
+      return downloadedData;
     }
 
     console.log('跳过同步操作');
@@ -133,12 +140,16 @@ export class WebDAVSyncExecutor {
   private shouldDownload(item: SyncItem): boolean {
     if (item.direction === 'upload') return false;
     
+    // 如果没有远程文件，不能下载
+    if (!item.remoteModified) return false;
+    
     // 如果远程有更新，需要下载
     if (item.localModified && item.remoteModified) {
       return item.remoteModified > item.localModified;
     }
     
-    return item.direction === 'download' || item.direction === 'bidirectional';
+    // 对于纯下载方向，只有在有远程文件时才下载
+    return item.direction === 'download';
   }
 
   /**

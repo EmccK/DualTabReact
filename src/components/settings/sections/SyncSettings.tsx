@@ -16,16 +16,21 @@ interface SyncSettingsProps {
     categories: BookmarkCategory[];
     settings: AppSettings;
   }>;
+  onDataUpdated?: (data: {
+    bookmarks: Bookmark[];
+    categories: BookmarkCategory[];
+    settings: AppSettings;
+  }) => void;
 }
 
 /**
  * 同步设置分组
  * 现在使用新的WebDAV功能组件
  */
-export function SyncSettings({ settings, onUpdate, getLocalData }: SyncSettingsProps) {
+export function SyncSettings({ settings, onUpdate, getLocalData, onDataUpdated }: SyncSettingsProps) {
   return (
     <div className="space-y-6">
-      <WebDAVPage getLocalData={getLocalData} />
+      <WebDAVPage getLocalData={getLocalData} onDataUpdated={onDataUpdated} />
     </div>
   );
 }

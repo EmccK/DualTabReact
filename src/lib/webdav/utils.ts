@@ -73,8 +73,26 @@ export function formatFileSize(bytes: number): string {
  */
 export function safeJsonParse<T>(jsonString: string, fallback: T): T {
   try {
-    return JSON.parse(jsonString);
-  } catch {
+    if (typeof jsonString !== 'string') {
+      console.warn('safeJsonParse: 输入不是字符串:', typeof jsonString, jsonString);
+      return fallback;
+    }
+    
+    const parsed = JSON.parse(jsonString);
+    console.log('safeJsonParse 成功解析:', { 
+      inputType: typeof jsonString, 
+      inputLength: jsonString.length,
+      outputType: typeof parsed,
+      isArray: Array.isArray(parsed),
+      parsed 
+    });
+    return parsed;
+  } catch (error) {
+    console.error('safeJsonParse 解析失败:', { 
+      error, 
+      inputType: typeof jsonString, 
+      input: jsonString?.substring(0, 200) 
+    });
     return fallback;
   }
 }
