@@ -391,8 +391,11 @@ function NewTabApp() {
       const target = event.target as Element
       const menuElement = target.closest('[data-context-menu="true"]')
       
-      // 如果不是在菜单内部点击，则关闭菜单
-      if (!menuElement) {
+      // 检查是否点击在分类边栏内部
+      const sidebarElement = target.closest('[data-category-sidebar="true"]')
+      
+      // 如果不是在菜单内部或边栏内部点击，则关闭菜单
+      if (!menuElement && !sidebarElement) {
         hideContextMenu()
       }
     }
@@ -500,6 +503,7 @@ function NewTabApp() {
           onCategoryContextMenu={handleCategoryContextMenu}
           loading={categoriesLoading}
           categorySettings={settings.bookmarks.categories}
+          contextMenuVisible={contextMenu.visible && contextMenu.type === 'category'}
         />
       </div>
 

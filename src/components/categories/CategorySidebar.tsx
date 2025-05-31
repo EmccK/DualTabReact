@@ -136,9 +136,12 @@ export function CategorySidebar({
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-l from-black/30 to-black/10 backdrop-blur-md flex flex-col border-l border-white/10">
+    <div 
+      className="w-full h-full bg-gradient-to-l from-black/30 to-black/10 backdrop-blur-md flex flex-col border-l border-white/10 relative z-10"
+      data-category-sidebar="true"
+    >
       {/* 分类列表 */}
-      <div className="flex-1 flex flex-col justify-center space-y-1 overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-center space-y-1 overflow-y-auto relative z-10">
         {/* 分类项目 */}
         {categories.map((category) => {
           return (
@@ -150,9 +153,13 @@ export function CategorySidebar({
               onDragEnd={handleDragEnd}
               onDragOver={(e) => handleDragOver(e, category.id)}
               onDrop={handleDrop}
-              onClick={() => handleCategoryClick(category.id)}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleCategoryClick(category.id)
+              }}
               onContextMenu={(e) => handleCategoryContextMenu(e, category)}
-              className={`group flex items-center space-x-2 px-3 py-2.5 cursor-pointer transition-all duration-200 ${
+              className={`relative z-10 group flex items-center space-x-2 px-3 py-2.5 cursor-pointer transition-all duration-200 ${
                 selectedCategoryId === category.id
                   ? 'text-white shadow-lg'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
@@ -162,7 +169,8 @@ export function CategorySidebar({
                 dragOverCategoryId === category.id ? 'bg-white/20 scale-105' : ''
               } hover:cursor-grab active:cursor-grabbing`}
               style={{
-                backgroundColor: selectedCategoryId === category.id ? category.color : undefined
+                backgroundColor: selectedCategoryId === category.id ? category.color : undefined,
+                pointerEvents: 'auto'  // 确保可以接收鼠标事件
               }}
             >
               <span className="text-base">{category.icon}</span>
@@ -173,10 +181,15 @@ export function CategorySidebar({
       </div>
       
       {/* 添加分类按钮 */}
-      <div className="p-3 border-t border-white/10">
+      <div className="p-3 border-t border-white/10 relative z-10">
         <div
-          onClick={onAddCategory}
-          className="group flex items-center justify-center space-x-2 px-3 py-2.5 cursor-pointer transition-all duration-200 text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onAddCategory()
+          }}
+          className="group flex items-center justify-center space-x-2 px-3 py-2.5 cursor-pointer transition-all duration-200 text-white/80 hover:text-white hover:bg-white/10 rounded-lg relative z-10"
+          style={{ pointerEvents: 'auto' }}
         >
           <Plus className="h-4 w-4" />
           <span className="text-sm font-medium">添加分类</span>

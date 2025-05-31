@@ -15,6 +15,7 @@ interface SimpleCategorySidebarProps {
   onCategoryContextMenu?: (category: BookmarkCategory, event: React.MouseEvent) => void
   loading?: boolean
   categorySettings: BookmarkSettings['categories']
+  contextMenuVisible?: boolean  // 新增：右键菜单是否可见
 }
 
 const SIDEBAR_WIDTH = 160 // 固定边栏宽度
@@ -29,10 +30,12 @@ export function SimpleCategorySidebar({
   onReorderCategories,
   onCategoryContextMenu,
   loading = false,
-  categorySettings
+  categorySettings,
+  contextMenuVisible = false  // 新增参数
 }: SimpleCategorySidebarProps) {
   const [isVisible, setIsVisible] = useState(categorySettings.sidebarVisible === 'always')
   const [isPinned, setIsPinned] = useState(false)
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)  // 新增状态
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 清除定时器
@@ -42,6 +45,15 @@ export function SimpleCategorySidebar({
       hideTimeoutRef.current = null
     }
   }, [])
+
+  // 隐藏边栏 - 考虑右键菜单状态
+  const hideSidebar = useCallback(() => {
+    if (categorySettings.sidebarVisible === 'auto' && !isPinned && !isContextMenuOpen) {
+      console.log('边栏立即隐藏')
+      clearHideTimeout()
+      setIsVisible(false)
+    }
+  }, [categorySettings.sidebarVisible, isPinned, isContextMenuOpen, clearHideTimeout])
 
   // 检查鼠标是否在边栏区域内
   const isMouseInSidebarArea = useCallback((clientX: number) => {
@@ -63,14 +75,25 @@ export function SimpleCategorySidebar({
     }
   }, [categorySettings.sidebarVisible, clearHideTimeout])
 
-  // 隐藏边栏
-  const hideSidebar = useCallback(() => {
-    if (categorySettings.sidebarVisible === 'auto' && !isPinned) {
-      console.log('边栏立即隐藏')
+  // 监听右键菜单状态变化
+  useEffect(() => {
+    setIsContextMenuOpen(contextMenuVisible)
+    
+    if (contextMenuVisible && categorySettings.sidebarVisible === 'auto') {
+      // 右键菜单打开时，确保边栏显示并临时固定
+      setIsVisible(true)
+      setIsPinned(true)
       clearHideTimeout()
-      setIsVisible(false)
+    } else if (!contextMenuVisible && isContextMenuOpen) {
+      // 右键菜单关闭时，取消固定，但给用户一些时间操作
+      setIsPinned(false)
+      hideTimeoutRef.current = setTimeout(() => {
+        if (categorySettings.sidebarVisible === 'auto') {
+          hideSidebar()
+        }
+      }, 1000) // 1秒延迟
     }
-  }, [categorySettings.sidebarVisible, isPinned, clearHideTimeout])
+  }, [contextMenuVisible, categorySettings.sidebarVisible, isContextMenuOpen, clearHideTimeout, hideSidebar])
 
   // 全局鼠标监听
   useEffect(() => {
@@ -83,8 +106,8 @@ export function SimpleCategorySidebar({
       if (inArea && !isVisible) {
         // 只有在边栏未显示时才触发显示
         showSidebar()
-      } else if (!inArea && isVisible && !isPinned) {
-        // 只有在边栏已显示且未固定时才触发隐藏
+      } else if (!inArea && isVisible && !isPinned && !isContextMenuOpen) {
+        // 只有在边栏已显示且未固定且右键菜单未打开时才触发隐藏
         hideSidebar()
       }
     }
@@ -153,12 +176,13 @@ export function SimpleCategorySidebar({
       {/* 边栏容器 */}
       <div
         className={`
-          fixed right-0 top-0 h-full z-30
+          fixed right-0 top-0 h-full z-[60]
           transition-transform duration-300 ease-in-out
           ${categorySettings.sidebarVisible === 'auto' && !isVisible ? 'translate-x-full' : 'translate-x-0'}
           ${isPinned ? 'shadow-2xl' : ''}
         `}
         style={{ width: `${SIDEBAR_WIDTH}px` }}
+        data-category-sidebar="true"
         onMouseEnter={() => {
           // 鼠标进入边栏时，取消隐藏定时器
           if (categorySettings.sidebarVisible === 'auto') {
@@ -166,8 +190,8 @@ export function SimpleCategorySidebar({
           }
         }}
         onMouseLeave={() => {
-          // 鼠标离开边栏时，立即触发隐藏
-          if (categorySettings.sidebarVisible === 'auto' && !isPinned) {
+          // 鼠标离开边栏时，如果右键菜单未打开才触发隐藏
+          if (categorySettings.sidebarVisible === 'auto' && !isPinned && !isContextMenuOpen) {
             hideSidebar()
           }
         }}
@@ -205,15 +229,26 @@ export function SimpleCategorySidebar({
         </div>
       )}
 
-      {/* 遮罩层 - 只覆盖左侧区域，不影响边栏 */}
+      {/* 遮罩层 - 只覆盖左侧区域，不影响边栏，并确保z-index低于边栏 */}
       {categorySettings.sidebarVisible === 'auto' && isVisible && (
         <div
-          className="fixed inset-0 bg-transparent z-20 transition-opacity duration-300"
-          style={{ right: `${SIDEBAR_WIDTH}px` }}
-          onClick={() => {
+          className="fixed inset-0 bg-transparent z-10 transition-opacity duration-300"
+          style={{ 
+            right: `${SIDEBAR_WIDTH + 2}px`,  // 增加2px确保不会覆盖到边栏
+            pointerEvents: 'auto'  // 确保可以接收点击事件
+          }}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
             setIsPinned(false)
             setIsVisible(false)
             clearHideTimeout()
+          }}
+          onMouseMove={(e) => {
+            // 确保鼠标在遮罩层上时会隐藏边栏，但要考虑右键菜单状态
+            if (!isPinned && !isContextMenuOpen) {
+              hideSidebar()
+            }
           }}
         />
       )}
