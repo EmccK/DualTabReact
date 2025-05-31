@@ -22,7 +22,7 @@ const BookmarkIcon: React.FC<BookmarkIconProps> = ({
   const iconStyle: React.CSSProperties = {
     width: size,
     height: size,
-    borderRadius: borderRadius === 0 ? 0 : `${borderRadius}px`,
+    borderRadius: `${borderRadius}px`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -71,7 +71,7 @@ const BookmarkIcon: React.FC<BookmarkIconProps> = ({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            borderRadius: borderRadius === 0 ? 0 : `${borderRadius}px`,
+            borderRadius: `${borderRadius}px`,
           }}
           onError={(e) => {
             // 图片加载失败时显示文字
@@ -107,7 +107,7 @@ const BookmarkIcon: React.FC<BookmarkIconProps> = ({
             width: '100%',
             height: '100%',
             objectFit: 'contain',
-            borderRadius: borderRadius > 0 ? `${borderRadius * 0.5}px` : 0,
+            borderRadius: `${borderRadius * 0.5}px`,
           }}
           onError={(e) => {
             // favicon加载失败时显示文字

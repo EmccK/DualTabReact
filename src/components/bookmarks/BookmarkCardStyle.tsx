@@ -3,7 +3,7 @@
  * 对应图片1的样式：图标在左侧，文字在右侧，有背景
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import BookmarkIcon from './BookmarkIcon';
 import { CARD_STYLE_CONFIG } from '@/constants/bookmark-style.constants';
 import type { BookmarkCardProps } from '@/types/bookmark-style.types';
@@ -15,6 +15,8 @@ const BookmarkCardStyle: React.FC<BookmarkCardProps> = ({
   onContextMenu,
   className = '',
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   const handleClick = () => {
     onClick?.(bookmark);
   };
@@ -27,7 +29,7 @@ const BookmarkCardStyle: React.FC<BookmarkCardProps> = ({
   const cardStyle: React.CSSProperties = {
     width: CARD_STYLE_CONFIG.width,
     height: CARD_STYLE_CONFIG.height,
-    borderRadius: settings.borderRadius === 0 ? 0 : `${settings.borderRadius}px`,
+    borderRadius: `${settings.borderRadius}px`,
     padding: CARD_STYLE_CONFIG.padding,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     backdropFilter: 'blur(10px)',
@@ -38,6 +40,7 @@ const BookmarkCardStyle: React.FC<BookmarkCardProps> = ({
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     userSelect: 'none',
+    transform: isHovered ? `scale(${settings.hoverScale})` : 'scale(1)',
   };
 
   const textStyle: React.CSSProperties = {
@@ -53,8 +56,10 @@ const BookmarkCardStyle: React.FC<BookmarkCardProps> = ({
 
   return (
     <div
-      className={`group hover:scale-105 hover:shadow-lg active:scale-95 ${className}`}
+      className={`group hover:shadow-lg active:scale-95 ${className}`}
       style={cardStyle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >

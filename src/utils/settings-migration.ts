@@ -129,6 +129,8 @@ export function migrateSettings(oldSettings: any): AppSettings {
       '启用分类排序设置 (始终启用)',
       '标签页位置设置 (始终使用右侧边栏)',
       '边栏宽度设置 (现在使用固定宽度 160px)',
+      '显示书签标题设置 (始终显示标题)',
+      '显示网站图标设置 (始终显示图标)',
     ]
   });
 
@@ -155,7 +157,9 @@ export function needsMigration(settings: any): boolean {
     settings.bookmarks?.categories?.layout !== undefined ||
     settings.bookmarks?.categories?.style !== undefined ||
     settings.bookmarks?.categories?.showEmpty !== undefined ||
-    settings.bookmarks?.categories?.enableSort !== undefined;
+    settings.bookmarks?.categories?.enableSort !== undefined ||
+    settings.bookmarks?.display?.showTitle !== undefined ||
+    settings.bookmarks?.display?.showFavicons !== undefined;
 
   return currentVersion !== CURRENT_SETTINGS_VERSION || hasRemovedSettings;
 }
@@ -211,6 +215,12 @@ export function createMigrationReport(oldSettings: any, newSettings: AppSettings
   }
   if (oldSettings.bookmarks?.categories?.tabPosition !== undefined) {
     removed.push('书签管理 → 标签页位置 (现在始终使用右侧边栏布局)');
+  }
+  if (oldSettings.bookmarks?.display?.showTitle !== undefined) {
+    removed.push('书签管理 → 显示书签标题 (现在始终显示标题)');
+  }
+  if (oldSettings.bookmarks?.display?.showFavicons !== undefined) {
+    removed.push('书签管理 → 显示网站图标 (现在始终显示图标)');
   }
 
   // 检查保留的设置项

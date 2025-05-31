@@ -3,7 +3,7 @@
  * 对应图片2的样式：图标在上方，文字在下方，无背景
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import BookmarkIcon from './BookmarkIcon';
 import { ICON_STYLE_CONFIG } from '@/constants/bookmark-style.constants';
 import type { BookmarkCardProps } from '@/types/bookmark-style.types';
@@ -15,6 +15,8 @@ const BookmarkIconStyle: React.FC<BookmarkCardProps> = ({
   onContextMenu,
   className = '',
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   const handleClick = () => {
     onClick?.(bookmark);
   };
@@ -33,6 +35,7 @@ const BookmarkIconStyle: React.FC<BookmarkCardProps> = ({
     transition: 'all 0.2s ease',
     userSelect: 'none',
     maxWidth: ICON_STYLE_CONFIG.textMaxWidth,
+    transform: isHovered ? `scale(${settings.hoverScale})` : 'scale(1)',
   };
 
   const textStyle: React.CSSProperties = {
@@ -51,8 +54,10 @@ const BookmarkIconStyle: React.FC<BookmarkCardProps> = ({
 
   return (
     <div
-      className={`group hover:scale-105 active:scale-95 ${className}`}
+      className={`group active:scale-95 ${className}`}
       style={containerStyle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >

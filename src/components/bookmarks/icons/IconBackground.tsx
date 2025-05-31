@@ -34,7 +34,7 @@ const IconBackground: React.FC<IconBackgroundProps> = ({
     if (!background) return {};
 
     const styles: React.CSSProperties = {
-      opacity: background.opacity || 1,
+      opacity: background.opacity ?? 1,
     };
 
     if (background.color) {

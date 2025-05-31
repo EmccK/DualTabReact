@@ -71,7 +71,7 @@ const BorderRadiusSlider: React.FC<BorderRadiusSliderProps> = ({
         <div
           className="w-12 h-12 bg-blue-500 transition-all duration-200"
           style={{ 
-            borderRadius: value === 0 ? '0px' : `${value}px`
+            borderRadius: `${value}px`
           }}
         />
       </div>

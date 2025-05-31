@@ -13,8 +13,6 @@ export interface BookmarkSettings {
   display: {
     styleType: 'card' | 'icon';       // 书签样式类型：卡片式或图标式
     borderRadius: number;             // 圆角大小 0-100px
-    showTitle: boolean;               // 显示书签标题
-    showFavicons: boolean;            // 显示网站图标
     showDescriptions: boolean;        // 显示描述信息
   };
   
@@ -99,8 +97,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
     display: {
       styleType: 'card',            // 默认使用卡片样式
       borderRadius: 12,             // 默认圆角
-      showTitle: true,
-      showFavicons: true,
       showDescriptions: true,
     },
     behavior: {

@@ -9,6 +9,7 @@ export type BookmarkStyleType = 'card' | 'icon';
 export interface BookmarkStyleSettings {
   styleType: BookmarkStyleType;  // 样式类型：卡片式或图标式
   borderRadius: number;          // 圆角大小 (0-20px)
+  hoverScale: number;            // 悬停缩放比例 (1.0-1.2)
 }
 
 // 书签项目接口

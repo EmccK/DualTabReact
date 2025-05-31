@@ -61,6 +61,7 @@ export const adaptItemToBookmark = (item: BookmarkItem, originalBookmark?: Bookm
 export const extractBookmarkStyleSettings = (settings: any): BookmarkStyleSettings => {
   return {
     styleType: settings.bookmarks?.display?.styleType || 'card',
-    borderRadius: settings.bookmarks?.display?.borderRadius || 12,
+    borderRadius: settings.bookmarks?.display?.borderRadius ?? 12,
+    hoverScale: settings.bookmarks?.behavior?.hoverScale ?? 1.05,
   };
 };

@@ -80,41 +80,20 @@ export function BookmarkSettings({ settings, onUpdate }: BookmarkSettingsProps) 
               </div>
             </SettingItem>
 
-            <SettingItem
-              title="显示书签标题"
-              description="在书签中显示标题文字"
-            >
-              <ToggleSwitch
-                checked={settings.display.showTitle}
-                onCheckedChange={(checked) => onUpdate({ 
-                  display: { ...settings.display, showTitle: checked }
-                })}
-              />
-            </SettingItem>
 
-            <SettingItem
-              title="显示网站图标"
-              description="在书签中显示网站的favicon图标"
-            >
-              <ToggleSwitch
-                checked={settings.display.showFavicons}
-                onCheckedChange={(checked) => onUpdate({ 
-                  display: { ...settings.display, showFavicons: checked }
-                })}
-              />
-            </SettingItem>
-
-            <SettingItem
-              title="显示描述信息"
-              description="在书签中显示描述文字"
-            >
-              <ToggleSwitch
-                checked={settings.display.showDescriptions}
-                onCheckedChange={(checked) => onUpdate({ 
-                  display: { ...settings.display, showDescriptions: checked }
-                })}
-              />
-            </SettingItem>
+            {settings.display.styleType === 'card' && (
+              <SettingItem
+                title="显示描述信息"
+                description="在书签中显示描述文字"
+              >
+                <ToggleSwitch
+                  checked={settings.display.showDescriptions}
+                  onCheckedChange={(checked) => onUpdate({ 
+                    display: { ...settings.display, showDescriptions: checked }
+                  })}
+                />
+              </SettingItem>
+            )}
           </div>
         </section>
       </div>
