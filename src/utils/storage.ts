@@ -20,6 +20,7 @@ export const STORAGE_KEYS = {
   CATEGORIES: 'categories', 
   NETWORK_MODE: 'networkMode',
   SETTINGS: 'settings',
+  SELECTED_CATEGORY: 'selectedCategoryId',
 } as const;
 
 // 内存缓存，减少Chrome API调用
@@ -514,6 +515,32 @@ export async function restoreFromBackup(backupData: BackupData): Promise<Operati
  */
 export function clearCache(): void {
   cache.clear();
+}
+
+/**
+ * 加载选中的分类ID
+ */
+export async function loadSelectedCategoryId(): Promise<OperationResult<string | null>> {
+  return getCachedData(
+    STORAGE_KEYS.SELECTED_CATEGORY,
+    async () => {
+      const result = await chromeStorageGet<string>(STORAGE_KEYS.SELECTED_CATEGORY);
+      
+      if (!result.success) {
+        return { success: true, data: null }; // 默认无选中分类
+      }
+
+      const categoryId = result.data?.[STORAGE_KEYS.SELECTED_CATEGORY] || null;
+      return { success: true, data: categoryId };
+    }
+  );
+}
+
+/**
+ * 保存选中的分类ID
+ */
+export async function saveSelectedCategoryId(categoryId: string | null): Promise<OperationResult<void>> {
+  return chromeStorageSet({ [STORAGE_KEYS.SELECTED_CATEGORY]: categoryId });
 }
 
 /**

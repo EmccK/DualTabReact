@@ -8,6 +8,7 @@ import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
 import { AttributionOverlay } from '@/components/background'
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
+import { loadSelectedCategoryId, saveSelectedCategoryId } from '@/utils/storage'
 import { backgroundImageManager } from '@/services/background'
 import type { BackgroundImageFilters } from '@/types/background'
 import { Plus, RefreshCw, Settings, Edit, Trash2 } from 'lucide-react'
@@ -59,15 +60,42 @@ function NewTabApp() {
     reload: reloadCategories
   } = useCategories()
   
-  // 分类筛选状态 - 确保始终选中第一个分类
+  // 分类筛选状态 - 从存储中恢复选中状态
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   
-  // 当分类数据加载完成后，确保有默认选中的分类
+  // 从存储中加载上次选中的分类
   useEffect(() => {
-    if (categories.length > 0 && !selectedCategoryId) {
-      setSelectedCategoryId(categories[0].id)
+    const loadSelectedCategory = async () => {
+      try {
+        const result = await loadSelectedCategoryId()
+        if (result.success && result.data) {
+          // 验证选中的分类是否仍然存在
+          const categoryExists = categories.find(cat => cat.id === result.data)
+          if (categoryExists) {
+            setSelectedCategoryId(result.data)
+            return
+          }
+        }
+        
+        // 如果没有保存的选中分类或分类不存在，选择第一个分类
+        if (categories.length > 0) {
+          const firstCategoryId = categories[0].id
+          setSelectedCategoryId(firstCategoryId)
+          await saveSelectedCategoryId(firstCategoryId)
+        }
+      } catch (error) {
+        console.error('加载选中分类失败:', error)
+        // 出错时也选择第一个分类
+        if (categories.length > 0) {
+          setSelectedCategoryId(categories[0].id)
+        }
+      }
     }
-  }, [categories, selectedCategoryId])
+    
+    if (categories.length > 0) {
+      loadSelectedCategory()
+    }
+  }, [categories])
   
   // 分类弹窗状态
   const [categoryModalOpen, setCategoryModalOpen] = useState(false)
@@ -291,13 +319,24 @@ function NewTabApp() {
   }, [reorderBookmarks])
 
 
-  // 分类选择处理 - 确保始终有分类被选中
-  const handleCategorySelect = useCallback((categoryId: string | null) => {
-    // 如果传入null或者选择的分类不存在，选择第一个分类
-    if (!categoryId || !categories.find(cat => cat.id === categoryId)) {
-      const firstCategory = categories.length > 0 ? categories[0] : null
-      setSelectedCategoryId(firstCategory?.id || null)
-    } else {
+  // 分类选择处理 - 确保始终有分类被选中并保存到存储
+  const handleCategorySelect = useCallback(async (categoryId: string | null) => {
+    try {
+      // 如果传入null或者选择的分类不存在，选择第一个分类
+      if (!categoryId || !categories.find(cat => cat.id === categoryId)) {
+        const firstCategory = categories.length > 0 ? categories[0] : null
+        const selectedId = firstCategory?.id || null
+        setSelectedCategoryId(selectedId)
+        if (selectedId) {
+          await saveSelectedCategoryId(selectedId)
+        }
+      } else {
+        setSelectedCategoryId(categoryId)
+        await saveSelectedCategoryId(categoryId)
+      }
+    } catch (error) {
+      console.error('保存选中分类失败:', error)
+      // 即使保存失败也要更新UI状态
       setSelectedCategoryId(categoryId)
     }
   }, [categories])
@@ -332,7 +371,11 @@ function NewTabApp() {
         // 如果删除的是当前选中的分类，切换到第一个可用分类
         if (selectedCategoryId === categoryId) {
           const remainingCategory = categories.find(cat => cat.id !== categoryId)
-          setSelectedCategoryId(remainingCategory?.id || null)
+          const newSelectedId = remainingCategory?.id || null
+          setSelectedCategoryId(newSelectedId)
+          if (newSelectedId) {
+            await saveSelectedCategoryId(newSelectedId)
+          }
         }
       } else {
         console.error('分类删除失败:', result.error)
@@ -637,9 +680,12 @@ function NewTabApp() {
           // 重要：同步后重置选中的分类，因为categoryId可能已经改变
           if (syncedData.categories && syncedData.categories.length > 0) {
             console.log('重置选中分类为第一个分类:', syncedData.categories[0]);
-            setSelectedCategoryId(syncedData.categories[0].id);
+            const firstCategoryId = syncedData.categories[0].id;
+            setSelectedCategoryId(firstCategoryId);
+            await saveSelectedCategoryId(firstCategoryId);
           } else {
             setSelectedCategoryId(null);
+            await saveSelectedCategoryId(null);
           }
           
           console.log('应用状态重新加载完成');
