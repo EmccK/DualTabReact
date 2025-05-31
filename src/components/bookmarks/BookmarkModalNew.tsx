@@ -1,6 +1,6 @@
 /**
- * 书签弹窗组件（与现有API兼容）
- * 适配新的书签样式系统
+ * 书签添加/编辑弹窗组件
+ * 支持文字图标不限字符数
  */
 
 import React, { useState, useEffect } from 'react';
@@ -11,71 +11,59 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import { Upload, Link, Type } from 'lucide-react';
+import { Upload, Link, Type, Palette } from 'lucide-react';
 import { COLOR_PALETTE } from '@/constants/bookmark-style.constants';
-import type { Bookmark, NetworkMode } from '@/types';
+import type { BookmarkItem } from '@/types/bookmark-style.types';
 
 interface BookmarkModalProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
-  mode: 'add' | 'edit';
-  bookmark?: Bookmark;
-  networkMode: NetworkMode;
-  selectedCategoryId?: string | null;
-  onSuccess: () => void;
+  onSave: (bookmark: BookmarkItem) => void;
+  bookmark?: BookmarkItem | null;
+  title?: string;
 }
 
 const BookmarkModal: React.FC<BookmarkModalProps> = ({
-  isOpen,
+  open,
   onClose,
-  mode,
-  bookmark,
-  networkMode,
-  selectedCategoryId,
-  onSuccess,
+  onSave,
+  bookmark = null,
+  title = '添加书签',
 }) => {
-  const [formData, setFormData] = useState<Partial<Bookmark>>({
+  const [formData, setFormData] = useState<Partial<BookmarkItem>>({
     title: '',
     url: '',
-    description: '',
     iconType: 'text',
     iconText: '',
     iconImage: '',
     iconColor: COLOR_PALETTE[0],
-    categoryId: selectedCategoryId || undefined,
   });
 
   const [urlError, setUrlError] = useState('');
 
   // 编辑模式下填充数据
   useEffect(() => {
-    if (bookmark && mode === 'edit') {
+    if (bookmark) {
       setFormData({
         title: bookmark.title,
         url: bookmark.url,
-        description: bookmark.description || '',
-        iconType: bookmark.iconType || 'text',
+        iconType: bookmark.iconType,
         iconText: bookmark.iconText || '',
-        iconImage: bookmark.iconImage || bookmark.iconData || bookmark.icon || '',
+        iconImage: bookmark.iconImage || '',
         iconColor: bookmark.iconColor || COLOR_PALETTE[0],
-        categoryId: bookmark.categoryId || selectedCategoryId || undefined,
-        internalUrl: bookmark.internalUrl,
-        externalUrl: bookmark.externalUrl,
       });
     } else {
       setFormData({
         title: '',
         url: '',
-        description: '',
         iconType: 'text',
         iconText: '',
         iconImage: '',
         iconColor: COLOR_PALETTE[0],
-        categoryId: selectedCategoryId || undefined,
       });
     }
     setUrlError('');
-  }, [bookmark, mode, isOpen, selectedCategoryId]);
+  }, [bookmark, open]);
 
   // 验证URL格式
   const validateUrl = (url: string): boolean => {
@@ -88,7 +76,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   };
 
   // 处理表单提交
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!formData.title?.trim()) {
       return;
     }
@@ -102,43 +90,22 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       return;
     }
 
-    const now = Date.now();
-    const bookmarkData: Bookmark = {
-      id: bookmark?.id || `bookmark_${now}`,
-      name: formData.title.trim(),
+    const newBookmark: BookmarkItem = {
+      id: bookmark?.id || `bookmark_${Date.now()}`,
       title: formData.title.trim(),
       url: formData.url.trim(),
-      description: formData.description?.trim(),
-      categoryId: formData.categoryId,
-      internalUrl: formData.internalUrl,
-      externalUrl: formData.externalUrl,
       iconType: formData.iconType || 'text',
-      iconText: formData.iconText?.trim() || formData.title.trim().slice(0, 2),
+      iconText: formData.iconText?.trim() || formData.title.trim(),
       iconImage: formData.iconImage?.trim(),
-      iconData: formData.iconType === 'image' ? formData.iconImage?.trim() : undefined,
-      icon: formData.iconType === 'favicon' ? formData.iconImage?.trim() : undefined,
       iconColor: formData.iconColor || COLOR_PALETTE[0],
-      position: bookmark?.position,
-      createdAt: bookmark?.createdAt || now,
-      updatedAt: now,
     };
 
-    try {
-      // 这里应该调用实际的保存API
-      console.log('保存书签:', bookmarkData);
-      
-      // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error('保存书签失败:', error);
-    }
+    onSave(newBookmark);
+    onClose();
   };
 
   // 处理输入变化
-  const handleInputChange = (field: keyof Bookmark, value: string) => {
+  const handleInputChange = (field: keyof BookmarkItem, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     if (field === 'url') {
@@ -150,17 +117,15 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   const handleTitleChange = (title: string) => {
     handleInputChange('title', title);
     if (formData.iconType === 'text' && !formData.iconText) {
-      handleInputChange('iconText', title.slice(0, 4));
+      handleInputChange('iconText', title.slice(0, 4)); // 默认取前4个字符
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {mode === 'edit' ? '编辑书签' : '添加书签'}
-          </DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -184,50 +149,12 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                 value={formData.url || ''}
                 onChange={(e) => handleInputChange('url', e.target.value)}
                 placeholder="https://example.com"
-                className="mt-1"
+                className={`mt-1 ${urlError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
               />
               {urlError && (
                 <p className="text-sm text-red-500 mt-1">{urlError}</p>
               )}
             </div>
-
-            <div>
-              <Label htmlFor="description">描述（可选）</Label>
-              <Textarea
-                id="description"
-                value={formData.description || ''}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="输入书签描述"
-                className="mt-1"
-                rows={2}
-              />
-            </div>
-
-            {/* 网络模式URL设置 */}
-            {networkMode && (
-              <div className="space-y-2">
-                <div>
-                  <Label htmlFor="internalUrl">内网地址（可选）</Label>
-                  <Input
-                    id="internalUrl"
-                    value={formData.internalUrl || ''}
-                    onChange={(e) => handleInputChange('internalUrl', e.target.value)}
-                    placeholder="http://192.168.1.100:8080"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="externalUrl">外网地址（可选）</Label>
-                  <Input
-                    id="externalUrl"
-                    value={formData.externalUrl || ''}
-                    onChange={(e) => handleInputChange('externalUrl', e.target.value)}
-                    placeholder="https://example.com"
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
           {/* 图标设置 */}
@@ -264,7 +191,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                     onChange={(e) => handleInputChange('iconText', e.target.value)}
                     placeholder="不限字符数，一行显示"
                     className="mt-1"
-                    maxLength={10}
+                    maxLength={10} // 建议最大长度，但不强制限制
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     建议2-4个字符效果最佳，支持中英文和emoji
@@ -364,7 +291,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
             onClick={handleSubmit}
             disabled={!formData.title?.trim() || !formData.url?.trim()}
           >
-            {mode === 'edit' ? '保存' : '添加'}
+            {bookmark ? '保存' : '添加'}
           </Button>
         </DialogFooter>
       </DialogContent>

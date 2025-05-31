@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { BookmarkGridV2, BookmarkModal } from '@/components/bookmarks'
+import { BookmarkGridV3, BookmarkModal } from '@/components/bookmarks'
 import { NetworkSwitch } from '@/components/network'
 import { CategoryModal, SimpleCategorySidebar } from '@/components/categories'
 import { SettingsModal } from '@/components/settings'
@@ -474,15 +474,12 @@ function NewTabApp() {
 
             {/* 书签网格区域 */}
             <div className="w-full max-w-5xl relative z-10">
-              <BookmarkGridV2
+              <BookmarkGridV3
                 bookmarks={bookmarks.filter(bookmark => 
                   !selectedCategoryId || bookmark.categoryId === selectedCategoryId
                 )}
                 networkMode={networkMode}
                 bookmarkSettings={settings.bookmarks}
-                displayStyle={settings.bookmarks.display?.style || 'detailed'}
-                borderRadius={settings.bookmarks.display?.borderRadius || 8}
-                categoryId={selectedCategoryId || undefined}
                 onBookmarkClick={handleBookmarkClick}
                 onBookmarkContextMenu={handleBookmarkContextMenu}
                 onBookmarkReorder={handleBookmarksReorder}

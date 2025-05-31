@@ -11,30 +11,17 @@ export interface AppPreferences {
 export interface BookmarkSettings {
   // 显示设置
   display: {
-    style?: 'detailed' | 'compact'; // 显示样式
-    borderRadius?: number;      // 圆角大小 0-20px
-    iconSize: number;           // 图标大小 16-48px
-    showTitle: boolean;         // 显示书签标题
-    itemsPerRow: 'auto' | number; // 每行书签数量，auto为自适应
-    cardSpacing: number;        // 卡片间距 4-16px
-    cardPadding: number;        // 卡片内边距 8-24px
-    showFavicons: boolean;      // 显示网站图标
-    showDescriptions: boolean;  // 显示描述信息
+    styleType: 'card' | 'icon';       // 书签样式类型：卡片式或图标式
+    borderRadius: number;             // 圆角大小 0-100px
+    showTitle: boolean;               // 显示书签标题
+    showFavicons: boolean;            // 显示网站图标
+    showDescriptions: boolean;        // 显示描述信息
   };
   
   // 行为设置
   behavior: {
-    openIn: 'current' | 'new';  // 打开方式
-    hoverScale: number;         // 悬停缩放比例 1.0-1.2
-  };
-  
-  // 网格布局设置
-  grid: {
-    columns: 'auto' | number;   // 列数设置，auto为响应式
-    aspectRatio: string;        // 纵横比 '1/1', '4/3', '16/9'
-    responsive: boolean;        // 响应式布局
-    minCardWidth: number;       // 最小卡片宽度 80-200px
-    maxCardWidth: number;       // 最大卡片宽度 120-300px
+    openIn: 'current' | 'new';        // 打开方式
+    hoverScale: number;               // 悬停缩放比例 1.0-1.2
   };
   
   // 分类设置
@@ -110,26 +97,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   bookmarks: {
     display: {
-      style: 'detailed',
-      borderRadius: 8,
-      iconSize: 32,
+      styleType: 'card',            // 默认使用卡片样式
+      borderRadius: 12,             // 默认圆角
       showTitle: true,
-      itemsPerRow: 'auto',
-      cardSpacing: 8,
-      cardPadding: 16,
       showFavicons: true,
       showDescriptions: true,
     },
     behavior: {
       openIn: 'current',
       hoverScale: 1.05,
-    },
-    grid: {
-      columns: 'auto',
-      aspectRatio: '1/1',
-      responsive: true,
-      minCardWidth: 120,
-      maxCardWidth: 200,
     },
     categories: {
       sidebarVisible: 'always',

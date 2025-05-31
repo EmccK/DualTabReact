@@ -3,7 +3,7 @@
  */
 
 // 图标类型
-export type IconType = 'official' | 'text' | 'upload';
+export type IconType = 'official' | 'text' | 'upload' | 'image' | 'favicon';
 
 // 书签类型定义
 export interface Bookmark {
@@ -17,9 +17,10 @@ export interface Bookmark {
   description?: string; // 书签描述
   icon?: string;
   iconType?: IconType;
-  iconText?: string;
+  iconText?: string; // 文字图标内容（支持任意字符数）
+  iconImage?: string; // 图片图标URL
   iconData?: string; // 上传图片的base64数据
-  iconColor?: string;
+  iconColor?: string; // 图标背景颜色
   backgroundColor?: string;
   position?: number; // 书签在网格中的位置索引
   createdAt: number;

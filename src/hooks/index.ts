@@ -4,7 +4,6 @@
 
 export { useBackground } from './useBackground';
 export { useBookmarkCategories } from './useBookmarkCategories';
-export { useBookmarkStyles } from './useBookmarkStyles';
 export { useBookmarks } from './useBookmarks';
 export { useCategories } from './useCategories';
 export { useClock } from './useClock';
