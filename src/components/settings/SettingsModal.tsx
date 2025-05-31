@@ -260,22 +260,31 @@ export function SettingsModal({ open, onOpenChange, onDataUpdated }: SettingsMod
                 });
                 
                 // 将处理后的书签和分类数据保存到Chrome存储
-                await chrome.storage.local.set({
-                  bookmarks: processedData.bookmarks,
-                  categories: processedData.categories,
-                });
+                console.log('开始保存同步数据到Chrome存储...');
                 
-                // 设置数据通过useSettings机制更新
-                const settingsKey = 'app_settings';
-                await chrome.storage.local.set({
-                  [settingsKey]: syncedData.settings
-                });
+                // 使用Promise.all确保所有数据都保存完成
+                const now = Date.now();
+                await Promise.all([
+                  chrome.storage.local.set({
+                    bookmarks: processedData.bookmarks,
+                    categories: processedData.categories,
+                    // 添加修改时间标记
+                    bookmarks_modified_time: now,
+                    categories_modified_time: now,
+                  }),
+                  chrome.storage.local.set({
+                    app_settings: syncedData.settings,
+                    // 添加设置修改时间标记
+                    app_settings_modified_time: now,
+                  })
+                ]);
                 
-                console.log('同步数据已保存到Chrome存储', {
-                  bookmarks: processedData.bookmarks.length,
-                  categories: processedData.categories.length,
-                  settings: !!syncedData.settings,
-                });
+                console.log('同步数据已保存到Chrome存储，等待存储操作完成...');
+                
+                // 添加小延迟确保存储操作完全完成
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                console.log('开始重新加载应用数据...');
                 
                 // 通知主应用组件更新状态，使用处理后的数据
                 onDataUpdated?.({
@@ -283,6 +292,8 @@ export function SettingsModal({ open, onOpenChange, onDataUpdated }: SettingsMod
                   bookmarks: processedData.bookmarks,
                   categories: processedData.categories,
                 });
+                
+                console.log('同步数据处理完成');
               } catch (error) {
                 console.error('保存同步数据失败:', error);
               }

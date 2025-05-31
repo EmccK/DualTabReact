@@ -170,7 +170,11 @@ export async function saveBookmarks(bookmarks: Bookmark[]): Promise<OperationRes
     };
   }
 
-  return chromeStorageSet({ [STORAGE_KEYS.BOOKMARKS]: bookmarks });
+  const now = Date.now();
+  return chromeStorageSet({ 
+    [STORAGE_KEYS.BOOKMARKS]: bookmarks,
+    [`${STORAGE_KEYS.BOOKMARKS}_modified_time`]: now
+  });
 }
 
 /**
@@ -204,7 +208,11 @@ export async function saveCategories(categories: BookmarkCategory[]): Promise<Op
     };
   }
 
-  return chromeStorageSet({ [STORAGE_KEYS.CATEGORIES]: categories });
+  const now = Date.now();
+  return chromeStorageSet({ 
+    [STORAGE_KEYS.CATEGORIES]: categories,
+    [`${STORAGE_KEYS.CATEGORIES}_modified_time`]: now
+  });
 }
 
 /**

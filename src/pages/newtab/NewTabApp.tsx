@@ -105,6 +105,9 @@ function NewTabApp() {
   // 设置弹窗状态
   const [settingsModalOpen, setSettingsModalOpen] = useState(false)
   
+  // 强制重新渲染的状态 - 用于WebDAV同步后强制刷新UI
+  const [forceRefreshKey, setForceRefreshKey] = useState(0)
+  
   // 通用右键菜单状态
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean
@@ -545,6 +548,7 @@ function NewTabApp() {
           <div className="flex-1 flex items-start justify-center pt-16 px-4 relative z-10">
             <div className="w-full max-w-5xl">
               <BookmarkGridV3
+                key={forceRefreshKey} // 添加key来强制重新渲染
                 bookmarks={bookmarks.filter(bookmark => 
                   !selectedCategoryId || bookmark.categoryId === selectedCategoryId
                 )}
@@ -580,6 +584,7 @@ function NewTabApp() {
 
         {/* 右侧分类边栏 */}
         <SimpleCategorySidebar
+          key={`categories-${forceRefreshKey}`} // 添加key来强制重新渲染
           categories={categories}
           selectedCategoryId={selectedCategoryId}
           onCategorySelect={handleCategorySelect}
@@ -666,30 +671,63 @@ function NewTabApp() {
         open={settingsModalOpen}
         onOpenChange={setSettingsModalOpen}
         onDataUpdated={async (syncedData) => {
-          console.log('接收到同步数据更新，正在重新加载应用状态...', {
-            bookmarks: syncedData.bookmarks.length,
-            categories: syncedData.categories.length,
-          });
-          
-          // 同时重新加载书签和分类数据
-          await Promise.all([
-            reloadBookmarks(),
-            reloadCategories()
-          ]);
-          
-          // 重要：同步后重置选中的分类，因为categoryId可能已经改变
-          if (syncedData.categories && syncedData.categories.length > 0) {
-            console.log('重置选中分类为第一个分类:', syncedData.categories[0]);
-            const firstCategoryId = syncedData.categories[0].id;
-            setSelectedCategoryId(firstCategoryId);
-            await saveSelectedCategoryId(firstCategoryId);
-          } else {
-            setSelectedCategoryId(null);
-            await saveSelectedCategoryId(null);
+          try {
+            console.log('接收到同步数据更新，正在重新加载应用状态...', {
+              bookmarks: syncedData.bookmarks.length,
+              categories: syncedData.categories.length,
+            });
+            
+            // 先重新加载书签和分类数据
+            console.log('重新加载书签和分类数据...');
+            await Promise.all([
+              reloadBookmarks(),
+              reloadCategories()
+            ]);
+            
+            console.log('书签和分类数据重新加载完成');
+            
+            // 强制重新渲染组件
+            setForceRefreshKey(prev => prev + 1);
+            console.log('触发强制重新渲染');
+            
+            // 添加延迟确保hooks已经更新状态
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // 重要：同步后重置选中的分类，因为categoryId可能已经改变
+            if (syncedData.categories && syncedData.categories.length > 0) {
+              console.log('重置选中分类为第一个分类:', syncedData.categories[0]);
+              const firstCategoryId = syncedData.categories[0].id;
+              setSelectedCategoryId(firstCategoryId);
+              await saveSelectedCategoryId(firstCategoryId);
+            } else {
+              console.log('没有分类数据，清空选中分类');
+              setSelectedCategoryId(null);
+              await saveSelectedCategoryId(null);
+            }
+            
+            console.log('应用状态重新加载完成');
+            // 注意：设置数据会通过useSettings自动更新，不需要手动处理
+          } catch (error) {
+            console.error('重新加载应用状态失败:', error);
+            
+            // 如果重新加载失败，尝试直接更新状态
+            console.log('尝试直接更新本地状态...');
+            try {
+              // 强制重新渲染
+              setForceRefreshKey(prev => prev + 1);
+              
+              // 强制更新 - 这是一个兜底方案
+              if (syncedData.categories && syncedData.categories.length > 0) {
+                const firstCategoryId = syncedData.categories[0].id;
+                setSelectedCategoryId(firstCategoryId);
+                await saveSelectedCategoryId(firstCategoryId);
+              } else {
+                setSelectedCategoryId(null);
+              }
+            } catch (fallbackError) {
+              console.error('兜底方案也失败了:', fallbackError);
+            }
           }
-          
-          console.log('应用状态重新加载完成');
-          // 注意：设置数据会通过useSettings自动更新，不需要手动处理
         }}
       />
 

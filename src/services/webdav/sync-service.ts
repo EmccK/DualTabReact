@@ -22,50 +22,72 @@ export class WebDAVSyncService {
   constructor(private dataOps: WebDAVDataOperations) {}
 
   /**
-   * 获取本地修改时间
+   * 获取本地数据集合的修改时间
+   * 使用Chrome存储的实际写入时间，而不是依赖数据项的时间戳
    */
-  private getLocalModifiedTime(data: any[]): Date {
-    if (!data || data.length === 0) {
-      console.log('本地数据为空，返回1970年时间戳');
-      return new Date(0);
+  private async getLocalCollectionModifiedTime(collectionKey: string): Promise<Date> {
+    try {
+      // 尝试获取集合级别的修改时间标记
+      const metaKey = `${collectionKey}_modified_time`;
+      const result = await chrome.storage.local.get(metaKey);
+      
+      if (result[metaKey]) {
+        console.log(`${collectionKey} 集合修改时间:`, new Date(result[metaKey]).toISOString());
+        return new Date(result[metaKey]);
+      }
+      
+      // 如果没有集合修改时间，检查数据是否存在
+      const dataResult = await chrome.storage.local.get(collectionKey);
+      const data = dataResult[collectionKey];
+      
+      if (!data || (Array.isArray(data) && data.length === 0)) {
+        console.log(`${collectionKey}: 本地数据为空，返回1970年时间戳`);
+        return new Date(0); // 空数据，使用最早时间
+      }
+      
+      // 如果有数据但没有修改时间标记，使用数据项的时间戳
+      if (Array.isArray(data)) {
+        const times = data
+          .map(item => item.updatedAt || item.createdAt || 0)
+          .filter(time => time > 0);
+        
+        if (times.length > 0) {
+          const maxTime = Math.max(...times);
+          const result = new Date(maxTime);
+          console.log(`${collectionKey}: 使用数据项时间戳`, result.toISOString());
+          return result;
+        }
+      }
+      
+      // 最后的兜底策略：如果数据存在但没有任何时间信息，使用一个相对较旧的时间
+      console.log(`${collectionKey}: 数据存在但无时间信息，使用默认旧时间`);
+      return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7天前
+      
+    } catch (error) {
+      console.error(`获取${collectionKey}修改时间失败:`, error);
+      return new Date(0); // 出错时使用最早时间，倾向于下载远程数据
     }
-    
-    // 找到最新的修改时间
-    const times = data.map(item => item.updatedAt || item.createdAt || 0).filter(time => time > 0);
-    
-    if (times.length === 0) {
-      console.log('本地数据没有有效时间戳，返回1970年时间戳');
-      return new Date(0);
+  }
+
+  /**
+   * 更新本地数据集合的修改时间标记
+   */
+  private async updateLocalCollectionModifiedTime(collectionKey: string): Promise<void> {
+    try {
+      const metaKey = `${collectionKey}_modified_time`;
+      const now = Date.now();
+      await chrome.storage.local.set({ [metaKey]: now });
+      console.log(`更新${collectionKey}修改时间标记:`, new Date(now).toISOString());
+    } catch (error) {
+      console.error(`更新${collectionKey}修改时间标记失败:`, error);
     }
-    
-    const maxTime = Math.max(...times);
-    const result = new Date(maxTime);
-    console.log('本地数据修改时间:', {
-      dataLength: data.length,
-      validTimes: times.length,
-      maxTime,
-      resultTime: result.toISOString()
-    });
-    
-    return result;
   }
 
   /**
    * 获取设置的修改时间
    */
   private async getSettingsModifiedTime(): Promise<Date> {
-    try {
-      // 从Chrome storage获取设置的修改时间
-      // 由于我们无法直接获取storage的修改时间，使用一个保守的策略
-      // 如果本地有设置数据，假设它比较旧（除非明确指定）
-      
-      // 使用当前时间减去1小时作为默认本地修改时间
-      // 这样可以确保如果远程有更新的数据，会被优先下载
-      return new Date(Date.now() - 60 * 60 * 1000);
-    } catch (error) {
-      // 出错时返回更早的时间，优先下载远程数据
-      return new Date(Date.now() - 24 * 60 * 60 * 1000);
-    }
+    return this.getLocalCollectionModifiedTime('app_settings');
   }
 
   /**
@@ -197,8 +219,8 @@ export class WebDAVSyncService {
         settings: settingsRemoteModified,
       });
       
-      const localBookmarksModified = this.getLocalModifiedTime(bookmarks);
-      const localCategoriesModified = this.getLocalModifiedTime(categories);
+      const localBookmarksModified = await this.getLocalCollectionModifiedTime('bookmarks');
+      const localCategoriesModified = await this.getLocalCollectionModifiedTime('categories');
       
       console.log('本地数据修改时间:', {
         bookmarks: localBookmarksModified,
@@ -284,14 +306,26 @@ export class WebDAVSyncService {
             case 'bookmark':
               syncedBookmarks = result.updatedData;
               console.log('书签数据已更新，数量:', syncedBookmarks.length);
+              // 如果是下载操作，更新本地修改时间标记
+              if (item.remoteModified && (!item.localModified || item.remoteModified > item.localModified)) {
+                await this.updateLocalCollectionModifiedTime('bookmarks');
+              }
               break;
             case 'category':
               syncedCategories = result.updatedData;
               console.log('分类数据已更新，数量:', syncedCategories.length);
+              // 如果是下载操作，更新本地修改时间标记
+              if (item.remoteModified && (!item.localModified || item.remoteModified > item.localModified)) {
+                await this.updateLocalCollectionModifiedTime('categories');
+              }
               break;
             case 'settings':
               syncedSettings = result.updatedData;
               console.log('设置数据已更新');
+              // 如果是下载操作，更新本地修改时间标记
+              if (item.remoteModified && (!item.localModified || item.remoteModified > item.localModified)) {
+                await this.updateLocalCollectionModifiedTime('app_settings');
+              }
               break;
           }
         } else if (result.success && result.updatedData === undefined) {
