@@ -1,12 +1,13 @@
 /**
  * 书签网格布局组件
- * 根据样式类型自动调整网格布局，支持拖拽重排序
+ * 根据样式类型自动调整网格布局，支持拖拽重排序和响应式布局
  */
 
 import React, { useState, useCallback } from 'react';
 import BookmarkCard from './BookmarkCard';
 import { BOOKMARK_STYLE_TYPES, CARD_STYLE_CONFIG } from '@/constants/bookmark-style.constants';
 import type { BookmarkItem, BookmarkStyleSettings } from '@/types/bookmark-style.types';
+import './BookmarkGrid.css';
 
 interface BookmarkGridProps {
   bookmarks: BookmarkItem[];
@@ -37,30 +38,23 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
     dragOverId: null,
   });
 
-  // 根据样式类型设置不同的网格样式
-  const getGridStyle = (): React.CSSProperties => {
+  // 根据样式类型获取CSS类名和内联样式
+  const getGridConfig = () => {
     if (settings.styleType === BOOKMARK_STYLE_TYPES.CARD) {
-      // 计算统一的行高：基础高度 + 描述行高度（如果显示描述）
       const rowHeight = showDescriptions 
         ? CARD_STYLE_CONFIG.heightWithDescription 
         : CARD_STYLE_CONFIG.height;
       
-      // 卡片样式：单列布局或较宽的双列布局
       return {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gridTemplateRows: `repeat(auto, ${rowHeight}px)`,
-        gap: '12px',
-        padding: '20px',
+        className: 'bookmark-grid-card',
+        style: {
+          gridAutoRows: `${rowHeight}px`,
+        }
       };
     } else {
-      // 图标样式：多列布局
       return {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-        gap: '20px',
-        padding: '20px',
-        justifyItems: 'center',
+        className: 'bookmark-grid-icon',
+        style: {}
       };
     }
   };
@@ -167,40 +161,45 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   }
 
   return (
-    <div className={className} style={getGridStyle()}>
-      {bookmarks.map((bookmark, index) => (
-        <div
-          key={bookmark.id}
-          draggable
-          onDragStart={(e) => handleDragStart(bookmark.id, e)}
-          onDragEnd={(e) => handleDragEnd(bookmark.id, e)}
-          onDragOver={(e) => handleDragOver(bookmark.id, e)}
-          onDragEnter={(e) => handleDragEnter(bookmark.id, e)}
-          onDragLeave={(e) => handleDragLeave(bookmark.id, e)}
-          onDrop={(e) => handleDrop(bookmark.id, e)}
-          className="relative"
-          style={{
-            opacity: dragState.draggedId === bookmark.id ? 0.5 : 1,
-            transform: dragState.dragOverId === bookmark.id ? 'scale(1.02)' : 'scale(1)',
-            transition: 'transform 0.2s ease, opacity 0.2s ease',
-            cursor: dragState.isDragging ? 'grabbing' : 'grab',
-          }}
-        >
-          {/* 拖拽指示线 */}
-          {dragState.dragOverId === bookmark.id && dragState.draggedId !== bookmark.id && (
-            <div className="absolute -left-1 top-0 bottom-0 w-1 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50 animate-pulse z-10" />
-          )}
-          
-          <BookmarkCard
-            bookmark={bookmark}
-            settings={settings}
-            showDescriptions={showDescriptions}
-            onClick={onBookmarkClick}
-            onContextMenu={onBookmarkContextMenu}
-            className={dragState.draggedId === bookmark.id ? 'pointer-events-none' : ''}
-          />
-        </div>
-      ))}
+    <div className={`bookmark-grid-container ${className}`}>
+      <div 
+        className={getGridConfig().className}
+        style={getGridConfig().style}
+      >
+        {bookmarks.map((bookmark, index) => (
+          <div
+            key={bookmark.id}
+            draggable
+            onDragStart={(e) => handleDragStart(bookmark.id, e)}
+            onDragEnd={(e) => handleDragEnd(bookmark.id, e)}
+            onDragOver={(e) => handleDragOver(bookmark.id, e)}
+            onDragEnter={(e) => handleDragEnter(bookmark.id, e)}
+            onDragLeave={(e) => handleDragLeave(bookmark.id, e)}
+            onDrop={(e) => handleDrop(bookmark.id, e)}
+            className="relative"
+            style={{
+              opacity: dragState.draggedId === bookmark.id ? 0.5 : 1,
+              transform: dragState.dragOverId === bookmark.id ? 'scale(1.02)' : 'scale(1)',
+              transition: 'transform 0.2s ease, opacity 0.2s ease',
+              cursor: dragState.isDragging ? 'grabbing' : 'grab',
+            }}
+          >
+            {/* 拖拽指示线 */}
+            {dragState.dragOverId === bookmark.id && dragState.draggedId !== bookmark.id && (
+              <div className="absolute -left-1 top-0 bottom-0 w-1 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50 animate-pulse z-10" />
+            )}
+            
+            <BookmarkCard
+              bookmark={bookmark}
+              settings={settings}
+              showDescriptions={showDescriptions}
+              onClick={onBookmarkClick}
+              onContextMenu={onBookmarkContextMenu}
+              className={dragState.draggedId === bookmark.id ? 'pointer-events-none' : ''}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

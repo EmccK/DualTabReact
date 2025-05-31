@@ -1,0 +1,106 @@
+/* 书签网格响应式布局样式 */
+
+.bookmark-grid-container {
+  width: 100%;
+}
+
+/* 卡片样式网格 */
+.bookmark-grid-card {
+  display: grid;
+  width: 100%;
+  justify-content: center;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+/* 图标样式网格 */
+.bookmark-grid-icon {
+  display: grid;
+  width: 100%;
+  justify-content: center;
+  justify-items: center;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 80px));
+  gap: 24px;
+  padding: 20px;
+}
+
+/* 响应式断点优化 */
+
+/* 小屏幕 (手机) */
+@media (max-width: 640px) {
+  .bookmark-grid-card {
+    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .bookmark-grid-icon {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 70px));
+    gap: 20px;
+    padding: 16px;
+  }
+}
+
+/* 中等屏幕 (平板) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .bookmark-grid-card {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
+    padding: 18px;
+  }
+  
+  .bookmark-grid-icon {
+    gap: 22px;
+    padding: 18px;
+  }
+}
+
+/* 大屏幕 (桌面) */
+@media (min-width: 1025px) {
+  .bookmark-grid-card {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .bookmark-grid-icon {
+    gap: 24px;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+}
+
+/* 超大屏幕 */
+@media (min-width: 1441px) {
+  .bookmark-grid-card {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 24px;
+    padding: 24px;
+    max-width: 1400px;
+  }
+  
+  .bookmark-grid-icon {
+    gap: 28px;
+    padding: 24px;
+    max-width: 1200px;
+  }
+}
+
+/* 确保在极小屏幕上至少能显示一列 */
+@media (max-width: 320px) {
+  .bookmark-grid-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .bookmark-grid-icon {
+    grid-template-columns: repeat(auto-fit, minmax(60px, 60px));
+    gap: 16px;
+    padding: 12px;
+  }
+}
