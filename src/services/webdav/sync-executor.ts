@@ -124,14 +124,25 @@ export class WebDAVSyncExecutor {
     if (item.direction === 'download') return false;
     
     // 如果远程没有文件，需要上传
-    if (!item.remoteModified) return true;
+    if (!item.remoteModified) {
+      console.log(`${item.name}: 没有远程文件，需要上传`);
+      return true;
+    }
     
     // 如果本地更新，需要上传
     if (item.localModified && item.remoteModified) {
-      return item.localModified > item.remoteModified;
+      const shouldUpload = item.localModified > item.remoteModified;
+      console.log(`${item.name}: 时间比较上传决策`, {
+        localModified: item.localModified.toISOString(),
+        remoteModified: item.remoteModified.toISOString(),
+        shouldUpload
+      });
+      return shouldUpload;
     }
     
-    return item.direction === 'upload' || item.direction === 'bidirectional';
+    const result = item.direction === 'upload' || item.direction === 'bidirectional';
+    console.log(`${item.name}: 方向决策上传`, { direction: item.direction, result });
+    return result;
   }
 
   /**
@@ -141,15 +152,26 @@ export class WebDAVSyncExecutor {
     if (item.direction === 'upload') return false;
     
     // 如果没有远程文件，不能下载
-    if (!item.remoteModified) return false;
+    if (!item.remoteModified) {
+      console.log(`${item.name}: 没有远程文件，跳过下载`);
+      return false;
+    }
     
     // 如果远程有更新，需要下载
     if (item.localModified && item.remoteModified) {
-      return item.remoteModified > item.localModified;
+      const shouldDownload = item.remoteModified > item.localModified;
+      console.log(`${item.name}: 时间比较下载决策`, {
+        localModified: item.localModified.toISOString(),
+        remoteModified: item.remoteModified.toISOString(),
+        shouldDownload
+      });
+      return shouldDownload;
     }
     
     // 对于纯下载方向，只有在有远程文件时才下载
-    return item.direction === 'download';
+    const result = item.direction === 'download';
+    console.log(`${item.name}: 方向决策下载`, { direction: item.direction, result });
+    return result;
   }
 
   /**

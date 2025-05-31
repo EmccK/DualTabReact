@@ -78,12 +78,26 @@ export class WebDAVDataOperations {
     try {
       console.log('开始下载书签数据...');
       const response = await this.fileOps.downloadFile(WEBDAV_PATHS.BOOKMARKS);
-      console.log('书签文件下载响应:', { success: response.success, dataLength: response.data?.length });
+      console.log('书签文件下载响应:', { success: response.success, dataType: typeof response.data, dataLength: response.data?.length });
       
-      if (response.success) {
-        // response.data 已经是解析后的对象，不需要再次JSON.parse
-        const bookmarks = Array.isArray(response.data) ? response.data : [];
-        console.log('解析后的书签数据:', { count: bookmarks.length, sample: bookmarks.slice(0, 2) });
+      if (response.success && response.data) {
+        let bookmarks: Bookmark[];
+        
+        // 检查数据是否已经是解析后的对象
+        if (typeof response.data === 'string') {
+          // 如果是字符串，需要JSON解析
+          bookmarks = safeJsonParse(response.data, []);
+          console.log('从字符串解析书签数据:', { count: bookmarks.length });
+        } else if (Array.isArray(response.data)) {
+          // 如果已经是数组，直接使用
+          bookmarks = response.data;
+          console.log('使用已解析的书签数组:', { count: bookmarks.length });
+        } else {
+          console.warn('意外的书签数据格式:', typeof response.data, response.data);
+          bookmarks = [];
+        }
+        
+        console.log('最终书签数据:', { count: bookmarks.length, sample: bookmarks.slice(0, 2) });
         return bookmarks;
       }
     } catch (error) {
@@ -110,12 +124,26 @@ export class WebDAVDataOperations {
     try {
       console.log('开始下载分类数据...');
       const response = await this.fileOps.downloadFile(WEBDAV_PATHS.CATEGORIES);
-      console.log('分类文件下载响应:', { success: response.success, dataLength: response.data?.length });
+      console.log('分类文件下载响应:', { success: response.success, dataType: typeof response.data, dataLength: response.data?.length });
       
-      if (response.success) {
-        // response.data 已经是解析后的对象，不需要再次JSON.parse
-        const categories = Array.isArray(response.data) ? response.data : [];
-        console.log('解析后的分类数据:', { count: categories.length, sample: categories.slice(0, 2) });
+      if (response.success && response.data) {
+        let categories: BookmarkCategory[];
+        
+        // 检查数据是否已经是解析后的对象
+        if (typeof response.data === 'string') {
+          // 如果是字符串，需要JSON解析
+          categories = safeJsonParse(response.data, []);
+          console.log('从字符串解析分类数据:', { count: categories.length });
+        } else if (Array.isArray(response.data)) {
+          // 如果已经是数组，直接使用
+          categories = response.data;
+          console.log('使用已解析的分类数组:', { count: categories.length });
+        } else {
+          console.warn('意外的分类数据格式:', typeof response.data, response.data);
+          categories = [];
+        }
+        
+        console.log('最终分类数据:', { count: categories.length, sample: categories.slice(0, 2) });
         return categories;
       }
     } catch (error) {
@@ -153,10 +181,27 @@ export class WebDAVDataOperations {
    */
   async downloadSettings(): Promise<AppSettings | null> {
     try {
+      console.log('开始下载设置数据...');
       const response = await this.fileOps.downloadFile(WEBDAV_PATHS.SETTINGS);
-      if (response.success) {
-        // response.data 已经是解析后的对象，不需要再次JSON.parse
-        const rawSettings = response.data;
+      console.log('设置文件下载响应:', { success: response.success, dataType: typeof response.data });
+      
+      if (response.success && response.data) {
+        let rawSettings: any;
+        
+        // 检查数据是否已经是解析后的对象
+        if (typeof response.data === 'string') {
+          // 如果是字符串，需要JSON解析
+          rawSettings = safeJsonParse(response.data, null);
+          console.log('从字符串解析设置数据:', { type: typeof rawSettings, isNull: rawSettings === null });
+        } else if (typeof response.data === 'object' && response.data !== null) {
+          // 如果已经是对象，直接使用
+          rawSettings = response.data;
+          console.log('使用已解析的设置对象');
+        } else {
+          console.warn('意外的设置数据格式:', typeof response.data, response.data);
+          rawSettings = null;
+        }
+        
         if (rawSettings && typeof rawSettings === 'object') {
           // 导入设置迁移函数
           const { migrateSettings, needsMigration } = await import('../../utils/settings-migration');
@@ -175,6 +220,7 @@ export class WebDAVDataOperations {
     } catch (error) {
       console.warn('下载设置失败:', error);
     }
+    console.log('返回null设置');
     return null;
   }
 

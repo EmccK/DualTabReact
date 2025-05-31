@@ -37,6 +37,18 @@ export class WebDAVClientHelpers {
     } else if (contentType.includes('text/')) {
       const textData = await response.text();
       console.log('WebDAV文本响应:', { length: textData.length, preview: textData.substring(0, 200) });
+      
+      // 尝试解析为JSON（很多WebDAV服务器返回的JSON文件Content-Type是text/plain）
+      if (textData.trim().startsWith('{') || textData.trim().startsWith('[')) {
+        try {
+          const jsonData = JSON.parse(textData);
+          console.log('WebDAV文本响应成功解析为JSON:', { type: typeof jsonData, isArray: Array.isArray(jsonData) });
+          return jsonData;
+        } catch (error) {
+          console.warn('WebDAV文本响应JSON解析失败，返回原始文本:', error);
+        }
+      }
+      
       return textData as T;
     } else {
       return response.arrayBuffer() as T;

@@ -25,14 +25,29 @@ export class WebDAVSyncService {
    * 获取本地修改时间
    */
   private getLocalModifiedTime(data: any[]): Date {
-    if (!data || data.length === 0) return new Date(0);
+    if (!data || data.length === 0) {
+      console.log('本地数据为空，返回1970年时间戳');
+      return new Date(0);
+    }
     
     // 找到最新的修改时间
-    const maxTime = Math.max(
-      ...data.map(item => item.updatedAt || item.createdAt || 0)
-    );
+    const times = data.map(item => item.updatedAt || item.createdAt || 0).filter(time => time > 0);
     
-    return new Date(maxTime);
+    if (times.length === 0) {
+      console.log('本地数据没有有效时间戳，返回1970年时间戳');
+      return new Date(0);
+    }
+    
+    const maxTime = Math.max(...times);
+    const result = new Date(maxTime);
+    console.log('本地数据修改时间:', {
+      dataLength: data.length,
+      validTimes: times.length,
+      maxTime,
+      resultTime: result.toISOString()
+    });
+    
+    return result;
   }
 
   /**
@@ -253,9 +268,17 @@ export class WebDAVSyncService {
 
         const result = await executor.executeSyncItem(item, data);
         
+        console.log(`${item.name} 同步结果:`, {
+          success: result.success,
+          hasUpdatedData: !!result.updatedData,
+          hasConflict: !!result.conflict,
+          updatedDataType: typeof result.updatedData,
+          updatedDataLength: Array.isArray(result.updatedData) ? result.updatedData.length : 'N/A'
+        });
+        
         if (!result.success && result.conflict) {
           this.conflictQueue.push(result.conflict);
-        } else if (result.success && result.updatedData) {
+        } else if (result.success && result.updatedData !== undefined) {
           // 更新同步后的数据
           switch (item.type) {
             case 'bookmark':
@@ -271,6 +294,8 @@ export class WebDAVSyncService {
               console.log('设置数据已更新');
               break;
           }
+        } else if (result.success && result.updatedData === undefined) {
+          console.log(`${item.name}: 同步成功但没有更新数据，保持原数据`);
         }
       }
 
