@@ -175,9 +175,11 @@ function NewTabApp() {
         : bookmark.url
     
     if (url) {
-      safeOpenUrl(url)
+      // 根据设置中的打开方式决定target参数
+      const target = settings.bookmarks.behavior.openIn === 'current' ? '_self' : '_blank'
+      safeOpenUrl(url, target)
     }
-  }, [networkMode])
+  }, [networkMode, settings.bookmarks.behavior.openIn])
 
   // 处理书签保存
   const handleBookmarkSave = useCallback(async (bookmarkData: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt' | 'position'>) => {
