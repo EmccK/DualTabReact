@@ -46,8 +46,13 @@ export function SimpleCategorySidebar({
   // 检查鼠标是否在边栏区域内
   const isMouseInSidebarArea = useCallback((clientX: number) => {
     const windowWidth = window.innerWidth
-    return clientX >= windowWidth - SIDEBAR_WIDTH - 12 // 12px触发区域
-  }, [])
+    // 如果边栏已显示，那么整个边栏区域都算在内部
+    if (isVisible) {
+      return clientX >= windowWidth - SIDEBAR_WIDTH
+    }
+    // 如果边栏未显示，只有右侧的触发区域才会触发显示
+    return clientX >= windowWidth - 12 // 12px触发区域
+  }, [isVisible])
 
   // 显示边栏
   const showSidebar = useCallback(() => {
@@ -61,12 +66,9 @@ export function SimpleCategorySidebar({
   // 隐藏边栏
   const hideSidebar = useCallback(() => {
     if (categorySettings.sidebarVisible === 'auto' && !isPinned) {
-      console.log('隐藏边栏 (500ms后)')
+      console.log('边栏立即隐藏')
       clearHideTimeout()
-      hideTimeoutRef.current = setTimeout(() => {
-        console.log('边栏已隐藏')
-        setIsVisible(false)
-      }, 500)
+      setIsVisible(false)
     }
   }, [categorySettings.sidebarVisible, isPinned, clearHideTimeout])
 
@@ -78,9 +80,11 @@ export function SimpleCategorySidebar({
       const inArea = isMouseInSidebarArea(e.clientX)
       console.log('鼠标位置:', e.clientX, '窗口宽度:', window.innerWidth, '在边栏区域:', inArea)
       
-      if (inArea) {
+      if (inArea && !isVisible) {
+        // 只有在边栏未显示时才触发显示
         showSidebar()
-      } else {
+      } else if (!inArea && isVisible && !isPinned) {
+        // 只有在边栏已显示且未固定时才触发隐藏
         hideSidebar()
       }
     }
@@ -155,6 +159,18 @@ export function SimpleCategorySidebar({
           ${isPinned ? 'shadow-2xl' : ''}
         `}
         style={{ width: `${SIDEBAR_WIDTH}px` }}
+        onMouseEnter={() => {
+          // 鼠标进入边栏时，取消隐藏定时器
+          if (categorySettings.sidebarVisible === 'auto') {
+            clearHideTimeout()
+          }
+        }}
+        onMouseLeave={() => {
+          // 鼠标离开边栏时，立即触发隐藏
+          if (categorySettings.sidebarVisible === 'auto' && !isPinned) {
+            hideSidebar()
+          }
+        }}
       >
         {/* CategorySidebar - 完全独立，不受任何事件干扰 */}
         <CategorySidebar
@@ -189,10 +205,10 @@ export function SimpleCategorySidebar({
         </div>
       )}
 
-      {/* 遮罩层 */}
+      {/* 遮罩层 - 只覆盖左侧区域，不影响边栏 */}
       {categorySettings.sidebarVisible === 'auto' && isVisible && (
         <div
-          className="fixed inset-0 bg-black/10 z-20 transition-opacity duration-300"
+          className="fixed inset-0 bg-black/5 z-20 transition-opacity duration-300"
           style={{ right: `${SIDEBAR_WIDTH}px` }}
           onClick={() => {
             setIsPinned(false)

@@ -125,11 +125,11 @@ export function CategorySidebar({
 
   if (loading) {
     return (
-      <div className="w-full h-full">
-        <div className="space-y-1">
-          <div className="h-12 bg-white/20 animate-pulse" />
-          <div className="h-12 bg-white/20 animate-pulse" />
-          <div className="h-12 bg-white/20 animate-pulse" />
+      <div className="w-full h-full bg-white/10 backdrop-blur-md flex flex-col">
+        <div className="flex-1 flex flex-col justify-center space-y-1 overflow-y-auto">
+          <div className="h-12 bg-white/20 animate-pulse mx-3 rounded" />
+          <div className="h-12 bg-white/20 animate-pulse mx-3 rounded" />
+          <div className="h-12 bg-white/20 animate-pulse mx-3 rounded" />
         </div>
       </div>
     )
