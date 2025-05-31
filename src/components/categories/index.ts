@@ -5,5 +5,5 @@
 export { CategoryTabs } from './CategoryTabs'
 export { CategorySidebar } from './CategorySidebar'
 export { CategoryModal } from './CategoryModal'
-export { ResizableCategorySidebar } from './ResizableCategorySidebar'
 export { SimpleCategorySidebar } from './SimpleCategorySidebar'
+// ResizableCategorySidebar 已废弃 - 使用了废弃的 sidebarWidth 设置

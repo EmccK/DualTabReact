@@ -74,6 +74,7 @@ export interface AppSettings {
   bookmarks: BookmarkSettings;
   background: BackgroundSettings;
   sync: SyncSettings;
+  _version?: string; // 设置版本号，用于迁移
 }
 
 export interface SettingsContextType {
@@ -133,4 +134,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
     autoSync: false,
     syncInterval: 30,
   },
+  _version: '2.0.0', // 当前版本号
 };

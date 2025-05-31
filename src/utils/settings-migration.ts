@@ -49,11 +49,26 @@ export function migrateSettings(oldSettings: any): AppSettings {
 
   // 迁移书签设置
   if (oldSettings.bookmarks) {
-    // 显示设置 - 保持不变
+    // 显示设置 - 只保留当前使用的设置项
     if (oldSettings.bookmarks.display) {
       newSettings.bookmarks.display = {
-        ...DEFAULT_SETTINGS.bookmarks.display,
-        ...oldSettings.bookmarks.display,
+        // 保留现有的书签样式类型
+        styleType: oldSettings.bookmarks.display.styleType || DEFAULT_SETTINGS.bookmarks.display.styleType,
+        // 保留现有的圆角大小
+        borderRadius: oldSettings.bookmarks.display.borderRadius || DEFAULT_SETTINGS.bookmarks.display.borderRadius,
+        // 保留现有的描述显示设置
+        showDescriptions: oldSettings.bookmarks.display.showDescriptions !== undefined 
+          ? oldSettings.bookmarks.display.showDescriptions 
+          : DEFAULT_SETTINGS.bookmarks.display.showDescriptions,
+        
+        // 移除的设置项：
+        // - cardPadding: 使用CSS固定值
+        // - cardSpacing: 使用CSS固定值  
+        // - iconSize: 使用CSS固定值
+        // - itemsPerRow: 使用CSS响应式布局
+        // - showFavicons: 始终显示图标
+        // - showTitle: 始终显示标题
+        // - style: 移除，样式现在由styleType决定
       };
     }
 
@@ -72,14 +87,6 @@ export function migrateSettings(oldSettings: any): AppSettings {
       };
     }
 
-    // 网格设置 - 保持不变
-    if (oldSettings.bookmarks.grid) {
-      newSettings.bookmarks.grid = {
-        ...DEFAULT_SETTINGS.bookmarks.grid,
-        ...oldSettings.bookmarks.grid,
-      };
-    }
-
     // 分类设置 - 移除布局和样式选项
     if (oldSettings.bookmarks.categories) {
       newSettings.bookmarks.categories = {
@@ -95,6 +102,9 @@ export function migrateSettings(oldSettings: any): AppSettings {
         // - tabPosition: 移除，因为始终使用边栏布局
       };
     }
+
+    // 完全移除grid设置 - 现在使用CSS Grid响应式布局
+    // oldSettings.bookmarks.grid 不再需要迁移
   }
 
   // 背景设置 - 保持不变
@@ -131,6 +141,12 @@ export function migrateSettings(oldSettings: any): AppSettings {
       '边栏宽度设置 (现在使用固定宽度 160px)',
       '显示书签标题设置 (始终显示标题)',
       '显示网站图标设置 (始终显示图标)',
+      '卡片内边距设置 (使用CSS固定值)',
+      '卡片间距设置 (使用CSS固定值)',
+      '图标大小设置 (使用CSS固定值)',
+      '每行项目数设置 (使用CSS响应式布局)',
+      '书签详细样式设置 (现在由样式类型决定)',
+      '网格布局设置组 (使用CSS Grid响应式布局)',
     ]
   });
 
@@ -158,8 +174,16 @@ export function needsMigration(settings: any): boolean {
     settings.bookmarks?.categories?.style !== undefined ||
     settings.bookmarks?.categories?.showEmpty !== undefined ||
     settings.bookmarks?.categories?.enableSort !== undefined ||
+    settings.bookmarks?.categories?.sidebarWidth !== undefined ||
+    settings.bookmarks?.categories?.tabPosition !== undefined ||
     settings.bookmarks?.display?.showTitle !== undefined ||
-    settings.bookmarks?.display?.showFavicons !== undefined;
+    settings.bookmarks?.display?.showFavicons !== undefined ||
+    settings.bookmarks?.display?.cardPadding !== undefined ||
+    settings.bookmarks?.display?.cardSpacing !== undefined ||
+    settings.bookmarks?.display?.iconSize !== undefined ||
+    settings.bookmarks?.display?.itemsPerRow !== undefined ||
+    settings.bookmarks?.display?.style !== undefined ||
+    settings.bookmarks?.grid !== undefined; // 整个grid设置组都被移除
 
   return currentVersion !== CURRENT_SETTINGS_VERSION || hasRemovedSettings;
 }
@@ -221,6 +245,24 @@ export function createMigrationReport(oldSettings: any, newSettings: AppSettings
   }
   if (oldSettings.bookmarks?.display?.showFavicons !== undefined) {
     removed.push('书签管理 → 显示网站图标 (现在始终显示图标)');
+  }
+  if (oldSettings.bookmarks?.display?.cardPadding !== undefined) {
+    removed.push('书签管理 → 卡片内边距 (使用CSS固定值)');
+  }
+  if (oldSettings.bookmarks?.display?.cardSpacing !== undefined) {
+    removed.push('书签管理 → 卡片间距 (使用CSS固定值)');
+  }
+  if (oldSettings.bookmarks?.display?.iconSize !== undefined) {
+    removed.push('书签管理 → 图标大小 (使用CSS固定值)');
+  }
+  if (oldSettings.bookmarks?.display?.itemsPerRow !== undefined) {
+    removed.push('书签管理 → 每行项目数 (使用CSS响应式布局)');
+  }
+  if (oldSettings.bookmarks?.display?.style !== undefined) {
+    removed.push('书签管理 → 书签详细样式 (现在由样式类型决定)');
+  }
+  if (oldSettings.bookmarks?.grid !== undefined) {
+    removed.push('书签管理 → 网格布局设置组 (使用CSS Grid响应式布局)');
   }
 
   // 检查保留的设置项
