@@ -61,8 +61,15 @@ export class WebDAVSyncExecutor {
         item.localModified.getTime() - item.remoteModified.getTime()
       );
       
-      // 如果时间差小于1分钟，认为可能同时修改
-      if (timeDiff < 60000) {
+      // 如果时间差小于3分钟，认为可能存在并发修改
+      // 缩短到3分钟，减少误报，但仍能捕获真正的并发场景
+      if (timeDiff < 3 * 60000) {
+        console.log(`${item.name}: 检测到潜在冲突`, {
+          localTime: item.localModified.toISOString(),
+          remoteTime: item.remoteModified.toISOString(),
+          timeDiff: timeDiff / 1000 + '秒'
+        });
+        
         return {
           item,
           localData: null, // 需要外部传入
@@ -76,7 +83,7 @@ export class WebDAVSyncExecutor {
   }
 
   /**
-   * 执行同步操作
+   * 执行同步操作 - 带重试和冲突检测
    */
   private async performSync(item: SyncItem, localData: any): Promise<any> {
     const shouldUpload = this.shouldUpload(item);
@@ -96,10 +103,9 @@ export class WebDAVSyncExecutor {
       await this.uploadData(item, localData);
       return localData;
     } else if (shouldUpload) {
-      // 仅上传
-      console.log('执行上传操作');
-      await this.uploadData(item, localData);
-      return localData;
+      // 上传前先检查远程是否有新变化（防止并发覆盖）
+      console.log('执行上传操作 - 检查并发冲突');
+      return await this.safeUpload(item, localData);
     } else if (shouldDownload) {
       // 仅下载
       console.log('执行下载操作');
@@ -115,6 +121,55 @@ export class WebDAVSyncExecutor {
 
     console.log('跳过同步操作');
     return localData;
+  }
+
+  /**
+   * 安全上传 - 上传前再次检查远程状态
+   */
+  private async safeUpload(item: SyncItem, localData: any): Promise<any> {
+    try {
+      // 上传前再次获取远程文件时间
+      const currentRemoteTime = await this.dataOps.getFileLastModified(this.getFileName(item.type));
+      
+      // 检查是否有其他设备在同步期间更新了文件
+      if (currentRemoteTime && item.remoteModified) {
+        const timeDiff = currentRemoteTime.getTime() - item.remoteModified.getTime();
+        
+        if (timeDiff > 1000) { // 如果远程文件在1秒内有更新
+          console.log(`${item.name}: 检测到并发上传，远程文件已更新`, {
+            原始远程时间: item.remoteModified.toISOString(),
+            当前远程时间: currentRemoteTime.toISOString(),
+            时间差: timeDiff / 1000 + '秒'
+          });
+          
+          // 下载最新的远程数据而不是上传本地数据
+          console.log(`${item.name}: 改为下载最新远程数据`);
+          return await this.downloadData(item);
+        }
+      }
+      
+      // 没有并发冲突，正常上传
+      await this.uploadData(item, localData);
+      return localData;
+      
+    } catch (error) {
+      console.warn(`${item.name}: 安全上传检查失败，使用常规上传:`, error);
+      // 如果检查失败，回退到常规上传
+      await this.uploadData(item, localData);
+      return localData;
+    }
+  }
+
+  /**
+   * 根据类型获取文件名
+   */
+  private getFileName(type: string): string {
+    switch (type) {
+      case 'bookmark': return 'bookmarks.json';
+      case 'category': return 'categories.json';
+      case 'settings': return 'settings.json';
+      default: return `${type}.json`;
+    }
   }
 
   /**

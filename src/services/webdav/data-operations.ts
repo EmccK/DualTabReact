@@ -158,20 +158,7 @@ export class WebDAVDataOperations {
    */
   async uploadSettings(settings: AppSettings): Promise<void> {
     console.log('开始上传设置数据');
-    
-    // 导入设置迁移函数，确保上传的是最新格式的设置
-    const { migrateSettings, needsMigration } = await import('../../utils/settings-migration');
-    
-    let settingsToUpload = settings;
-    
-    // 检查是否需要迁移（虽然本地设置通常已经是最新的，但为了保险起见）
-    if (needsMigration(settings)) {
-      console.log('上传前需要迁移设置数据...');
-      settingsToUpload = migrateSettings(settings);
-      console.log('上传前设置迁移完成');
-    }
-    
-    const content = JSON.stringify(settingsToUpload, null, 2);
+    const content = JSON.stringify(settings, null, 2);
     await this.fileOps.uploadFile(WEBDAV_PATHS.SETTINGS, content);
     console.log('设置数据上传完成');
   }
@@ -203,17 +190,6 @@ export class WebDAVDataOperations {
         }
         
         if (rawSettings && typeof rawSettings === 'object') {
-          // 导入设置迁移函数
-          const { migrateSettings, needsMigration } = await import('../../utils/settings-migration');
-          
-          // 检查是否需要迁移
-          if (needsMigration(rawSettings)) {
-            console.log('WebDAV下载的设置需要迁移，正在清理旧数据...');
-            const migratedSettings = migrateSettings(rawSettings);
-            console.log('WebDAV设置迁移完成');
-            return migratedSettings;
-          }
-          
           return rawSettings as AppSettings;
         }
       }
