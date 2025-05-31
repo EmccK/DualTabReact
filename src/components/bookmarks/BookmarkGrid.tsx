@@ -5,12 +5,13 @@
 
 import React, { useState, useCallback } from 'react';
 import BookmarkCard from './BookmarkCard';
-import { BOOKMARK_STYLE_TYPES } from '@/constants/bookmark-style.constants';
+import { BOOKMARK_STYLE_TYPES, CARD_STYLE_CONFIG } from '@/constants/bookmark-style.constants';
 import type { BookmarkItem, BookmarkStyleSettings } from '@/types/bookmark-style.types';
 
 interface BookmarkGridProps {
   bookmarks: BookmarkItem[];
   settings: BookmarkStyleSettings;
+  showDescriptions?: boolean;
   onBookmarkClick?: (bookmark: BookmarkItem) => void;
   onBookmarkContextMenu?: (bookmark: BookmarkItem, event: React.MouseEvent) => void;
   onBookmarkReorder?: (reorderedBookmarks: BookmarkItem[]) => void;
@@ -20,6 +21,7 @@ interface BookmarkGridProps {
 const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   bookmarks,
   settings,
+  showDescriptions = false,
   onBookmarkClick,
   onBookmarkContextMenu,
   onBookmarkReorder,
@@ -38,10 +40,16 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   // 根据样式类型设置不同的网格样式
   const getGridStyle = (): React.CSSProperties => {
     if (settings.styleType === BOOKMARK_STYLE_TYPES.CARD) {
+      // 计算统一的行高：基础高度 + 描述行高度（如果显示描述）
+      const rowHeight = showDescriptions 
+        ? CARD_STYLE_CONFIG.heightWithDescription 
+        : CARD_STYLE_CONFIG.height;
+      
       // 卡片样式：单列布局或较宽的双列布局
       return {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gridTemplateRows: `repeat(auto, ${rowHeight}px)`,
         gap: '12px',
         padding: '20px',
       };
@@ -186,6 +194,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
           <BookmarkCard
             bookmark={bookmark}
             settings={settings}
+            showDescriptions={showDescriptions}
             onClick={onBookmarkClick}
             onContextMenu={onBookmarkContextMenu}
             className={dragState.draggedId === bookmark.id ? 'pointer-events-none' : ''}

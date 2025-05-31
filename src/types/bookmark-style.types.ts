@@ -17,6 +17,7 @@ export interface BookmarkItem {
   id: string;
   title: string;
   url: string;
+  description?: string;          // 书签描述信息
   iconType: 'text' | 'image' | 'favicon';
   iconText?: string;             // 文字图标内容（不限字符数）
   iconImage?: string;            // 图片图标URL
@@ -27,6 +28,7 @@ export interface BookmarkItem {
 export interface BookmarkCardProps {
   bookmark: BookmarkItem;
   settings: BookmarkStyleSettings;
+  showDescriptions?: boolean;
   onClick?: (bookmark: BookmarkItem) => void;
   onContextMenu?: (bookmark: BookmarkItem, event: React.MouseEvent) => void;
   className?: string;

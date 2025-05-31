@@ -33,6 +33,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   const [formData, setFormData] = useState<Partial<BookmarkItem>>({
     title: '',
     url: '',
+    description: '',
     iconType: 'text',
     iconText: '',
     iconImage: '',
@@ -47,6 +48,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       setFormData({
         title: bookmark.title,
         url: bookmark.url,
+        description: bookmark.description || '',
         iconType: bookmark.iconType,
         iconText: bookmark.iconText || '',
         iconImage: bookmark.iconImage || '',
@@ -56,6 +58,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       setFormData({
         title: '',
         url: '',
+        description: '',
         iconType: 'text',
         iconText: '',
         iconImage: '',
@@ -94,6 +97,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       id: bookmark?.id || `bookmark_${Date.now()}`,
       title: formData.title.trim(),
       url: formData.url.trim(),
+      description: formData.description?.trim(),
       iconType: formData.iconType || 'text',
       iconText: formData.iconText?.trim() || formData.title.trim(),
       iconImage: formData.iconImage?.trim(),
@@ -154,6 +158,18 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
               {urlError && (
                 <p className="text-sm text-red-500 mt-1">{urlError}</p>
               )}
+            </div>
+
+            <div>
+              <Label htmlFor="description">描述（可选）</Label>
+              <Textarea
+                id="description"
+                value={formData.description || ''}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="输入书签描述"
+                className="mt-1"
+                rows={2}
+              />
             </div>
           </div>
 

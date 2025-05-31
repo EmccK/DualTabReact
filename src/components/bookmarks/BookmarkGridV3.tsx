@@ -71,6 +71,7 @@ const BookmarkGridV3: React.FC<BookmarkGridV3Props> = ({
     <BookmarkGrid
       bookmarks={adaptedBookmarks}
       settings={styleSettings}
+      showDescriptions={bookmarkSettings.display.showDescriptions}
       onBookmarkClick={handleBookmarkClick}
       onBookmarkContextMenu={handleBookmarkContextMenu}
       onBookmarkReorder={handleBookmarkReorder}

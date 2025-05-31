@@ -49,7 +49,8 @@ export const PRESET_BORDER_RADIUS = [
 // 卡片样式配置
 export const CARD_STYLE_CONFIG = {
   width: 200,           // 卡片宽度
-  height: 60,           // 卡片高度
+  height: 60,           // 基础卡片高度
+  heightWithDescription: 70,  // 显示描述时的卡片高度
   iconSize: 40,         // 图标大小
   padding: 12,          // 内边距
   spacing: 12,          // 图标和文字间距

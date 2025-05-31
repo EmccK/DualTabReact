@@ -23,6 +23,8 @@ interface BookmarkModalProps {
   networkMode: NetworkMode;
   selectedCategoryId?: string | null;
   onSuccess: () => void;
+  onSave?: (bookmarkData: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt' | 'position'>) => Promise<void>;
+  onUpdate?: (bookmarkId: string, updates: Partial<Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
 }
 
 const BookmarkModal: React.FC<BookmarkModalProps> = ({
@@ -33,6 +35,8 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   networkMode,
   selectedCategoryId,
   onSuccess,
+  onSave,
+  onUpdate,
 }) => {
   const [formData, setFormData] = useState<Partial<Bookmark>>({
     title: '',
@@ -124,11 +128,45 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
     };
 
     try {
-      // 这里应该调用实际的保存API
-      console.log('保存书签:', bookmarkData);
-      
-      // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 100));
+      if (mode === 'edit' && bookmark && onUpdate) {
+        // 编辑模式：更新现有书签
+        const updates = {
+          name: bookmarkData.title,
+          title: bookmarkData.title,
+          url: bookmarkData.url,
+          description: bookmarkData.description,
+          categoryId: bookmarkData.categoryId,
+          internalUrl: bookmarkData.internalUrl,
+          externalUrl: bookmarkData.externalUrl,
+          iconType: bookmarkData.iconType,
+          iconText: bookmarkData.iconText,
+          iconImage: bookmarkData.iconImage,
+          iconData: bookmarkData.iconData,
+          icon: bookmarkData.icon,
+          iconColor: bookmarkData.iconColor,
+        };
+        await onUpdate(bookmark.id, updates);
+      } else if (mode === 'add' && onSave) {
+        // 添加模式：创建新书签
+        const newBookmarkData = {
+          name: bookmarkData.title,
+          title: bookmarkData.title,
+          url: bookmarkData.url,
+          description: bookmarkData.description,
+          categoryId: bookmarkData.categoryId,
+          internalUrl: bookmarkData.internalUrl,
+          externalUrl: bookmarkData.externalUrl,
+          iconType: bookmarkData.iconType,
+          iconText: bookmarkData.iconText,
+          iconImage: bookmarkData.iconImage,
+          iconData: bookmarkData.iconData,
+          icon: bookmarkData.icon,
+          iconColor: bookmarkData.iconColor,
+        };
+        await onSave(newBookmarkData);
+      } else {
+        console.warn('缺少保存回调函数');
+      }
       
       onSuccess();
       onClose();

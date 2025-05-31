@@ -40,6 +40,8 @@ function NewTabApp() {
     bookmarks,
     loading: bookmarksLoading,
     error: bookmarksError,
+    addBookmark,
+    updateBookmark,
     deleteBookmark,
     reorderBookmarks,
     reload: reloadBookmarks
@@ -176,6 +178,26 @@ function NewTabApp() {
       safeOpenUrl(url)
     }
   }, [networkMode])
+
+  // 处理书签保存
+  const handleBookmarkSave = useCallback(async (bookmarkData: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt' | 'position'>) => {
+    try {
+      await addBookmark(bookmarkData)
+    } catch (error) {
+      console.error('添加书签失败:', error)
+      throw error
+    }
+  }, [addBookmark])
+
+  // 处理书签更新
+  const handleBookmarkUpdate = useCallback(async (bookmarkId: string, updates: Partial<Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt'>>) => {
+    try {
+      await updateBookmark(bookmarkId, updates)
+    } catch (error) {
+      console.error('更新书签失败:', error)
+      throw error
+    }
+  }, [updateBookmark])
 
   // 通用右键菜单显示函数
   const showContextMenu = useCallback((
@@ -577,6 +599,8 @@ function NewTabApp() {
         networkMode={networkMode}
         selectedCategoryId={selectedCategoryId}
         onSuccess={reloadBookmarks}
+        onSave={handleBookmarkSave}
+        onUpdate={handleBookmarkUpdate}
       />
 
       {/* 分类弹窗 */}
