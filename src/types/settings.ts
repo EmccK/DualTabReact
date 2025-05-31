@@ -37,7 +37,6 @@ export interface BookmarkSettings {
   
   // 分类设置
   categories: {
-    sidebarWidth: number;       // 边栏宽度 200-400px
     sidebarVisible: 'always' | 'auto'; // 边栏显示模式
   };
 }
@@ -129,7 +128,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
       maxCardWidth: 200,
     },
     categories: {
-      sidebarWidth: 280,
       sidebarVisible: 'always',
     },
   },

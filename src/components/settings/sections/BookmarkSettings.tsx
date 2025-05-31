@@ -322,24 +322,6 @@ export function BookmarkSettings({ settings, onUpdate }: BookmarkSettingsProps) 
           </h3>
           <div className="space-y-0 border border-gray-200 rounded-lg bg-white">
             <SettingItem
-              title="边栏宽度"
-              description="设置右侧分类边栏的宽度，也可直接拖拽调整"
-            >
-              <div className="w-32">
-                <SliderControl
-                  value={settings.categories.sidebarWidth}
-                  onValueChange={(value) => onUpdate({ 
-                    categories: { ...settings.categories, sidebarWidth: value }
-                  })}
-                  min={200}
-                  max={400}
-                  step={20}
-                  valueFormatter={formatWidth}
-                />
-              </div>
-            </SettingItem>
-
-            <SettingItem
               title="边栏显示模式"
               description="控制分类边栏的显示行为"
             >

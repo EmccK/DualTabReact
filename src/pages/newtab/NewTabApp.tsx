@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { BookmarkGrid, BookmarkModal } from '@/components/bookmarks'
 import { NetworkSwitch } from '@/components/network'
-import { CategoryModal, ResizableCategorySidebar } from '@/components/categories'
+import { CategoryModal, SimpleCategorySidebar } from '@/components/categories'
 import { SettingsModal } from '@/components/settings'
 import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
@@ -10,10 +10,12 @@ import { AttributionOverlay } from '@/components/background'
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
 import { backgroundImageManager } from '@/services/background'
 import type { BackgroundImageFilters } from '@/types/background'
-import { Plus, RefreshCw, Settings, Cloud, Edit, Trash2 } from 'lucide-react'
+import { Plus, RefreshCw, Settings, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import { safeOpenUrl } from '@/utils/url-utils'
 import './newtab.css'
+
+const SIDEBAR_WIDTH = 160 // 固定边栏宽度
 
 function NewTabApp() {
   // 设置管理Hook - 最优先加载
@@ -97,9 +99,6 @@ function NewTabApp() {
     }
   }, [setNetworkMode])
 
-  const handleWebDAVSync = useCallback(() => {
-    console.log('WebDAV同步')
-  }, [])
 
   const handleOpenSettings = useCallback(() => {
     setSettingsModalOpen(true)
@@ -366,20 +365,6 @@ function NewTabApp() {
     }
   }, [reorderCategories])
 
-  // 处理边栏宽度更改
-  const handleSidebarWidthChange = useCallback(async (width: number) => {
-    try {
-      await updateSettings('bookmarks', {
-        categories: {
-          ...settings.bookmarks.categories,
-          sidebarWidth: width
-        }
-      })
-    } catch (error) {
-      console.error('更新边栏宽度失败:', error)
-    }
-  }, [updateSettings, settings.bookmarks.categories])
-
   // 处理删除书签
   const handleDeleteBookmark = useCallback(async (bookmark: Bookmark) => {
     if (confirm(`确定要删除书签"${bookmark.title}"吗？`)) {
@@ -439,7 +424,7 @@ function NewTabApp() {
         style={{ 
           paddingRight: settings.bookmarks.categories.sidebarVisible === 'auto' 
             ? '0px' 
-            : `${settings.bookmarks.categories.sidebarWidth}px` 
+            : `${SIDEBAR_WIDTH}px` 
         }}
       >
         {/* 左侧主内容区域 */}
@@ -466,17 +451,6 @@ function NewTabApp() {
                 <Settings className="h-4 w-4" />
               </Button>
 
-              {/* WebDAV同步 */}
-              <Button
-                onClick={handleWebDAVSync}
-                size="sm"
-                variant="ghost"
-                className="bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20"
-                title="WebDAV同步设置"
-              >
-                <Cloud className="h-4 w-4 mr-1" />
-                <span className="text-xs">同步</span>
-              </Button>
 
               {/* 网络模式切换 */}
               <NetworkSwitch
@@ -515,7 +489,7 @@ function NewTabApp() {
         </div>
 
         {/* 右侧分类边栏 */}
-        <ResizableCategorySidebar
+        <SimpleCategorySidebar
           categories={categories}
           selectedCategoryId={selectedCategoryId}
           onCategorySelect={handleCategorySelect}
@@ -526,7 +500,6 @@ function NewTabApp() {
           onCategoryContextMenu={handleCategoryContextMenu}
           loading={categoriesLoading}
           categorySettings={settings.bookmarks.categories}
-          onWidthChange={handleSidebarWidthChange}
         />
       </div>
 
@@ -536,7 +509,7 @@ function NewTabApp() {
         style={{ 
           right: settings.bookmarks.categories.sidebarVisible === 'auto' 
             ? '24px' 
-            : `${settings.bookmarks.categories.sidebarWidth + 24}px` 
+            : `${SIDEBAR_WIDTH + 24}px` 
         }}
       >
         {/* 刷新背景按钮 - 只在随机图片模式下显示 */}

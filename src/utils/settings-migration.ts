@@ -83,12 +83,11 @@ export function migrateSettings(oldSettings: any): AppSettings {
     // 分类设置 - 移除布局和样式选项
     if (oldSettings.bookmarks.categories) {
       newSettings.bookmarks.categories = {
-        // 保留现有的边栏宽度设置
-        sidebarWidth: oldSettings.bookmarks.categories.sidebarWidth || DEFAULT_SETTINGS.bookmarks.categories.sidebarWidth,
         // 保留现有的边栏显示模式设置
         sidebarVisible: oldSettings.bookmarks.categories.sidebarVisible || DEFAULT_SETTINGS.bookmarks.categories.sidebarVisible,
         
         // 移除的设置项（使用固定值）：
+        // - sidebarWidth: 现在使用固定宽度 160px
         // - layout: 始终为 'sidebar' (右侧边栏)
         // - style: 始终为 'simple' (简单样式)
         // - showEmpty: 始终为 true (显示空分类)
@@ -129,6 +128,7 @@ export function migrateSettings(oldSettings: any): AppSettings {
       '显示空分类设置 (始终显示)',
       '启用分类排序设置 (始终启用)',
       '标签页位置设置 (始终使用右侧边栏)',
+      '边栏宽度设置 (现在使用固定宽度 160px)',
     ]
   });
 
@@ -205,6 +205,9 @@ export function createMigrationReport(oldSettings: any, newSettings: AppSettings
   }
   if (oldSettings.bookmarks?.categories?.enableSort !== undefined) {
     removed.push('书签管理 → 启用分类排序 (现在始终启用分类排序)');
+  }
+  if (oldSettings.bookmarks?.categories?.sidebarWidth !== undefined) {
+    removed.push('书签管理 → 边栏宽度 (现在使用固定宽度 160px)');
   }
   if (oldSettings.bookmarks?.categories?.tabPosition !== undefined) {
     removed.push('书签管理 → 标签页位置 (现在始终使用右侧边栏布局)');

@@ -102,12 +102,13 @@ export function useBookmarkStyles(settings: BookmarkSettings) {
  */
 export function useCategoryLayoutStyles(settings: BookmarkSettings) {
   const layoutStyles = useMemo(() => {
-    // 分类布局始终为右侧边栏
+    // 分类布局始终为右侧边栏，使用固定宽度
+    const SIDEBAR_WIDTH = 160;
     return {
-      sidebarWidth: settings.categories.sidebarWidth,
-      mainWidth: `calc(100% - ${settings.categories.sidebarWidth + 24}px)`, // 24px为间距
+      sidebarWidth: SIDEBAR_WIDTH,
+      mainWidth: `calc(100% - ${SIDEBAR_WIDTH + 24}px)`, // 24px为间距
     };
-  }, [settings.categories]);
+  }, []);
 
   return {
     ...layoutStyles,
