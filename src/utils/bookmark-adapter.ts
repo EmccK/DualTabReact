@@ -10,14 +10,12 @@ import type { BookmarkItem, BookmarkStyleSettings } from '@/types/bookmark-style
 export const adaptBookmarkToItem = (bookmark: Bookmark): BookmarkItem => {
   // 确定图标类型
   let iconType: BookmarkItem['iconType'] = 'text';
-  if (bookmark.iconType === 'text' || bookmark.iconText) {
-    iconType = 'text';
-  } else if (bookmark.iconType === 'upload' && bookmark.iconData) {
-    iconType = 'image';
-  } else if (bookmark.iconType === 'image' && bookmark.iconImage) {
-    iconType = 'image';
-  } else if (bookmark.iconType === 'favicon' || bookmark.iconType === 'official' || bookmark.icon) {
+  if (bookmark.iconType === 'favicon' || bookmark.iconType === 'official') {
     iconType = 'favicon';
+  } else if (bookmark.iconType === 'upload' || bookmark.iconType === 'image') {
+    iconType = 'image';
+  } else {
+    iconType = 'text';
   }
 
   return {
@@ -45,7 +43,7 @@ export const adaptItemToBookmark = (item: BookmarkItem, originalBookmark?: Bookm
     internalUrl: originalBookmark?.internalUrl,
     externalUrl: originalBookmark?.externalUrl,
     description: item.description || originalBookmark?.description,
-    iconType: item.iconType === 'image' ? 'upload' : item.iconType === 'favicon' ? 'official' : 'text',
+    iconType: item.iconType === 'image' ? 'upload' : item.iconType === 'favicon' ? 'favicon' : 'text',
     iconText: item.iconText,
     iconImage: item.iconImage,
     iconData: item.iconType === 'image' ? item.iconImage : undefined,

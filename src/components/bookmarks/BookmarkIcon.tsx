@@ -89,7 +89,14 @@ const BookmarkIcon: React.FC<BookmarkIconProps> = ({
 
   // 渲染favicon图标
   if (bookmark.iconType === 'favicon') {
-    const faviconUrl = `https://www.google.com/s2/favicons?domain=${new URL(bookmark.url).hostname}&sz=64`;
+    let faviconUrl = '';
+    try {
+      const hostname = new URL(bookmark.url).hostname;
+      faviconUrl = `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`;
+    } catch {
+      // URL解析失败时，直接使用Google服务
+      faviconUrl = `https://www.google.com/s2/favicons?domain=${bookmark.url}&sz=64`;
+    }
     
     return (
       <div

@@ -34,7 +34,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
     title: '',
     url: '',
     description: '',
-    iconType: 'text',
+    iconType: 'favicon', // 默认使用网站图标
     iconText: '',
     iconImage: '',
     iconColor: COLOR_PALETTE[0],
@@ -59,7 +59,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
         title: '',
         url: '',
         description: '',
-        iconType: 'text',
+        iconType: 'favicon', // 默认使用网站图标
         iconText: '',
         iconImage: '',
         iconColor: COLOR_PALETTE[0],
@@ -100,7 +100,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       description: formData.description?.trim(),
       iconType: formData.iconType || 'text',
       iconText: formData.iconText?.trim() || formData.title.trim(),
-      iconImage: formData.iconImage?.trim(),
+      iconImage: formData.iconType === 'favicon' ? '' : formData.iconImage?.trim(),
       iconColor: formData.iconColor || COLOR_PALETTE[0],
     };
 
@@ -178,11 +178,15 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
             <Label>图标设置</Label>
             
             <Tabs
-              value={formData.iconType || 'text'}
+              value={formData.iconType || 'favicon'}
               onValueChange={(value) => handleInputChange('iconType', value)}
               className="w-full"
             >
               <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="favicon" className="flex items-center space-x-1">
+                  <Link size={14} />
+                  <span>网站图标</span>
+                </TabsTrigger>
                 <TabsTrigger value="text" className="flex items-center space-x-1">
                   <Type size={14} />
                   <span>文字</span>
@@ -191,11 +195,14 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                   <Upload size={14} />
                   <span>图片</span>
                 </TabsTrigger>
-                <TabsTrigger value="favicon" className="flex items-center space-x-1">
-                  <Link size={14} />
-                  <span>网站图标</span>
-                </TabsTrigger>
               </TabsList>
+
+              {/* 网站图标 */}
+              <TabsContent value="favicon" className="space-y-3">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  将自动获取网站的 favicon 图标
+                </div>
+              </TabsContent>
 
               {/* 文字图标 */}
               <TabsContent value="text" className="space-y-3">
@@ -217,22 +224,46 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                 {/* 颜色选择 */}
                 <div>
                   <Label>背景颜色</Label>
-                  <div className="grid grid-cols-5 gap-2 mt-2">
-                    {COLOR_PALETTE.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => handleInputChange('iconColor', color)}
-                        className={`
-                          w-8 h-8 rounded transition-all duration-200
-                          ${formData.iconColor === color 
-                            ? 'ring-2 ring-blue-500 ring-offset-2' 
-                            : 'hover:scale-110'
-                          }
-                        `}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
+                  
+                  {/* 自定义颜色输入 */}
+                  <div className="flex items-center space-x-3 mt-2 mb-3">
+                    <input
+                      type="color"
+                      value={formData.iconColor || COLOR_PALETTE[0]}
+                      onChange={(e) => handleInputChange('iconColor', e.target.value)}
+                      className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                      title="选择自定义颜色"
+                    />
+                    <Input
+                      value={formData.iconColor || COLOR_PALETTE[0]}
+                      onChange={(e) => handleInputChange('iconColor', e.target.value)}
+                      placeholder="#3b82f6"
+                      className="flex-1 font-mono text-sm"
+                      maxLength={7}
+                    />
+                  </div>
+                  
+                  {/* 预设颜色快速选择 */}
+                  <div>
+                    <Label className="text-xs text-gray-500">快速选择</Label>
+                    <div className="grid grid-cols-5 gap-2 mt-1">
+                      {COLOR_PALETTE.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleInputChange('iconColor', color)}
+                          className={`
+                            w-8 h-8 rounded transition-all duration-200 border-2
+                            ${formData.iconColor === color 
+                              ? 'ring-2 ring-blue-500 ring-offset-2 border-blue-500' 
+                              : 'border-gray-300 hover:scale-110'
+                            }
+                          `}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </TabsContent>
@@ -251,13 +282,6 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                   <p className="text-xs text-gray-500 mt-1">
                     支持 PNG、JPG、GIF、WebP 格式
                   </p>
-                </div>
-              </TabsContent>
-
-              {/* 网站图标 */}
-              <TabsContent value="favicon" className="space-y-3">
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  将自动获取网站的 favicon 图标
                 </div>
               </TabsContent>
             </Tabs>
@@ -287,7 +311,28 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                       }}
                     />
                   )}
-                  {formData.iconType === 'favicon' && '🌐'}
+                  {formData.iconType === 'favicon' && formData.url && (() => {
+                    try {
+                      const hostname = new URL(formData.url).hostname;
+                      const faviconUrl = `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`;
+                      return (
+                        <img
+                          src={faviconUrl}
+                          alt="favicon"
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            if (target.parentElement) {
+                              target.parentElement.innerHTML = '🌐';
+                            }
+                          }}
+                        />
+                      );
+                    } catch {
+                      return '🌐';
+                    }
+                  })()}
                 </div>
                 
                 {/* 文字预览 */}
