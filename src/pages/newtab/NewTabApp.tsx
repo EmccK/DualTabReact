@@ -7,11 +7,12 @@ import { SettingsModal } from '@/components/settings'
 import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
 import { AttributionOverlay } from '@/components/background'
+import { ImageScalerTest } from '@/components/test/ImageScalerTest'
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
 import { loadSelectedCategoryId, saveSelectedCategoryId } from '@/utils/storage'
 import { backgroundImageManager } from '@/services/background'
 import type { BackgroundImageFilters } from '@/types/background'
-import { Plus, RefreshCw, Settings, Edit, Trash2 } from 'lucide-react'
+import { Plus, RefreshCw, Settings, Edit, Trash2, TestTube } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import { safeOpenUrl } from '@/utils/url-utils'
 import './newtab.css'
@@ -104,7 +105,10 @@ function NewTabApp() {
   
   // 设置弹窗状态
   const [settingsModalOpen, setSettingsModalOpen] = useState(false)
-  
+
+  // 测试模式状态
+  const [testMode, setTestMode] = useState(false)
+
   // 强制重新渲染的状态 - 用于UI刷新
   const [forceRefreshKey, setForceRefreshKey] = useState(0)
   
@@ -500,9 +504,14 @@ function NewTabApp() {
     )
   }
 
+  // 如果是测试模式，显示测试页面
+  if (testMode) {
+    return <ImageScalerTest onBack={() => setTestMode(false)} />;
+  }
+
   return (
-    <div 
-      className="min-h-screen relative overflow-hidden transition-all duration-500" 
+    <div
+      className="min-h-screen relative overflow-hidden transition-all duration-500"
       style={backgroundStyles}
       onClick={handleGlobalClick}
     >
@@ -530,6 +539,17 @@ function NewTabApp() {
 
             {/* 右侧：控制按钮组 */}
             <div className="flex items-center space-x-3">
+              {/* 测试按钮 */}
+              <Button
+                onClick={() => setTestMode(true)}
+                size="sm"
+                variant="ghost"
+                className="bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20"
+                title="图片缩放功能测试"
+              >
+                <TestTube className="h-4 w-4" />
+              </Button>
+
               {/* 设置按钮 */}
               <Button
                 onClick={handleOpenSettings}
@@ -540,7 +560,6 @@ function NewTabApp() {
               >
                 <Settings className="h-4 w-4" />
               </Button>
-
 
               {/* 网络模式切换 */}
               <NetworkSwitch

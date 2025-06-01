@@ -158,6 +158,29 @@ export function validateCustomGradient(gradient: CustomGradient): string[] {
 }
 
 /**
+ * 将颜色和透明度转换为rgba格式
+ */
+export function colorWithOpacity(color: string, opacity: number): string {
+  if (color.startsWith('#')) {
+    // 转换hex颜色为rgba
+    const rgb = hexToRgb(color);
+    if (rgb) {
+      return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity / 100})`;
+    }
+  } else if (color.startsWith('rgb(')) {
+    // 将rgb转换为rgba
+    const rgb = color.slice(4, -1);
+    return `rgba(${rgb}, ${opacity / 100})`;
+  } else if (color.startsWith('rgba(')) {
+    // 已经是rgba格式，更新透明度
+    const rgba = color.slice(5, -1).split(',');
+    rgba[3] = ` ${opacity / 100}`;
+    return `rgba(${rgba.join(',')})`;
+  }
+  return color;
+}
+
+/**
  * 预设渐变模板
  */
 export const CUSTOM_GRADIENT_TEMPLATES: Partial<CustomGradient>[] = [

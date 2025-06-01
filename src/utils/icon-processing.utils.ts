@@ -4,7 +4,7 @@
 
 import type { Bookmark, NetworkMode } from '@/types';
 import type { TextIconConfig, UploadIconConfig, OfficialIconConfig } from '@/types/bookmark-icon.types';
-import { ICON_TYPES, FAVICON_SERVICE_URLS } from '@/constants';
+import { ICON_TYPES, FAVICON_SERVICE_URLS } from '@/constants/icon.constants';
 import { getUrlDomain } from '@/utils/url-utils';
 
 /**
@@ -231,13 +231,163 @@ export const generateDefaultTextIcon = (text: string, backgroundColor?: string):
 export const isValidImageUrl = (url: string): Promise<boolean> => {
   return new Promise((resolve) => {
     const img = new Image();
-    
+
     img.onload = () => resolve(true);
     img.onerror = () => resolve(false);
-    
+
     // 设置超时
     setTimeout(() => resolve(false), 5000);
-    
+
     img.src = url;
+  });
+};
+
+/**
+ * 应用图片缩放配置生成最终图片
+ */
+export const applyImageScale = (
+  imageData: string,
+  scaleConfig: {
+    scale: number;
+    offsetX: number;
+    offsetY: number;
+    rotation?: number;
+    backgroundColor?: string;
+    backgroundOpacity?: number;
+  },
+  outputSize: number = 64
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        reject(new Error('无法创建canvas上下文'));
+        return;
+      }
+
+      // 设置画布尺寸
+      canvas.width = outputSize;
+      canvas.height = outputSize;
+
+      // 绘制背景
+      if (scaleConfig.backgroundColor && (scaleConfig.backgroundOpacity ?? 100) > 0) {
+        const opacity = (scaleConfig.backgroundOpacity ?? 100) / 100;
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = scaleConfig.backgroundColor;
+        ctx.fillRect(0, 0, outputSize, outputSize);
+        ctx.globalAlpha = 1; // 重置透明度
+      } else {
+        // 透明背景
+        ctx.clearRect(0, 0, outputSize, outputSize);
+      }
+
+      // 保存当前状态
+      ctx.save();
+
+      // 移动到画布中心
+      ctx.translate(outputSize / 2, outputSize / 2);
+
+      // 应用旋转
+      if (scaleConfig.rotation) {
+        ctx.rotate((scaleConfig.rotation * Math.PI) / 180);
+      }
+
+      // 计算适合画布的基础尺寸（100%时正好放下）
+      const aspectRatio = img.width / img.height;
+      let baseWidth, baseHeight;
+
+      if (aspectRatio > 1) {
+        // 宽图片：以宽度为准
+        baseWidth = outputSize;
+        baseHeight = outputSize / aspectRatio;
+      } else {
+        // 高图片或正方形：以高度为准
+        baseHeight = outputSize;
+        baseWidth = outputSize * aspectRatio;
+      }
+
+      // 应用用户缩放
+      const finalWidth = baseWidth * scaleConfig.scale;
+      const finalHeight = baseHeight * scaleConfig.scale;
+
+      // 应用偏移（转换为像素值）
+      const offsetX = (scaleConfig.offsetX / 100) * outputSize;
+      const offsetY = (scaleConfig.offsetY / 100) * outputSize;
+
+      // 绘制图片
+      ctx.drawImage(
+        img,
+        -finalWidth / 2 + offsetX,
+        -finalHeight / 2 + offsetY,
+        finalWidth,
+        finalHeight
+      );
+
+      // 恢复状态
+      ctx.restore();
+
+      try {
+        const resultData = canvas.toDataURL('image/png');
+        resolve(resultData);
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    img.onerror = () => {
+      reject(new Error('图片加载失败'));
+    };
+
+    img.src = imageData;
+  });
+};
+
+/**
+ * 压缩并应用缩放配置的图片
+ */
+export const compressAndScaleImage = (
+  imageData: string,
+  scaleConfig?: {
+    scale: number;
+    offsetX: number;
+    offsetY: number;
+    rotation?: number;
+    backgroundColor?: string;
+    backgroundOpacity?: number;
+  },
+  maxWidth: number = 512,
+  maxHeight: number = 512,
+  quality: number = 0.8
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    // 如果有缩放配置，先应用缩放
+    if (scaleConfig) {
+      applyImageScale(imageData, scaleConfig, Math.min(maxWidth, maxHeight))
+        .then(scaledData => {
+          // 检查是否需要保持透明度
+          const needsPngFormat = !scaleConfig.backgroundColor || (scaleConfig.backgroundOpacity ?? 100) < 100;
+          
+          if (needsPngFormat) {
+            // 有透明度时直接返回PNG，不进行JPEG压缩
+            resolve(scaledData);
+          } else {
+            // 完全不透明时进行JPEG压缩
+            compressImage(scaledData, maxWidth, maxHeight, quality)
+              .then(resolve)
+              .catch(reject);
+          }
+        })
+        .catch(reject);
+    } else {
+      // 直接压缩
+      compressImage(imageData, maxWidth, maxHeight, quality)
+        .then(resolve)
+        .catch(reject);
+    }
   });
 };

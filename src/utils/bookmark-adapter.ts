@@ -27,6 +27,8 @@ export const adaptBookmarkToItem = (bookmark: Bookmark): BookmarkItem => {
     iconText: bookmark.iconText || bookmark.title.slice(0, 2),
     iconImage: bookmark.iconImage || bookmark.iconData || bookmark.icon,
     iconColor: bookmark.iconColor || '#3b82f6',
+    imageScale: bookmark.imageScale,
+    originalIconImage: bookmark.originalIconImage,
   };
 };
 
@@ -49,6 +51,8 @@ export const adaptItemToBookmark = (item: BookmarkItem, originalBookmark?: Bookm
     iconData: item.iconType === 'image' ? item.iconImage : undefined,
     icon: item.iconType === 'favicon' ? item.iconImage : undefined,
     iconColor: item.iconColor,
+    imageScale: item.imageScale,
+    originalIconImage: item.originalIconImage,
     backgroundColor: originalBookmark?.backgroundColor,
     position: originalBookmark?.position,
     createdAt: originalBookmark?.createdAt || now,

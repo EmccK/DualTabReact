@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { colorWithOpacity } from '@/utils/gradient/customGradientUtils';
 import type { BookmarkItem } from '@/types/bookmark-style.types';
 
 interface BookmarkIconProps {
@@ -59,10 +60,22 @@ const BookmarkIcon: React.FC<BookmarkIconProps> = ({
 
   // 渲染图片图标
   if (bookmark.iconType === 'image' && bookmark.iconImage) {
+    // 获取背景颜色配置
+    const backgroundColor = bookmark.imageScale?.backgroundColor;
+    const backgroundOpacity = bookmark.imageScale?.backgroundOpacity ?? 100;
+    
+    // 处理背景颜色：如果没有设置或透明度为0，则使用透明背景
+    const rgbaBackground = backgroundColor && backgroundOpacity > 0
+      ? colorWithOpacity(backgroundColor, backgroundOpacity)
+      : 'transparent';
+    
     return (
       <div
         className={`${className}`}
-        style={iconStyle}
+        style={{
+          ...iconStyle,
+          backgroundColor: rgbaBackground,
+        }}
       >
         <img
           src={bookmark.iconImage}

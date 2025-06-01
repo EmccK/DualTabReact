@@ -2,11 +2,14 @@ import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Upload, Type, Globe, Image } from 'lucide-react'
+import { ImageScaler } from '@/components/ui/ImageScaler'
+import { Upload, Type, Globe, Image, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { themeClasses } from '@/styles/theme'
 import { getFaviconUrl } from '@/utils/icon-utils'
+import { compressAndScaleImage } from '@/utils/icon-processing.utils'
 import type { IconType } from '@/types'
+import type { ImageScaleConfig } from '@/types/bookmark-style.types'
 
 interface IconSelectorProps {
   iconType: IconType
@@ -14,9 +17,12 @@ interface IconSelectorProps {
   iconData?: string
   backgroundColor?: string
   url?: string  // 添加URL参数用于获取favicon
+  imageScale?: ImageScaleConfig // 图片缩放配置
   onIconTypeChange: (type: IconType) => void
   onIconTextChange: (text: string) => void
   onIconUpload: (data: string) => void
+  onImageScaleChange?: (config: ImageScaleConfig) => void
+  onImageUrlChange?: (url: string) => void // 添加URL变化回调
   className?: string
 }
 
@@ -26,13 +32,18 @@ export function IconSelector({
   iconData,
   backgroundColor = 'transparent',
   url = '',
+  imageScale,
   onIconTypeChange,
   onIconTextChange,
   onIconUpload,
+  onImageScaleChange,
+  onImageUrlChange,
   className
 }: IconSelectorProps) {
   const [uploadFileName, setUploadFileName] = useState<string>('')
   const [faviconError, setFaviconError] = useState<boolean>(false)
+  const [showImageScaler, setShowImageScaler] = useState<boolean>(false)
+  const [originalImageData, setOriginalImageData] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleIconTypeSelect = useCallback((type: IconType) => {
@@ -63,14 +74,68 @@ export function IconSelector({
     reader.onload = (event) => {
       const result = event.target?.result as string
       if (result) {
-        onIconUpload(result)
+        setOriginalImageData(result)
+        setShowImageScaler(true)
+        // 初始化默认缩放配置
+        const defaultConfig: ImageScaleConfig = {
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          rotation: 0,
+          backgroundColor: '#ffffff',
+          backgroundOpacity: 0
+        }
+        onImageScaleChange?.(defaultConfig)
       }
     }
     reader.readAsDataURL(file)
-  }, [onIconUpload])
+  }, [onImageScaleChange])
 
   const handleUploadClick = useCallback(() => {
     fileInputRef.current?.click()
+  }, [])
+
+  // 处理图片缩放配置变化
+  const handleImageScaleChange = useCallback((config: ImageScaleConfig) => {
+    onImageScaleChange?.(config)
+
+    // 应用缩放配置生成最终图片
+    const sourceImage = originalImageData || iconData
+    if (sourceImage) {
+      compressAndScaleImage(sourceImage, config, 64, 64, 0.9)
+        .then(scaledData => {
+          onIconUpload(scaledData)
+        })
+        .catch(error => {
+          console.error('图片缩放失败:', error)
+          alert('图片缩放失败，请重试')
+        })
+    }
+  }, [originalImageData, iconData, onIconUpload, onImageScaleChange])
+
+  // 处理URL图片的缩放
+  const handleUrlImageScale = useCallback((url: string) => {
+    if (!url) return
+
+    // 设置原始图片数据为URL
+    setOriginalImageData(url)
+    setShowImageScaler(true)
+
+    // 初始化默认缩放配置
+    const defaultConfig: ImageScaleConfig = {
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+      rotation: 0,
+      backgroundColor: '#ffffff',
+      backgroundOpacity: 0
+    }
+    onImageScaleChange?.(defaultConfig)
+  }, [onImageScaleChange])
+
+  // 完成图片编辑
+  const handleImageEditComplete = useCallback(() => {
+    setShowImageScaler(false)
   }, [])
 
   // 当URL改变时重置favicon错误状态
@@ -218,15 +283,27 @@ export function IconSelector({
                 onChange={handleFileUpload}
                 className="hidden"
               />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleUploadClick}
-                className={cn(themeClasses.button.secondary, "w-full h-9 text-xs")}
-              >
-                <Upload className="w-3 h-3 mr-1" />
-                选择图片
-              </Button>
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleUploadClick}
+                  className={cn(themeClasses.button.secondary, "flex-1 h-9 text-xs")}
+                >
+                  <Upload className="w-3 h-3 mr-1" />
+                  选择图片
+                </Button>
+                {iconData && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowImageScaler(true)}
+                    className={cn(themeClasses.button.secondary, "h-9 text-xs")}
+                  >
+                    <Settings className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
               {uploadFileName && (
                 <p className="text-xs text-gray-600 truncate">
                   {uploadFileName}
@@ -236,6 +313,29 @@ export function IconSelector({
           )}
         </div>
       </div>
+
+      {/* 图片缩放器 */}
+      {showImageScaler && originalImageData && imageScale && (
+        <div className="mt-4">
+          <ImageScaler
+            imageUrl={originalImageData}
+            config={imageScale}
+            onConfigChange={handleImageScaleChange}
+            size={64}
+            className="w-full"
+          />
+          <div className="flex justify-end mt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleImageEditComplete}
+              className="text-xs"
+            >
+              完成编辑
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

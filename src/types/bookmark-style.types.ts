@@ -12,6 +12,16 @@ export interface BookmarkStyleSettings {
   hoverScale: number;            // 悬停缩放比例 (1.0-1.2)
 }
 
+// 图片缩放配置
+export interface ImageScaleConfig {
+  scale: number;                 // 缩放比例 (0.1-3.0)
+  offsetX: number;               // X轴偏移 (-100 到 100)
+  offsetY: number;               // Y轴偏移 (-100 到 100)
+  rotation?: number;             // 旋转角度 (0-360)
+  backgroundColor?: string;      // 背景颜色
+  backgroundOpacity?: number;    // 背景透明度 (0-100)
+}
+
 // 书签项目接口
 export interface BookmarkItem {
   id: string;
@@ -22,6 +32,8 @@ export interface BookmarkItem {
   iconText?: string;             // 文字图标内容（不限字符数）
   iconImage?: string;            // 图片图标URL
   iconColor?: string;            // 图标背景色
+  imageScale?: ImageScaleConfig; // 图片缩放配置
+  originalIconImage?: string;    // 原始图片数据（用于重新编辑）
 }
 
 // 书签卡片属性

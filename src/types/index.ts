@@ -20,7 +20,9 @@ export interface Bookmark {
   iconText?: string; // 文字图标内容（支持任意字符数）
   iconImage?: string; // 图片图标URL
   iconData?: string; // 上传图片的base64数据
+  originalIconImage?: string; // 原始图片数据（用于重新编辑）
   iconColor?: string; // 图标背景颜色
+  imageScale?: import('./bookmark-style.types').ImageScaleConfig; // 图片缩放配置
   backgroundColor?: string;
   position?: number; // 书签在网格中的位置索引
   createdAt: number;

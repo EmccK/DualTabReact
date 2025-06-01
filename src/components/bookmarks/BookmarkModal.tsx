@@ -11,9 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import { Upload, Link, Type } from 'lucide-react';
+import { ImageScaler } from '@/components/ui/ImageScaler';
+import { Upload, Link, Type, Settings } from 'lucide-react';
 import { COLOR_PALETTE } from '@/constants/bookmark-style.constants';
+import { compressAndScaleImage } from '@/utils/icon-processing.utils';
+import { colorWithOpacity } from '@/utils/gradient/customGradientUtils';
 import type { Bookmark, NetworkMode } from '@/types';
+import type { ImageScaleConfig } from '@/types/bookmark-style.types';
 
 interface BookmarkModalProps {
   isOpen: boolean;
@@ -50,6 +54,17 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   });
 
   const [urlError, setUrlError] = useState('');
+  const [showImageScaler, setShowImageScaler] = useState(false);
+  const [originalImageData, setOriginalImageData] = useState('');
+  const [originalImageUrl, setOriginalImageUrl] = useState(''); // 保存原始URL
+  const [imageScale, setImageScale] = useState<ImageScaleConfig>({
+    scale: 1,
+    offsetX: 0,
+    offsetY: 0,
+    rotation: 0,
+    backgroundColor: '#ffffff',
+    backgroundOpacity: 100
+  });
 
   // 编辑模式下填充数据
   useEffect(() => {
@@ -75,6 +90,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
         categoryId: bookmark.categoryId || selectedCategoryId || undefined,
         internalUrl: bookmark.internalUrl || '',
         externalUrl: bookmark.externalUrl || '',
+        imageScale: bookmark.imageScale, // 添加 imageScale 字段
       });
     } else {
       setFormData({
@@ -86,9 +102,57 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
         iconImage: '',
         iconColor: COLOR_PALETTE[0],
         categoryId: selectedCategoryId || undefined,
+        imageScale: {
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          rotation: 0,
+          backgroundColor: '#ffffff',
+          backgroundOpacity: 100
+        },
       });
     }
     setUrlError('');
+    setShowImageScaler(false);
+    
+    // 设置原始图片数据和 imageScale
+    if (bookmark && mode === 'edit') {
+      // 编辑模式：使用保存的原始图片数据和配置
+      const originalImage = bookmark.originalIconImage || bookmark.iconImage || bookmark.iconData || bookmark.icon || '';
+      setOriginalImageData(originalImage);
+      
+      // 判断是否是URL图片
+      if (originalImage && (originalImage.startsWith('http://') || originalImage.startsWith('https://'))) {
+        setOriginalImageUrl(originalImage);
+      } else {
+        setOriginalImageUrl('');
+      }
+      
+      if (bookmark.imageScale) {
+        setImageScale(bookmark.imageScale);
+      } else {
+        setImageScale({
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          rotation: 0,
+          backgroundColor: '#ffffff',
+          backgroundOpacity: 100
+        });
+      }
+    } else {
+      // 新增模式：清空数据
+      setOriginalImageData('');
+      setOriginalImageUrl('');
+      setImageScale({
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0,
+        rotation: 0,
+        backgroundColor: '#ffffff',
+        backgroundOpacity: 100
+      });
+    }
   }, [bookmark, mode, isOpen, selectedCategoryId]);
 
   // 验证URL格式
@@ -150,7 +214,9 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       iconImage: formData.iconImage?.trim(),
       iconData: formData.iconType === 'image' ? formData.iconImage?.trim() : undefined,
       icon: formData.iconType === 'favicon' ? formData.iconImage?.trim() : undefined,
+      originalIconImage: formData.iconType === 'image' ? originalImageData : undefined,
       iconColor: formData.iconColor || COLOR_PALETTE[0],
+      imageScale: formData.iconType === 'image' ? imageScale : undefined,
       position: bookmark?.position,
       createdAt: bookmark?.createdAt || now,
       updatedAt: now,
@@ -167,12 +233,14 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
           categoryId: bookmarkData.categoryId,
           internalUrl: bookmarkData.internalUrl,
           externalUrl: bookmarkData.externalUrl,
-          iconType: bookmarkData.iconType === 'favicon' ? 'favicon' : bookmarkData.iconType === 'image' ? 'upload' : 'text',
+          iconType: (bookmarkData.iconType === 'favicon' ? 'favicon' : bookmarkData.iconType === 'image' ? 'upload' : 'text') as IconType,
           iconText: bookmarkData.iconText,
           iconImage: bookmarkData.iconType === 'image' ? bookmarkData.iconImage : undefined,
           iconData: bookmarkData.iconType === 'image' ? bookmarkData.iconImage : undefined,
           icon: bookmarkData.iconType === 'favicon' ? '' : undefined,
+          originalIconImage: bookmarkData.originalIconImage,
           iconColor: bookmarkData.iconColor,
+          imageScale: bookmarkData.imageScale,
         };
         await onUpdate(bookmark.id, updates);
       } else if (mode === 'add' && onSave) {
@@ -185,12 +253,14 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
           categoryId: bookmarkData.categoryId,
           internalUrl: bookmarkData.internalUrl,
           externalUrl: bookmarkData.externalUrl,
-          iconType: bookmarkData.iconType === 'favicon' ? 'favicon' : bookmarkData.iconType === 'image' ? 'upload' : 'text',
+          iconType: (bookmarkData.iconType === 'favicon' ? 'favicon' : bookmarkData.iconType === 'image' ? 'upload' : 'text') as IconType,
           iconText: bookmarkData.iconText,
           iconImage: bookmarkData.iconType === 'image' ? bookmarkData.iconImage : undefined,
           iconData: bookmarkData.iconType === 'image' ? bookmarkData.iconImage : undefined,
           icon: bookmarkData.iconType === 'favicon' ? '' : undefined,
+          originalIconImage: bookmarkData.originalIconImage,
           iconColor: bookmarkData.iconColor,
+          imageScale: bookmarkData.imageScale,
         };
         await onSave(newBookmarkData);
       } else {
@@ -211,6 +281,12 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
     if (field === 'url' || field === 'internalUrl' || field === 'externalUrl') {
       setUrlError('');
     }
+    
+    // 特殊处理图片URL输入，同时更新原始图片数据
+    if (field === 'iconImage' && value && (value.startsWith('http://') || value.startsWith('https://'))) {
+      setOriginalImageData(value);
+      setOriginalImageUrl(value);
+    }
   };
 
   // 自动生成图标文字
@@ -219,6 +295,96 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
     if (formData.iconType === 'text' && !formData.iconText) {
       handleInputChange('iconText', title.slice(0, 4));
     }
+  };
+
+  // 处理图片上传
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('请选择图片文件');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('图片文件大小不能超过2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setOriginalImageData(result);
+        setOriginalImageUrl(''); // 清除URL状态，标记为本地上传
+        setShowImageScaler(true);
+        // 初始化默认缩放配置
+        const defaultConfig: ImageScaleConfig = {
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          rotation: 0,
+          backgroundColor: '#ffffff',
+          backgroundOpacity: 100
+        };
+        setImageScale(defaultConfig);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 处理图片缩放配置变化
+  const handleImageScaleChange = (config: ImageScaleConfig) => {
+    setImageScale(config);
+    // 同时更新formData中的imageScale，确保配置被保存
+    setFormData(prev => ({ ...prev, imageScale: config }));
+
+    // 对所有图片都生成缩放后的版本
+    if (originalImageData) {
+      compressAndScaleImage(originalImageData, config, 64, 64, 0.9)
+        .then(scaledData => {
+          setFormData(prev => ({ ...prev, iconImage: scaledData }));
+        })
+        .catch(error => {
+          console.error('图片缩放失败:', error);
+          alert('图片缩放失败，请重试');
+        });
+    }
+  };
+
+  // 处理URL图片的缩放
+  const handleUrlImageScale = (url: string) => {
+    if (!url) return;
+
+    // 判断是否是URL（而不是base64）
+    const isUrl = url.startsWith('http://') || url.startsWith('https://');
+
+    if (isUrl) {
+      // 这是URL图片，保存原始URL
+      setOriginalImageUrl(url);
+      setOriginalImageData(url);
+    } else {
+      // 这是base64图片（本地上传的）
+      setOriginalImageUrl('');
+      setOriginalImageData(url);
+    }
+
+    setShowImageScaler(true);
+
+    // 使用现有的缩放配置，只有在完全没有配置时才使用默认配置
+    if (!imageScale) {
+      const defaultConfig: ImageScaleConfig = {
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0,
+        rotation: 0,
+        backgroundColor: '#ffffff',
+        backgroundOpacity: 100
+      };
+      setImageScale(defaultConfig);
+    }
+    // 如果已有配置，直接使用现有的 imageScale，不重置
   };
 
   return (
@@ -396,19 +562,101 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
               </TabsContent>
 
               {/* 图片图标 */}
-              <TabsContent value="image" className="space-y-3">
-                <div>
-                  <Label htmlFor="iconImage">图片URL</Label>
-                  <Input
-                    id="iconImage"
-                    value={formData.iconImage || ''}
-                    onChange={(e) => handleInputChange('iconImage', e.target.value)}
-                    placeholder="https://example.com/icon.png"
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    支持 PNG、JPG、GIF、WebP 格式
-                  </p>
+              <TabsContent value="image" className="space-y-4">
+                <div className="space-y-4">
+                  {/* 图片来源选择 */}
+                  <div className="space-y-3">
+                    {/* 图片URL输入 */}
+                    <div>
+                      <Label htmlFor="iconImage">图片URL</Label>
+                      <Input
+                        id="iconImage"
+                        value={formData.iconImage || ''}
+                        onChange={(e) => handleInputChange('iconImage', e.target.value)}
+                        placeholder="https://example.com/icon.png"
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* 或者上传本地图片 */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">或者</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>上传本地图片</Label>
+                      <div className="mt-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => document.getElementById('image-upload')?.click()}
+                          className="w-full"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          选择图片文件
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 图片调整控制 */}
+                  {formData.iconImage && (
+                    <div className="border rounded-lg p-3 bg-gray-50">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">图片调整</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const imageUrl = originalImageData || formData.iconImage!;
+                            handleUrlImageScale(imageUrl);
+                          }}
+                        >
+                          <Settings className="w-4 h-4 mr-1" />
+                          调整
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        点击"调整"按钮可以缩放、旋转图片并设置背景
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 图片缩放器 */}
+                  {showImageScaler && originalImageData && (
+                    <div className="border rounded-lg p-3 bg-gray-50">
+                      <ImageScaler
+                        imageUrl={originalImageData}
+                        config={imageScale}
+                        onConfigChange={handleImageScaleChange}
+                        size={64}
+                        className="w-full"
+                      />
+                      <div className="flex justify-end mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowImageScaler(false)}
+                          className="text-xs"
+                        >
+                          完成编辑
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
@@ -423,7 +671,22 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                 <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold"
                   style={{
-                    backgroundColor: formData.iconType === 'text' ? formData.iconColor : '#f8fafc',
+                    backgroundColor: (() => {
+                      if (formData.iconType === 'text') {
+                        return formData.iconColor;
+                      } else if (formData.iconType === 'image') {
+                        const backgroundColor = imageScale?.backgroundColor;
+                        const backgroundOpacity = imageScale?.backgroundOpacity ?? 100;
+                        
+                        // 如果有背景颜色且透明度大于0，则应用背景
+                        if (backgroundColor && backgroundOpacity > 0) {
+                          return colorWithOpacity(backgroundColor, backgroundOpacity);
+                        }
+                        // 否则使用透明背景
+                        return 'transparent';
+                      }
+                      return '#f8fafc';
+                    })(),
                   }}
                 >
                   {formData.iconType === 'text' && (formData.iconText || formData.title?.slice(0, 2))}
