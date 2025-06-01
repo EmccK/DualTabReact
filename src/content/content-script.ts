@@ -1,7 +1,12 @@
 // DualTab 内容脚本
 // 在普通网页中运行，用于提取页面信息等功能
 
-console.log('[DEBUG] DualTab content script loaded on:', window.location.href)
+// 调试模式检查
+const DEBUG = process.env.NODE_ENV === 'development'
+
+if (DEBUG) {
+  console.log('[DEBUG] DualTab content script loaded on:', window.location.href)
+}
 
 // 监听来自background script的消息
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -69,7 +74,9 @@ if (document.readyState === 'loading') {
 }
 
 function initialize() {
-  console.log('[DEBUG] Content script initialized')
+  if (DEBUG) {
+    console.log('[DEBUG] Content script initialized')
+  }
   // 这里可以添加页面加载完成后的初始化逻辑
 }
 

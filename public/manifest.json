@@ -18,7 +18,8 @@
         }
     },
     "host_permissions": [
-        "*://*/"
+        "https://dynamic-api.monknow.com/*",
+        "https://*/*"
     ],
     "web_accessible_resources": [
         {

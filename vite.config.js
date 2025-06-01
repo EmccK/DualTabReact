@@ -36,7 +36,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     // Chrome扩展优化
-    minify: false, // 可选：关闭压缩便于调试
+    minify: true, // 启用压缩减小文件大小
     sourcemap: false
   },
   publicDir: 'public'

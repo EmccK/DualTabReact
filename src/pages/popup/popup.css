@@ -2,16 +2,6 @@
  * Popup专用样式
  */
 
-/* 隐藏滚动条但保持滚动功能 */
-.popup-scrollable {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.popup-scrollable::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
-}
-
 /* 响应式弹窗内容 */
 .popup-content {
   min-height: 100%;
