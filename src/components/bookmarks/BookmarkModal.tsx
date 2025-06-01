@@ -717,13 +717,15 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                     };
 
                     return (
-                      <BookmarkIcon
-                        bookmark={previewBookmark}
-                        networkMode={networkMode}
-                        size={32}
-                        borderRadius={4}
-                        className="w-full h-full"
-                      />
+                      <div className="w-full h-full flex items-center justify-center">
+                        <BookmarkIcon
+                          bookmark={previewBookmark}
+                          networkMode={networkMode}
+                          size={32}
+                          borderRadius={4}
+                          className="w-8 h-8"
+                        />
+                      </div>
                     );
                   })()}
                 </div>

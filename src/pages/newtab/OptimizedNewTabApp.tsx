@@ -13,12 +13,12 @@ import { SettingsModal } from '@/components/settings'
 import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
 import { AttributionOverlay } from '@/components/background'
-import { ImageScalerTest } from '@/components/test/ImageScalerTest'
+
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
 import { useCategorySwitch, usePageLoadState } from '@/hooks/useOptimizedCategories'
 import { backgroundImageManager } from '@/services/background'
 import type { BackgroundImageFilters } from '@/types/background'
-import { Plus, RefreshCw, Settings, Edit, Trash2, TestTube } from 'lucide-react'
+import { Plus, RefreshCw, Settings, Edit, Trash2 } from 'lucide-react'
 import type { Bookmark, NetworkMode, BookmarkCategory } from '@/types'
 import { safeOpenUrl } from '@/utils/url-utils'
 import './newtab.css'
@@ -86,9 +86,6 @@ function OptimizedNewTabApp() {
   
   // 设置弹窗状态
   const [settingsModalOpen, setSettingsModalOpen] = useState(false)
-
-  // 测试模式状态
-  const [testMode, setTestMode] = useState(false)
   
   // 通用右键菜单状态
   const [contextMenu, setContextMenu] = useState<{
@@ -436,11 +433,6 @@ function OptimizedNewTabApp() {
     )
   }
 
-  // 如果是测试模式，显示测试页面
-  if (testMode) {
-    return <ImageScalerTest onBack={() => setTestMode(false)} />;
-  }
-
   // 计算显示的书签（使用优化的过滤逻辑）
   const displayBookmarks = bookmarks.filter(bookmark => 
     !selectedCategoryId || bookmark.categoryId === selectedCategoryId
@@ -474,17 +466,6 @@ function OptimizedNewTabApp() {
 
             {/* 右侧：控制按钮组 */}
             <div className="flex items-center space-x-3">
-              {/* 测试按钮 */}
-              <Button
-                onClick={() => setTestMode(true)}
-                size="sm"
-                variant="ghost"
-                className="bg-white/10 backdrop-blur-md text-white hover:bg-white/20 border border-white/20"
-                title="图片缩放功能测试"
-              >
-                <TestTube className="h-4 w-4" />
-              </Button>
-
               {/* 设置按钮 */}
               <Button
                 onClick={handleOpenSettings}

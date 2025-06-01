@@ -538,7 +538,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                         <img
                           src={faviconUrl}
                           alt="favicon"
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-cover rounded-lg"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
