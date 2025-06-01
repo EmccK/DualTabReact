@@ -3,7 +3,7 @@
  * 适配新的书签样式系统
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -354,24 +354,17 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // 处理图片缩放配置变化
-  const handleImageScaleChange = (config: ImageScaleConfig) => {
+  // 处理图片缩放配置变化 - 优化版本
+  const handleImageScaleChange = useCallback((config: ImageScaleConfig) => {
     setImageScale(config);
     // 同时更新formData中的imageScale，确保配置被保存
     setFormData(prev => ({ ...prev, imageScale: config }));
+  }, []);
 
-    // 对所有图片都生成缩放后的版本
-    if (originalImageData) {
-      compressAndScaleImage(originalImageData, config, 64, 64, 0.9)
-        .then(scaledData => {
-          setFormData(prev => ({ ...prev, iconImage: scaledData }));
-        })
-        .catch(error => {
-          console.error('图片缩放失败:', error);
-          alert('图片缩放失败，请重试');
-        });
-    }
-  };
+  // 优化：只在ImageScaler组件内部处理图片生成
+  const handleImageGenerated = useCallback((scaledImageData: string) => {
+    setFormData(prev => ({ ...prev, iconImage: scaledImageData }));
+  }, []);
 
   // 处理URL图片的缩放
   const handleUrlImageScale = (url: string) => {
@@ -649,6 +642,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                               imageUrl={originalImageData}
                               config={imageScale}
                               onConfigChange={handleImageScaleChange}
+                              onImageGenerated={handleImageGenerated}
                               size={48}
                               className="w-full"
                             />

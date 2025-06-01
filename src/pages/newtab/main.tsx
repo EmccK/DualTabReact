@@ -1,10 +1,10 @@
 import { createRoot } from 'react-dom/client'
-import NewTabApp from './NewTabApp.tsx'
+import OptimizedNewTabApp from './OptimizedNewTabApp.tsx'
 import ErrorBoundary from '@/components/ErrorBoundary.tsx'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
-    <NewTabApp />
+    <OptimizedNewTabApp />
   </ErrorBoundary>
 )

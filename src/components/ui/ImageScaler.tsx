@@ -1,15 +1,14 @@
 /**
- * 图片缩放组件
- * 支持图片预览、缩放、位置调整和旋转
+ * 优化的图片缩放组件
+ * 支持实时预览和防抖处理，解决拖拽卡顿问题
  */
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { RotateCw, RotateCcw, Move, ZoomIn, ZoomOut, Palette } from 'lucide-react';
+import { RotateCw, RotateCcw, Move, ZoomIn, ZoomOut } from 'lucide-react';
 import type { ImageScaleConfig } from '@/types/bookmark-style.types';
 
 interface ImageScalerProps {
@@ -17,8 +16,25 @@ interface ImageScalerProps {
   config: ImageScaleConfig;
   onConfigChange: (config: ImageScaleConfig) => void;
   onImageGenerated?: (dataUrl: string) => void;
-  size?: number; // 输出图片尺寸，默认64px
+  size?: number;
   className?: string;
+}
+
+// 防抖Hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 }
 
 export function ImageScaler({
@@ -30,153 +46,211 @@ export function ImageScaler({
   className
 }: ImageScalerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // 生成缩放后的图片
-  const generateScaledImage = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !imageLoaded) return;
+  // 使用防抖来延迟最终图片生成，但不影响预览更新
+  const debouncedConfig = useDebounce(config, 300);
+
+  // 预览尺寸
+  const previewSize = size * 1.5;
+
+  // 缓存图片对象
+  const imageObject = useMemo(() => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    return img;
+  }, []);
+
+  // 加载图片
+  useEffect(() => {
+    setImageLoaded(false);
+    imageObject.onload = () => setImageLoaded(true);
+    imageObject.onerror = () => setImageLoaded(false);
+    imageObject.src = imageUrl;
+  }, [imageUrl, imageObject]);
+
+  // 绘制图片到画布的通用函数
+  const drawImageToCanvas = useCallback((
+    canvas: HTMLCanvasElement, 
+    targetConfig: ImageScaleConfig, 
+    targetSize: number
+  ) => {
+    if (!imageLoaded) return false;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return false;
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // 设置画布尺寸
+    canvas.width = targetSize;
+    canvas.height = targetSize;
 
-    img.onload = () => {
-      // 设置画布尺寸
-      canvas.width = size;
-      canvas.height = size;
+    // 绘制背景
+    if (targetConfig.backgroundColor && (targetConfig.backgroundOpacity ?? 100) > 0) {
+      const opacity = (targetConfig.backgroundOpacity ?? 100) / 100;
+      ctx.globalAlpha = opacity;
+      ctx.fillStyle = targetConfig.backgroundColor;
+      ctx.fillRect(0, 0, targetSize, targetSize);
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.clearRect(0, 0, targetSize, targetSize);
+    }
 
-      // 绘制背景
-      if (config.backgroundColor && (config.backgroundOpacity ?? 100) > 0) {
-        const opacity = (config.backgroundOpacity ?? 100) / 100;
-        ctx.globalAlpha = opacity;
-        ctx.fillStyle = config.backgroundColor;
-        ctx.fillRect(0, 0, size, size);
-        ctx.globalAlpha = 1; // 重置透明度
-      } else {
-        // 透明背景
-        ctx.clearRect(0, 0, size, size);
+    // 保存状态
+    ctx.save();
+
+    // 移动到中心
+    ctx.translate(targetSize / 2, targetSize / 2);
+
+    // 应用旋转
+    if (targetConfig.rotation) {
+      ctx.rotate((targetConfig.rotation * Math.PI) / 180);
+    }
+
+    // 计算尺寸
+    const aspectRatio = imageObject.width / imageObject.height;
+    let baseWidth, baseHeight;
+
+    if (aspectRatio > 1) {
+      baseWidth = targetSize;
+      baseHeight = targetSize / aspectRatio;
+    } else {
+      baseHeight = targetSize;
+      baseWidth = targetSize * aspectRatio;
+    }
+
+    const finalWidth = baseWidth * targetConfig.scale;
+    const finalHeight = baseHeight * targetConfig.scale;
+
+    const offsetX = (targetConfig.offsetX / 100) * targetSize;
+    const offsetY = (targetConfig.offsetY / 100) * targetSize;
+
+    // 绘制图片
+    ctx.drawImage(
+      imageObject,
+      -finalWidth / 2 + offsetX,
+      -finalHeight / 2 + offsetY,
+      finalWidth,
+      finalHeight
+    );
+
+    ctx.restore();
+    return true;
+  }, [imageObject, imageLoaded]);
+
+  // 更新预览（实时，无防抖）
+  const updatePreview = useCallback(() => {
+    const canvas = previewCanvasRef.current;
+    if (!canvas) return;
+    
+    drawImageToCanvas(canvas, config, previewSize);
+  }, [config, previewSize, drawImageToCanvas]);
+
+  // 生成最终图片（防抖，用于实际保存）
+  const generateFinalImage = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // 如果正在处理，跳过这次请求
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+    
+    // 使用 requestAnimationFrame 确保在下一帧执行，避免阻塞UI
+    requestAnimationFrame(() => {
+      try {
+        if (drawImageToCanvas(canvas, debouncedConfig, size)) {
+          const dataUrl = canvas.toDataURL('image/png');
+          onImageGenerated?.(dataUrl);
+        }
+      } catch (error) {
+        console.error('生成图片失败:', error);
+      } finally {
+        setIsProcessing(false);
       }
+    });
+  }, [debouncedConfig, size, drawImageToCanvas, onImageGenerated]);
 
-      // 保存当前状态
-      ctx.save();
-
-      // 移动到画布中心
-      ctx.translate(size / 2, size / 2);
-
-      // 应用旋转
-      if (config.rotation) {
-        ctx.rotate((config.rotation * Math.PI) / 180);
-      }
-
-      // 计算适合画布的基础尺寸（100%时正好放下）
-      const aspectRatio = img.width / img.height;
-      let baseWidth, baseHeight;
-
-      if (aspectRatio > 1) {
-        // 宽图片：以宽度为准
-        baseWidth = size;
-        baseHeight = size / aspectRatio;
-      } else {
-        // 高图片或正方形：以高度为准
-        baseHeight = size;
-        baseWidth = size * aspectRatio;
-      }
-
-      // 应用用户缩放
-      const finalWidth = baseWidth * config.scale;
-      const finalHeight = baseHeight * config.scale;
-
-      // 应用偏移（转换为像素值）
-      const offsetX = (config.offsetX / 100) * size;
-      const offsetY = (config.offsetY / 100) * size;
-
-      // 绘制图片
-      ctx.drawImage(
-        img,
-        -finalWidth / 2 + offsetX,
-        -finalHeight / 2 + offsetY,
-        finalWidth,
-        finalHeight
-      );
-
-      // 恢复状态
-      ctx.restore();
-
-      // 生成数据URL
-      const dataUrl = canvas.toDataURL('image/png');
-      onImageGenerated?.(dataUrl);
-    };
-
-    img.src = imageUrl;
-  }, [imageUrl, config, size, imageLoaded, onImageGenerated]);
-
-  // 当配置改变时重新生成图片
+  // 实时更新预览
   useEffect(() => {
-    generateScaledImage();
-  }, [generateScaledImage]);
+    updatePreview();
+  }, [updatePreview]);
 
-  // 检查图片是否加载完成
+  // 防抖后生成最终图片
   useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => setImageLoaded(true);
-    img.onerror = () => setImageLoaded(false);
-    img.src = imageUrl;
-  }, [imageUrl]);
+    generateFinalImage();
+  }, [generateFinalImage]);
 
-  // 处理鼠标拖拽
+  // 鼠标拖拽处理 - 优化性能
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     setIsDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging) return;
+    e.preventDefault();
 
     const deltaX = e.clientX - dragStart.x;
     const deltaY = e.clientY - dragStart.y;
 
-    // 转换为百分比偏移
-    const offsetXDelta = (deltaX / size) * 100;
-    const offsetYDelta = (deltaY / size) * 100;
+    // 减小移动敏感度，使拖拽更平滑
+    const sensitivity = 0.3;
+    const offsetXDelta = (deltaX / previewSize) * 100 * sensitivity;
+    const offsetYDelta = (deltaY / previewSize) * 100 * sensitivity;
 
-    onConfigChange({
+    const newConfig = {
       ...config,
       offsetX: Math.max(-100, Math.min(100, config.offsetX + offsetXDelta)),
       offsetY: Math.max(-100, Math.min(100, config.offsetY + offsetYDelta))
-    });
+    };
 
+    onConfigChange(newConfig);
     setDragStart({ x: e.clientX, y: e.clientY });
-  }, [isDragging, dragStart, config, onConfigChange, size]);
+  }, [isDragging, dragStart, config, onConfigChange, previewSize]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
 
+  // 优化的滑动处理 - 使用节流
+  const throttledConfigChange = useCallback((newConfig: ImageScaleConfig) => {
+    onConfigChange(newConfig);
+  }, [onConfigChange]);
+
   // 重置配置
   const resetConfig = useCallback(() => {
-    onConfigChange({
+    const defaultConfig = {
       scale: 1,
       offsetX: 0,
       offsetY: 0,
       rotation: 0,
       backgroundColor: '#ffffff',
       backgroundOpacity: 100
-    });
-  }, [onConfigChange]);
+    };
+    
+    onConfigChange(defaultConfig);
+    
+    // 立即更新预览，不等待防抖
+    setTimeout(() => {
+      const canvas = previewCanvasRef.current;
+      if (canvas) {
+        drawImageToCanvas(canvas, defaultConfig, previewSize);
+      }
+    }, 0);
+  }, [onConfigChange, drawImageToCanvas, previewSize]);
 
-  // 旋转图片
+  // 旋转
   const rotateImage = useCallback((degrees: number) => {
-    onConfigChange({
+    throttledConfigChange({
       ...config,
       rotation: ((config.rotation || 0) + degrees) % 360
     });
-  }, [config, onConfigChange]);
+  }, [config, throttledConfigChange]);
 
   return (
     <div className={className}>
@@ -193,34 +267,54 @@ export function ImageScaler({
           </Button>
         </div>
 
-        {/* 预览区域 - 缩小尺寸 */}
+        {/* 预览区域 */}
         <div className="flex justify-center">
           <div 
-            className="relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden cursor-move"
-            style={{ width: size * 1.5, height: size * 1.5 }}
+            className={`relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden select-none ${
+              isDragging ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
+            style={{ width: previewSize, height: previewSize }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
           >
+            {/* 预览画布 */}
             <canvas
-              ref={canvasRef}
-              width={size}
-              height={size}
-              className="w-full h-full object-contain"
-              style={{ imageRendering: 'crisp-edges' }}
+              ref={previewCanvasRef}
+              width={previewSize}
+              height={previewSize}
+              className="w-full h-full"
+              style={{ imageRendering: 'pixelated' }}
             />
+            
+            {/* 拖拽提示 */}
             {isDragging && (
-              <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+              <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center pointer-events-none">
                 <Move className="w-4 h-4 text-blue-600" />
+              </div>
+            )}
+            
+            {/* 加载状态 */}
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                <div className="text-xs text-gray-500">加载中...</div>
               </div>
             )}
           </div>
         </div>
 
-        {/* 控制面板 - 紧凑布局 */}
+        {/* 隐藏的最终输出画布 */}
+        <canvas
+          ref={canvasRef}
+          width={size}
+          height={size}
+          className="hidden"
+        />
+
+        {/* 控制面板 */}
         <div className="space-y-2">
-          {/* 缩放和旋转在一行 */}
+          {/* 缩放和旋转 */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
@@ -231,7 +325,7 @@ export function ImageScaler({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onConfigChange({ ...config, scale: Math.max(0.1, config.scale - 0.1) })}
+                  onClick={() => throttledConfigChange({ ...config, scale: Math.max(0.1, config.scale - 0.1) })}
                   disabled={config.scale <= 0.1}
                   className="h-6 w-6 p-0"
                 >
@@ -239,16 +333,16 @@ export function ImageScaler({
                 </Button>
                 <Slider
                   value={[config.scale]}
-                  onValueChange={([value]) => onConfigChange({ ...config, scale: value })}
+                  onValueChange={([value]) => throttledConfigChange({ ...config, scale: value })}
                   min={0.1}
                   max={3}
-                  step={0.1}
+                  step={0.05}
                   className="flex-1"
                 />
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onConfigChange({ ...config, scale: Math.min(3, config.scale + 0.1) })}
+                  onClick={() => throttledConfigChange({ ...config, scale: Math.min(3, config.scale + 0.1) })}
                   disabled={config.scale >= 3}
                   className="h-6 w-6 p-0"
                 >
@@ -273,10 +367,10 @@ export function ImageScaler({
                 </Button>
                 <Slider
                   value={[config.rotation || 0]}
-                  onValueChange={([value]) => onConfigChange({ ...config, rotation: value })}
+                  onValueChange={([value]) => throttledConfigChange({ ...config, rotation: value })}
                   min={0}
                   max={360}
-                  step={15}
+                  step={5}
                   className="flex-1"
                 />
                 <Button
@@ -297,35 +391,34 @@ export function ImageScaler({
               <Label className="text-xs">水平位置</Label>
               <Slider
                 value={[config.offsetX]}
-                onValueChange={([value]) => onConfigChange({ ...config, offsetX: value })}
+                onValueChange={([value]) => throttledConfigChange({ ...config, offsetX: value })}
                 min={-100}
                 max={100}
-                step={1}
+                step={2}
               />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">垂直位置</Label>
               <Slider
                 value={[config.offsetY]}
-                onValueChange={([value]) => onConfigChange({ ...config, offsetY: value })}
+                onValueChange={([value]) => throttledConfigChange({ ...config, offsetY: value })}
                 min={-100}
                 max={100}
-                step={1}
+                step={2}
               />
             </div>
           </div>
 
-          {/* 背景设置 - 折叠显示 */}
+          {/* 背景设置 */}
           <div className="border-t pt-2">
             <div className="grid grid-cols-2 gap-3">
-              {/* 背景颜色 */}
               <div className="space-y-1">
                 <Label className="text-xs">背景颜色</Label>
                 <div className="flex items-center space-x-1">
                   <input
                     type="color"
                     value={config.backgroundColor || '#ffffff'}
-                    onChange={(e) => onConfigChange({
+                    onChange={(e) => throttledConfigChange({
                       ...config,
                       backgroundColor: e.target.value,
                       backgroundOpacity: config.backgroundOpacity ?? 100
@@ -334,7 +427,7 @@ export function ImageScaler({
                   />
                   <Input
                     value={config.backgroundColor || '#ffffff'}
-                    onChange={(e) => onConfigChange({
+                    onChange={(e) => throttledConfigChange({
                       ...config,
                       backgroundColor: e.target.value,
                       backgroundOpacity: config.backgroundOpacity ?? 100
@@ -346,7 +439,6 @@ export function ImageScaler({
                 </div>
               </div>
 
-              {/* 背景透明度 */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs">透明度</Label>
@@ -354,7 +446,7 @@ export function ImageScaler({
                 </div>
                 <Slider
                   value={[config.backgroundOpacity ?? 100]}
-                  onValueChange={([value]) => onConfigChange({ 
+                  onValueChange={([value]) => throttledConfigChange({ 
                     ...config, 
                     backgroundOpacity: value,
                     backgroundColor: config.backgroundColor || '#ffffff'
@@ -369,9 +461,9 @@ export function ImageScaler({
           </div>
         </div>
 
-        {/* 提示信息 */}
+        {/* 状态提示 */}
         <div className="text-xs text-gray-500 text-center">
-          拖拽预览区域调整位置
+          {isProcessing ? '处理中...' : '拖拽预览区域调整位置'}
         </div>
       </div>
     </div>
