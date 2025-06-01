@@ -1,17 +1,23 @@
 /**
- * 书签图标组件
- * 支持文字、图片、favicon三种类型
+ * 书签图标组件 - 重定向到新的统一组件
+ * 保持向后兼容性
  */
 
 import React from 'react';
-import { colorWithOpacity } from '@/utils/gradient/customGradientUtils';
+import { BookmarkIcon as NewBookmarkIcon } from '@/components/icon';
 import type { BookmarkItem } from '@/types/bookmark-style.types';
+import type { Bookmark, NetworkMode } from '@/types';
 
+// 兼容旧的接口
 interface BookmarkIconProps {
-  bookmark: BookmarkItem;
+  bookmark: BookmarkItem | Bookmark;
   size: number;
   borderRadius: number;
   className?: string;
+  networkMode?: NetworkMode;
+  onClick?: () => void;
+  onLoad?: () => void;
+  onError?: (error: Error) => void;
 }
 
 const BookmarkIcon: React.FC<BookmarkIconProps> = ({
@@ -19,143 +25,47 @@ const BookmarkIcon: React.FC<BookmarkIconProps> = ({
   size,
   borderRadius,
   className = '',
+  networkMode = 'external',
+  onClick,
+  onLoad,
+  onError,
 }) => {
-  const iconStyle: React.CSSProperties = {
-    width: size,
-    height: size,
-    borderRadius: `${borderRadius}px`,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: Math.round(size * 0.4),
-    fontWeight: 'bold',
-    color: 'white',
-    overflow: 'hidden',
-    flexShrink: 0,
+  // 转换BookmarkItem到Bookmark格式
+  const normalizedBookmark: Bookmark = {
+    id: bookmark.id,
+    name: bookmark.title,
+    title: bookmark.title,
+    url: bookmark.url,
+    description: 'description' in bookmark ? bookmark.description : undefined,
+    iconType: bookmark.iconType === 'favicon' ? 'official' : 
+              bookmark.iconType === 'image' ? 'upload' : 
+              bookmark.iconType,
+    iconText: bookmark.iconText,
+    iconImage: 'iconImage' in bookmark ? bookmark.iconImage : undefined,
+    iconData: 'iconData' in bookmark ? bookmark.iconData : 
+              'icon' in bookmark ? bookmark.icon : undefined,
+    iconColor: bookmark.iconColor,
+    imageScale: 'imageScale' in bookmark ? bookmark.imageScale : undefined,
+    backgroundColor: 'backgroundColor' in bookmark ? bookmark.backgroundColor : undefined,
+    internalUrl: 'internalUrl' in bookmark ? bookmark.internalUrl : undefined,
+    externalUrl: 'externalUrl' in bookmark ? bookmark.externalUrl : undefined,
+    categoryId: 'categoryId' in bookmark ? bookmark.categoryId : undefined,
+    position: 'position' in bookmark ? bookmark.position : undefined,
+    createdAt: 'createdAt' in bookmark ? bookmark.createdAt : Date.now(),
+    updatedAt: 'updatedAt' in bookmark ? bookmark.updatedAt : Date.now(),
   };
 
-  // 渲染文字图标
-  if (bookmark.iconType === 'text') {
-    const backgroundColor = bookmark.iconColor || '#3b82f6';
-    const text = bookmark.iconText || bookmark.title.slice(0, 2);
-    
-    return (
-      <div
-        className={`${className}`}
-        style={{
-          ...iconStyle,
-          backgroundColor,
-        }}
-      >
-        <span style={{
-          lineHeight: 1,
-          whiteSpace: 'nowrap',
-          fontSize: text.length > 2 ? Math.round(size * 0.3) : Math.round(size * 0.4),
-        }}>
-          {text}
-        </span>
-      </div>
-    );
-  }
-
-  // 渲染图片图标
-  if (bookmark.iconType === 'image' && bookmark.iconImage) {
-    // 获取背景颜色配置
-    const backgroundColor = bookmark.imageScale?.backgroundColor;
-    const backgroundOpacity = bookmark.imageScale?.backgroundOpacity ?? 100;
-    
-    // 处理背景颜色：如果没有设置或透明度为0，则使用透明背景
-    const rgbaBackground = backgroundColor && backgroundOpacity > 0
-      ? colorWithOpacity(backgroundColor, backgroundOpacity)
-      : 'transparent';
-    
-    return (
-      <div
-        className={`${className}`}
-        style={{
-          ...iconStyle,
-          backgroundColor: rgbaBackground,
-        }}
-      >
-        <img
-          src={bookmark.iconImage}
-          alt={bookmark.title}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            borderRadius: `${borderRadius}px`,
-          }}
-          onError={(e) => {
-            // 图片加载失败时显示文字
-            const target = e.target as HTMLImageElement;
-            const parent = target.parentElement;
-            if (parent) {
-              parent.innerHTML = bookmark.title.slice(0, 2);
-              parent.style.backgroundColor = bookmark.iconColor || '#3b82f6';
-            }
-          }}
-        />
-      </div>
-    );
-  }
-
-  // 渲染favicon图标
-  if (bookmark.iconType === 'favicon') {
-    let faviconUrl = '';
-    try {
-      const hostname = new URL(bookmark.url).hostname;
-      faviconUrl = `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`;
-    } catch {
-      // URL解析失败时，直接使用Google服务
-      faviconUrl = `https://www.google.com/s2/favicons?domain=${bookmark.url}&sz=64`;
-    }
-    
-    return (
-      <div
-        className={`${className}`}
-        style={{
-          ...iconStyle,
-          backgroundColor: '#f8fafc',
-          padding: size * 0.1,
-        }}
-      >
-        <img
-          src={faviconUrl}
-          alt={bookmark.title}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            borderRadius: `${borderRadius * 0.5}px`,
-          }}
-          onError={(e) => {
-            // favicon加载失败时显示文字
-            const target = e.target as HTMLImageElement;
-            const parent = target.parentElement;
-            if (parent) {
-              parent.innerHTML = bookmark.title.slice(0, 2);
-              parent.style.backgroundColor = bookmark.iconColor || '#3b82f6';
-              parent.style.color = 'white';
-              parent.style.padding = '0';
-            }
-          }}
-        />
-      </div>
-    );
-  }
-
-  // 默认文字图标
   return (
-    <div
-      className={`${className}`}
-      style={{
-        ...iconStyle,
-        backgroundColor: bookmark.iconColor || '#3b82f6',
-      }}
-    >
-      {bookmark.title.slice(0, 2)}
-    </div>
+    <NewBookmarkIcon
+      bookmark={normalizedBookmark}
+      networkMode={networkMode}
+      size={size}
+      borderRadius={borderRadius}
+      className={className}
+      onClick={onClick}
+      onLoad={onLoad}
+      onError={onError}
+    />
   );
 };
 

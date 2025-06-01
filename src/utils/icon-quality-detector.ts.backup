@@ -1,0 +1,324 @@
+/**
+ * 图标质量检测工具
+ * 用于检测和评估图标质量，提供优化建议
+ */
+
+interface IconQualityReport {
+  url: string;
+  domain: string;
+  score: number; // 0-100分
+  issues: IconIssue[];
+  suggestions: string[];
+  dimensions: { width: number; height: number } | null;
+  fileSize: number | null;
+  loadTime: number;
+  isValid: boolean;
+}
+
+interface IconIssue {
+  type: 'size' | 'quality' | 'format' | 'accessibility' | 'performance';
+  severity: 'low' | 'medium' | 'high';
+  message: string;
+  fix?: string;
+}
+
+class IconQualityDetector {
+  /**
+   * 检测图标质量
+   */
+  async detectQuality(iconUrl: string, originalUrl: string): Promise<IconQualityReport> {
+    const startTime = performance.now();
+    const domain = this.extractDomain(originalUrl);
+    
+    const report: IconQualityReport = {
+      url: iconUrl,
+      domain,
+      score: 0,
+      issues: [],
+      suggestions: [],
+      dimensions: null,
+      fileSize: null,
+      loadTime: 0,
+      isValid: false,
+    };
+
+    try {
+      // 加载图标并获取基本信息
+      const imageInfo = await this.loadImageInfo(iconUrl);
+      report.dimensions = imageInfo.dimensions;
+      report.fileSize = imageInfo.fileSize;
+      report.loadTime = performance.now() - startTime;
+      report.isValid = imageInfo.isValid;
+
+      if (!imageInfo.isValid) {
+        report.issues.push({
+          type: 'quality',
+          severity: 'high',
+          message: '图标加载失败或无效',
+          fix: '尝试使用其他图标服务或上传自定义图标'
+        });
+        return report;
+      }
+
+      // 检测尺寸问题
+      this.checkDimensions(report);
+      
+      // 检测性能问题
+      this.checkPerformance(report);
+      
+      // 检测格式问题
+      this.checkFormat(report);
+      
+      // 检测可访问性问题
+      this.checkAccessibility(report);
+      
+      // 计算总分
+      report.score = this.calculateScore(report);
+      
+      // 生成优化建议
+      this.generateSuggestions(report);
+
+    } catch (error) {
+      report.issues.push({
+        type: 'quality',
+        severity: 'high',
+        message: `图标检测失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      });
+    }
+
+    return report;
+  }
+
+  /**
+   * 加载图片信息
+   */
+  private async loadImageInfo(url: string): Promise<{
+    dimensions: { width: number; height: number } | null;
+    fileSize: number | null;
+    isValid: boolean;
+  }> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const startTime = Date.now();
+      
+      img.onload = () => {
+        resolve({
+          dimensions: { width: img.width, height: img.height },
+          fileSize: null, // 无法直接获取文件大小
+          isValid: img.width > 0 && img.height > 0,
+        });
+      };
+      
+      img.onerror = () => {
+        resolve({
+          dimensions: null,
+          fileSize: null,
+          isValid: false,
+        });
+      };
+      
+      // 设置超时
+      setTimeout(() => {
+        resolve({
+          dimensions: null,
+          fileSize: null,
+          isValid: false,
+        });
+      }, 5000);
+      
+      img.src = url;
+    });
+  }
+
+  /**
+   * 检测尺寸问题
+   */
+  private checkDimensions(report: IconQualityReport): void {
+    if (!report.dimensions) return;
+
+    const { width, height } = report.dimensions;
+
+    // 检查是否太小
+    if (width < 16 || height < 16) {
+      report.issues.push({
+        type: 'size',
+        severity: 'high',
+        message: `图标尺寸过小 (${width}x${height})，可能显示不清晰`,
+        fix: '使用更大尺寸的图标服务或上传高分辨率图标'
+      });
+    }
+
+    // 检查是否不是正方形
+    if (Math.abs(width - height) > 2) {
+      report.issues.push({
+        type: 'size',
+        severity: 'medium',
+        message: `图标不是正方形 (${width}x${height})，可能显示变形`,
+        fix: '使用正方形图标或调整显示方式'
+      });
+    }
+
+    // 检查是否过大
+    if (width > 512 || height > 512) {
+      report.issues.push({
+        type: 'performance',
+        severity: 'medium',
+        message: `图标尺寸过大 (${width}x${height})，可能影响加载性能`,
+        fix: '使用适当尺寸的图标（推荐32-128px）'
+      });
+    }
+  }
+
+  /**
+   * 检测性能问题
+   */
+  private checkPerformance(report: IconQualityReport): void {
+    // 检查加载时间
+    if (report.loadTime > 3000) {
+      report.issues.push({
+        type: 'performance',
+        severity: 'high',
+        message: `图标加载时间过长 (${Math.round(report.loadTime)}ms)`,
+        fix: '使用更快的图标服务或启用缓存'
+      });
+    } else if (report.loadTime > 1000) {
+      report.issues.push({
+        type: 'performance',
+        severity: 'medium',
+        message: `图标加载时间较长 (${Math.round(report.loadTime)}ms)`,
+        fix: '考虑使用CDN或本地缓存'
+      });
+    }
+  }
+
+  /**
+   * 检测格式问题
+   */
+  private checkFormat(report: IconQualityReport): void {
+    const url = report.url.toLowerCase();
+    
+    // 检查是否使用了过时的格式
+    if (url.includes('.gif')) {
+      report.issues.push({
+        type: 'format',
+        severity: 'low',
+        message: '使用了GIF格式，建议使用PNG或SVG',
+        fix: '使用PNG或SVG格式获得更好的质量'
+      });
+    }
+
+    // 检查是否使用了低质量的服务
+    if (url.includes('favicon.ico')) {
+      report.issues.push({
+        type: 'format',
+        severity: 'low',
+        message: '使用了ICO格式，可能质量较低',
+        fix: '尝试使用PNG或SVG格式的图标服务'
+      });
+    }
+  }
+
+  /**
+   * 检测可访问性问题
+   */
+  private checkAccessibility(report: IconQualityReport): void {
+    // 检查是否是1x1像素的透明图片（常见的占位符）
+    if (report.dimensions && report.dimensions.width === 1 && report.dimensions.height === 1) {
+      report.issues.push({
+        type: 'accessibility',
+        severity: 'high',
+        message: '图标是1x1像素的占位符，用户无法识别',
+        fix: '使用有意义的图标或文字替代'
+      });
+    }
+  }
+
+  /**
+   * 计算质量分数
+   */
+  private calculateScore(report: IconQualityReport): number {
+    let score = 100;
+
+    // 根据问题严重程度扣分
+    for (const issue of report.issues) {
+      switch (issue.severity) {
+        case 'high':
+          score -= 30;
+          break;
+        case 'medium':
+          score -= 15;
+          break;
+        case 'low':
+          score -= 5;
+          break;
+      }
+    }
+
+    // 根据加载时间调整分数
+    if (report.loadTime < 500) {
+      score += 5; // 快速加载奖励
+    }
+
+    // 根据尺寸适当性调整分数
+    if (report.dimensions) {
+      const { width, height } = report.dimensions;
+      if (width >= 32 && width <= 128 && height >= 32 && height <= 128) {
+        score += 5; // 适当尺寸奖励
+      }
+    }
+
+    return Math.max(0, Math.min(100, score));
+  }
+
+  /**
+   * 生成优化建议
+   */
+  private generateSuggestions(report: IconQualityReport): void {
+    const suggestions: string[] = [];
+
+    if (report.score < 60) {
+      suggestions.push('考虑上传自定义图标以获得更好的质量');
+    }
+
+    if (report.loadTime > 1000) {
+      suggestions.push('启用图标缓存以提高加载速度');
+    }
+
+    if (report.issues.some(issue => issue.type === 'size')) {
+      suggestions.push('使用32-64px的正方形图标获得最佳显示效果');
+    }
+
+    if (report.issues.length === 0) {
+      suggestions.push('图标质量良好，无需优化');
+    }
+
+    report.suggestions = suggestions;
+  }
+
+  /**
+   * 提取域名
+   */
+  private extractDomain(url: string): string {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  }
+
+  /**
+   * 批量检测多个图标
+   */
+  async batchDetect(icons: Array<{ iconUrl: string; originalUrl: string }>): Promise<IconQualityReport[]> {
+    const reports = await Promise.allSettled(
+      icons.map(({ iconUrl, originalUrl }) => this.detectQuality(iconUrl, originalUrl))
+    );
+
+    return reports
+      .filter((result): result is PromiseFulfilledResult<IconQualityReport> => result.status === 'fulfilled')
+      .map(result => result.value);
+  }
+}
+
+export const iconQualityDetector = new IconQualityDetector();
+export default IconQualityDetector;

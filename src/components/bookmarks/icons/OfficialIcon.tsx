@@ -8,6 +8,7 @@ import { Globe, AlertCircle } from 'lucide-react';
 import IconBackground from './IconBackground';
 import { FAVICON_SERVICE_URLS, ICON_RETRY_CONFIG } from '@/constants';
 import { getUrlDomain } from '@/utils/url-utils';
+import { getFaviconFallbackUrls } from '@/utils/icon-utils';
 import type { BaseIconProps, OfficialIconConfig, IconStatus } from '@/types/bookmark-icon.types';
 
 interface OfficialIconProps extends BaseIconProps {
@@ -31,16 +32,10 @@ const OfficialIcon: React.FC<OfficialIconProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   const [lastError, setLastError] = useState<Error | null>(null);
 
-  // 生成回退URL列表
+  // 生成回退URL列表 - 使用增强的图标获取逻辑
   const generateFallbackUrls = useCallback((targetUrl: string): string[] => {
-    const domain = getUrlDomain(targetUrl);
-    if (!domain) return [];
-
-    return FAVICON_SERVICE_URLS.map(template => 
-      template
-        .replace('{domain}', domain)
-        .replace('{size}', size.toString())
-    );
+    // 使用新的智能图标获取函数
+    return getFaviconFallbackUrls(targetUrl, size);
   }, [size]);
 
   // 初始化图标URL

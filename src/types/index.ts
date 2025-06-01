@@ -2,8 +2,8 @@
  * 应用核心类型定义
  */
 
-// 图标类型
-export type IconType = 'official' | 'text' | 'upload' | 'image' | 'favicon';
+// 图标类型 - 统一定义，移除重复的类型
+export type IconType = 'official' | 'text' | 'upload';
 
 // 书签类型定义
 export interface Bookmark {

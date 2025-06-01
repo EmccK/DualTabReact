@@ -2,6 +2,8 @@
  * 新版书签样式类型定义
  */
 
+import type { IconType } from './index';
+
 // 书签样式类型
 export type BookmarkStyleType = 'card' | 'icon';
 
@@ -28,9 +30,10 @@ export interface BookmarkItem {
   title: string;
   url: string;
   description?: string;          // 书签描述信息
-  iconType: 'text' | 'image' | 'favicon';
+  iconType: IconType;            // 使用统一的IconType
   iconText?: string;             // 文字图标内容（不限字符数）
   iconImage?: string;            // 图片图标URL
+  iconData?: string;             // 上传图片的base64数据
   iconColor?: string;            // 图标背景色
   imageScale?: ImageScaleConfig; // 图片缩放配置
   originalIconImage?: string;    // 原始图片数据（用于重新编辑）

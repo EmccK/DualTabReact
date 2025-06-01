@@ -1,14 +1,12 @@
 /**
  * 图标样式书签组件
  * 对应图片2的样式：图标在上方，文字在下方，无背景
- * 使用新的统一图标组件
  */
 
 import React, { useState } from 'react';
-import { BookmarkIcon } from '@/components/icon';
+import BookmarkIcon from './BookmarkIcon';
 import { ICON_STYLE_CONFIG } from '@/constants/bookmark-style.constants';
 import type { BookmarkCardProps } from '@/types/bookmark-style.types';
-import type { Bookmark } from '@/types';
 
 const BookmarkIconStyle: React.FC<BookmarkCardProps> = ({
   bookmark,
@@ -26,30 +24,6 @@ const BookmarkIconStyle: React.FC<BookmarkCardProps> = ({
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     onContextMenu?.(bookmark, e);
-  };
-
-  // 转换BookmarkItem到Bookmark格式
-  const normalizedBookmark: Bookmark = {
-    id: bookmark.id,
-    name: bookmark.title,
-    title: bookmark.title,
-    url: bookmark.url,
-    description: bookmark.description,
-    iconType: bookmark.iconType === 'favicon' ? 'official' : 
-              bookmark.iconType === 'image' ? 'upload' : 
-              bookmark.iconType,
-    iconText: bookmark.iconText,
-    iconImage: bookmark.iconImage,
-    iconData: bookmark.iconImage, // 兼容处理
-    iconColor: bookmark.iconColor,
-    imageScale: bookmark.imageScale,
-    backgroundColor: undefined,
-    internalUrl: undefined,
-    externalUrl: undefined,
-    categoryId: undefined,
-    position: undefined,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
   };
 
   const containerStyle: React.CSSProperties = {
@@ -87,12 +61,11 @@ const BookmarkIconStyle: React.FC<BookmarkCardProps> = ({
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >
-      {/* 书签图标 - 使用新的统一组件 */}
+      {/* 书签图标 */}
       <BookmarkIcon
-        bookmark={normalizedBookmark}
-        networkMode="external"
+        bookmark={bookmark}
         size={ICON_STYLE_CONFIG.iconSize}
-        borderRadius={settings.borderRadius}
+        borderRadius={settings.borderRadius} // 图标式样式中，调整的是图标的圆角
         className="shadow-lg"
       />
       

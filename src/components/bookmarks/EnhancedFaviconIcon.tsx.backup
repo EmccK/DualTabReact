@@ -1,0 +1,235 @@
+/**
+ * 增强的Favicon图标组件
+ * 支持智能加载、多源fallback、并发加载等特性
+ */
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Globe, AlertCircle, Loader2 } from 'lucide-react';
+import { loadBestFaviconUrl, extractDomain, isInternalDomain } from '@/utils/icon-utils';
+import { ICON_RETRY_CONFIG } from '@/constants/icon.constants';
+
+interface EnhancedFaviconIconProps {
+  url: string;
+  title: string;
+  size?: number;
+  borderRadius?: number;
+  className?: string;
+  style?: React.CSSProperties;
+  onLoad?: (url: string) => void;
+  onError?: (error: Error) => void;
+  showLoadingState?: boolean;
+  fallbackToText?: boolean;
+}
+
+type LoadingState = 'idle' | 'loading' | 'loaded' | 'error';
+
+const EnhancedFaviconIcon: React.FC<EnhancedFaviconIconProps> = ({
+  url,
+  title,
+  size = 32,
+  borderRadius = 8,
+  className = '',
+  style = {},
+  onLoad,
+  onError,
+  showLoadingState = true,
+  fallbackToText = true,
+}) => {
+  const [loadingState, setLoadingState] = useState<LoadingState>('idle');
+  const [faviconUrl, setFaviconUrl] = useState<string>('');
+  const [error, setError] = useState<Error | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+
+  // 清理函数
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // 加载图标 - 简化版本
+  const loadFavicon = useCallback(async () => {
+    if (!url || !mountedRef.current) return;
+
+    setLoadingState('loading');
+    setError(null);
+
+    try {
+      // 简化：直接使用Google Favicons API，这是最稳定的
+      const domain = extractDomain(url);
+
+      // 检查是否是内网地址
+      if (isInternalDomain(domain)) {
+        setFaviconUrl('🏠');
+        setLoadingState('loaded');
+        return;
+      }
+
+      const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`;
+
+      // 简单的图片加载测试
+      const img = new Image();
+      img.onload = () => {
+        if (mountedRef.current) {
+          setFaviconUrl(faviconUrl);
+          setLoadingState('loaded');
+          onLoad?.(faviconUrl);
+        }
+      };
+      img.onerror = () => {
+        if (mountedRef.current) {
+          setLoadingState('error');
+          setError(new Error('Failed to load favicon'));
+          onError?.(new Error('Failed to load favicon'));
+        }
+      };
+      img.src = faviconUrl;
+
+    } catch (err) {
+      if (!mountedRef.current) return;
+
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      setError(error);
+      setLoadingState('error');
+      onError?.(error);
+    }
+  }, [url, size]); // 移除 onLoad 和 onError 依赖，避免无限重新渲染
+
+  // 当URL变化时重新加载
+  useEffect(() => {
+    loadFavicon();
+  }, [loadFavicon]);
+
+  // 样式配置
+  const containerStyle: React.CSSProperties = {
+    width: size,
+    height: size,
+    borderRadius: `${borderRadius}px`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    flexShrink: 0,
+    ...style,
+  };
+
+  const imageStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+  };
+
+  // 渲染加载状态
+  if (loadingState === 'loading' && showLoadingState) {
+    return (
+      <div
+        className={`bg-gray-100 ${className}`}
+        style={containerStyle}
+      >
+        <Loader2 
+          size={size * 0.4} 
+          className="text-gray-400 animate-spin" 
+        />
+      </div>
+    );
+  }
+
+  // 渲染成功状态
+  if (loadingState === 'loaded' && faviconUrl) {
+    // 如果是emoji或文字图标
+    if (!faviconUrl.startsWith('http')) {
+      return (
+        <div
+          className={`bg-blue-50 text-blue-600 font-medium ${className}`}
+          style={{
+            ...containerStyle,
+            fontSize: size * 0.5,
+          }}
+        >
+          {faviconUrl}
+        </div>
+      );
+    }
+
+    // 如果是图片URL
+    return (
+      <div
+        className={`bg-white ${className}`}
+        style={containerStyle}
+      >
+        <img
+          src={faviconUrl}
+          alt={title}
+          style={imageStyle}
+          onError={() => {
+            if (mountedRef.current) {
+              setLoadingState('error');
+              setError(new Error('Image load failed'));
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  // 渲染错误状态
+  if (loadingState === 'error') {
+    const domain = extractDomain(url);
+    const isInternal = isInternalDomain(domain);
+    
+    // 如果启用文字回退，显示文字图标
+    if (fallbackToText) {
+      const fallbackText = title.slice(0, 2).toUpperCase() || '??';
+      return (
+        <div
+          className={`bg-gradient-to-br from-blue-500 to-blue-600 text-white font-bold ${className}`}
+          style={{
+            ...containerStyle,
+            fontSize: size * 0.35,
+          }}
+          title={`无法加载 ${domain} 的图标`}
+        >
+          {fallbackText}
+        </div>
+      );
+    }
+
+    // 显示默认图标
+    return (
+      <div
+        className={`bg-gray-100 ${className}`}
+        style={containerStyle}
+        title={`无法加载 ${domain} 的图标`}
+      >
+        {isInternal ? (
+          <div className="text-orange-500 text-lg">🏠</div>
+        ) : (
+          <Globe size={size * 0.6} className="text-gray-400" />
+        )}
+        {process.env.NODE_ENV === 'development' && (
+          <AlertCircle 
+            size={size * 0.2} 
+            className="absolute -top-1 -right-1 text-red-500" 
+            title={error?.message}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // 默认状态（idle）
+  return (
+    <div
+      className={`bg-gray-100 ${className}`}
+      style={containerStyle}
+    >
+      <Globe size={size * 0.6} className="text-gray-400" />
+    </div>
+  );
+};
+
+export default EnhancedFaviconIcon;

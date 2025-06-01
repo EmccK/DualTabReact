@@ -1,8 +1,9 @@
 /**
- * 图标相关常量定义
+ * 图标相关常量定义 - 简化版本
+ * 只保留核心的、真正使用的常量
  */
 
-import type { IconType, IconStatus } from '@/types/bookmark-icon.types';
+import type { IconType } from '@/types/index';
 
 // 图标类型常量
 export const ICON_TYPES = {
@@ -32,22 +33,11 @@ export const ICON_TYPE_DESCRIPTIONS = {
   [ICON_TYPES.UPLOAD]: '上传本地图片作为图标',
 } as const;
 
-// 图标状态常量
-export const ICON_STATUS = {
-  LOADING: 'loading' as const,
-  LOADED: 'loaded' as const,
-  ERROR: 'error' as const,
-  FALLBACK: 'fallback' as const,
-} as const;
-
 // 图标尺寸预设
 export const ICON_SIZE_PRESETS = [
-  { label: '小 (16px)', value: 16 },
-  { label: '中 (24px)', value: 24 },
-  { label: '默认 (32px)', value: 32 },
-  { label: '大 (40px)', value: 40 },
-  { label: '特大 (48px)', value: 48 },
-  { label: '巨大 (64px)', value: 64 },
+  { label: '小 (24px)', value: 24 },
+  { label: '中 (32px)', value: 32 },
+  { label: '大 (48px)', value: 48 },
 ] as const;
 
 // 图标尺寸范围
@@ -64,56 +54,11 @@ export const BORDER_RADIUS_PRESETS = [
   { label: '轻微', value: 4 },
   { label: '适中', value: 8 },
   { label: '圆润', value: 12 },
-  { label: '很圆', value: 16 },
   { label: '圆形', value: 20 },
-] as const;
-
-// 边框宽度选项
-export const BORDER_WIDTH_OPTIONS = [
-  { label: '无边框', value: 0 },
-  { label: '细 (1px)', value: 1 },
-  { label: '中 (2px)', value: 2 },
-  { label: '粗 (3px)', value: 3 },
-  { label: '很粗 (4px)', value: 4 },
-  { label: '最粗 (5px)', value: 5 },
-] as const;
-
-// 字体粗细选项
-export const FONT_WEIGHT_OPTIONS = [
-  { label: '正常', value: 'normal' },
-  { label: '中等', value: 'medium' },
-  { label: '粗体', value: 'bold' },
-] as const;
-
-// 对象填充方式选项
-export const OBJECT_FIT_OPTIONS = [
-  { label: '覆盖', value: 'cover' },
-  { label: '包含', value: 'contain' },
-  { label: '填充', value: 'fill' },
-  { label: '缩小', value: 'scale-down' },
-] as const;
-
-// 默认颜色调色板
-export const DEFAULT_COLOR_PALETTE = [
-  '#ffffff', // white
-  '#000000', // black
-  '#3b82f6', // blue-500
-  '#ef4444', // red-500
-  '#10b981', // emerald-500
-  '#f59e0b', // amber-500
-  '#8b5cf6', // violet-500
-  '#ec4899', // pink-500
-  '#06b6d4', // cyan-500
-  '#84cc16', // lime-500
-  '#f97316', // orange-500
-  '#6366f1', // indigo-500
-  '#14b8a6', // teal-500
-  '#a855f7', // purple-500
 ] as const;
 
 // 预设背景色
 export const PRESET_BACKGROUND_COLORS = [
-  { label: '白色', value: '#ffffff' },
   { label: '蓝色', value: '#3b82f6' },
   { label: '红色', value: '#ef4444' },
   { label: '绿色', value: '#10b981' },
@@ -122,8 +67,6 @@ export const PRESET_BACKGROUND_COLORS = [
   { label: '粉色', value: '#ec4899' },
   { label: '青色', value: '#06b6d4' },
   { label: '橙色', value: '#f97316' },
-  { label: '灰色', value: '#6b7280' },
-  { label: '黑色', value: '#1f2937' },
 ] as const;
 
 // 预设文字颜色
@@ -131,31 +74,26 @@ export const PRESET_TEXT_COLORS = [
   { label: '白色', value: '#ffffff' },
   { label: '黑色', value: '#000000' },
   { label: '灰色', value: '#6b7280' },
-  { label: '蓝色', value: '#3b82f6' },
-  { label: '红色', value: '#ef4444' },
 ] as const;
 
-// 官方图标获取服务URL模板
+// 简化的favicon服务URL
 export const FAVICON_SERVICE_URLS = [
   'https://www.google.com/s2/favicons?domain={domain}&sz={size}',
   'https://icons.duckduckgo.com/ip3/{domain}.ico',
-  'https://{domain}/favicon.ico',
-  'https://favicons.githubusercontent.com/{domain}',
 ] as const;
 
 // 图标缓存配置
 export const ICON_CACHE_CONFIG = {
-  maxSize: 50, // MB
+  maxSize: 100, // 条目数量
   maxAge: 24 * 60 * 60 * 1000, // 24小时
   cleanupInterval: 60 * 60 * 1000, // 1小时清理一次
 } as const;
 
-// 图标加载重试配置
-export const ICON_RETRY_CONFIG = {
-  maxRetries: 3,
-  retryDelay: 1000, // 1秒
-  backoffMultiplier: 2,
-  maxRetryDelay: 10000, // 10秒
+// 图标加载配置
+export const ICON_LOAD_CONFIG = {
+  timeout: 5000, // 5秒超时
+  maxRetries: 2, // 最大重试次数
+  retryDelay: 1000, // 重试延迟
 } as const;
 
 // 支持的图片格式
@@ -165,13 +103,53 @@ export const SUPPORTED_IMAGE_FORMATS = [
   'image/png',
   'image/gif',
   'image/webp',
-  'image/svg+xml',
 ] as const;
 
 // 上传图片限制
 export const UPLOAD_IMAGE_LIMITS = {
-  maxSize: 5 * 1024 * 1024, // 5MB
-  maxWidth: 512,
-  maxHeight: 512,
+  maxSize: 2 * 1024 * 1024, // 2MB
+  maxWidth: 256,
+  maxHeight: 256,
   quality: 0.8,
 } as const;
+
+// 内网域名检测模式
+export const INTERNAL_DOMAIN_PATTERNS = [
+  'localhost',
+  '127.0.0.1',
+  '192.168.',
+  '10.',
+  '172.16.',
+  '.local',
+  '.lan',
+] as const;
+
+// 默认图标设置
+export const DEFAULT_ICON_SETTINGS = {
+  size: 32,
+  borderRadius: 8,
+  backgroundColor: '#3b82f6',
+  textColor: '#ffffff',
+  fontSize: 20,
+  fontWeight: 'bold',
+} as const;
+
+// 导出所有常量的默认对象
+export default {
+  ICON_TYPES,
+  AVAILABLE_ICON_TYPES,
+  ICON_TYPE_LABELS,
+  ICON_TYPE_DESCRIPTIONS,
+  ICON_SIZE_PRESETS,
+  ICON_SIZE_RANGE,
+  BORDER_RADIUS_PRESETS,
+  PRESET_BACKGROUND_COLORS,
+  PRESET_TEXT_COLORS,
+  FAVICON_SERVICE_URLS,
+  ICON_CACHE_CONFIG,
+  ICON_LOAD_CONFIG,
+  SUPPORTED_IMAGE_FORMATS,
+  UPLOAD_IMAGE_LIMITS,
+  INTERNAL_DOMAIN_PATTERNS,
+  DEFAULT_ICON_SETTINGS,
+};

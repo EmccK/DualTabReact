@@ -16,6 +16,7 @@ import { Upload, Link, Type, Settings } from 'lucide-react';
 import { COLOR_PALETTE } from '@/constants/bookmark-style.constants';
 import { compressAndScaleImage } from '@/utils/icon-processing.utils';
 import { colorWithOpacity } from '@/utils/gradient/customGradientUtils';
+import { BookmarkIcon } from '@/components/icon';
 import type { Bookmark, NetworkMode } from '@/types';
 import type { ImageScaleConfig } from '@/types/bookmark-style.types';
 
@@ -702,34 +703,34 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                   )}
                   {formData.iconType === 'favicon' && (() => {
                     // 优先使用外网地址，然后内网地址，最后基本URL
-                    const previewUrl = networkMode 
+                    const previewUrl = networkMode
                       ? (formData.externalUrl || formData.internalUrl)
                       : formData.url;
-                    
+
                     if (!previewUrl) {
                       return '🌐';
                     }
-                    
-                    try {
-                      const hostname = new URL(previewUrl).hostname;
-                      const faviconUrl = `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`;
-                      return (
-                        <img
-                          src={faviconUrl}
-                          alt="favicon"
-                          className="w-full h-full object-contain"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            if (target.parentElement) {
-                              target.parentElement.innerHTML = '🌐';
-                            }
-                          }}
-                        />
-                      );
-                    } catch {
-                      return '🌐';
-                    }
+
+                    // 使用新的统一图标组件进行预览
+                    const previewBookmark = {
+                      id: 'preview',
+                      name: formData.title || '书签',
+                      title: formData.title || '书签',
+                      url: previewUrl,
+                      iconType: 'official' as const,
+                      createdAt: Date.now(),
+                      updatedAt: Date.now(),
+                    };
+
+                    return (
+                      <BookmarkIcon
+                        bookmark={previewBookmark}
+                        networkMode={networkMode}
+                        size={32}
+                        borderRadius={4}
+                        className="w-full h-full"
+                      />
+                    );
                   })()}
                 </div>
                 

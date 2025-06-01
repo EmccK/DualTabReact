@@ -1,0 +1,178 @@
+/**
+ * 图标预加载Hook
+ * 用于批量预加载书签图标，提升用户体验
+ */
+
+import { useEffect, useCallback, useRef } from 'react';
+import { preloadBookmarkIcons, getIconCacheStats } from '@/utils/icon-utils';
+import type { Bookmark } from '@/types';
+
+interface UseIconPreloaderOptions {
+  enabled?: boolean;
+  batchSize?: number;
+  delay?: number;
+  priority?: 'high' | 'low';
+}
+
+interface IconPreloaderStats {
+  totalBookmarks: number;
+  preloadedCount: number;
+  cacheHitRate: number;
+  isPreloading: boolean;
+}
+
+export const useIconPreloader = (
+  bookmarks: Bookmark[],
+  options: UseIconPreloaderOptions = {}
+) => {
+  const {
+    enabled = true,
+    batchSize = 5,
+    delay = 100,
+    priority = 'low'
+  } = options;
+
+  const preloadingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const preloadedUrlsRef = useRef(new Set<string>());
+
+  // 预加载图标
+  const preloadIcons = useCallback(async () => {
+    if (!enabled || preloadingRef.current || bookmarks.length === 0) {
+      return;
+    }
+
+    // 取消之前的预加载任务
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    preloadingRef.current = true;
+
+    try {
+      // 过滤出需要预加载的书签（favicon类型且未预加载过）
+      const bookmarksToPreload = bookmarks.filter(bookmark => {
+        const needsPreload = (
+          bookmark.iconType === 'favicon' || 
+          bookmark.iconType === 'official' || 
+          !bookmark.iconType
+        ) && bookmark.url && !preloadedUrlsRef.current.has(bookmark.url);
+        
+        return needsPreload;
+      });
+
+      if (bookmarksToPreload.length === 0) {
+        preloadingRef.current = false;
+        return;
+      }
+
+      // 按优先级排序（最近添加的优先）
+      const sortedBookmarks = [...bookmarksToPreload].sort((a, b) => {
+        if (priority === 'high') {
+          return b.updatedAt - a.updatedAt; // 最新的优先
+        }
+        return a.createdAt - b.createdAt; // 最老的优先
+      });
+
+      // 分批预加载
+      for (let i = 0; i < sortedBookmarks.length; i += batchSize) {
+        if (abortControllerRef.current?.signal.aborted) {
+          break;
+        }
+
+        const batch = sortedBookmarks.slice(i, i + batchSize);
+        const batchData = batch.map(bookmark => ({
+          url: bookmark.url,
+          title: bookmark.title
+        }));
+
+        try {
+          await preloadBookmarkIcons(batchData);
+          
+          // 标记为已预加载
+          batch.forEach(bookmark => {
+            preloadedUrlsRef.current.add(bookmark.url);
+          });
+
+          // 延迟以避免阻塞UI
+          if (delay > 0 && i + batchSize < sortedBookmarks.length) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        } catch (error) {
+          console.warn('Batch preload failed:', error);
+        }
+      }
+    } catch (error) {
+      console.warn('Icon preloading failed:', error);
+    } finally {
+      preloadingRef.current = false;
+    }
+  }, [bookmarks, enabled, batchSize, delay, priority]);
+
+  // 获取预加载统计信息
+  const getStats = useCallback(async (): Promise<IconPreloaderStats> => {
+    const cacheStats = await getIconCacheStats();
+    
+    return {
+      totalBookmarks: bookmarks.length,
+      preloadedCount: preloadedUrlsRef.current.size,
+      cacheHitRate: cacheStats.hitRate,
+      isPreloading: preloadingRef.current,
+    };
+  }, [bookmarks.length]);
+
+  // 手动触发预加载
+  const triggerPreload = useCallback(() => {
+    preloadIcons();
+  }, [preloadIcons]);
+
+  // 清除预加载状态
+  const clearPreloadedUrls = useCallback(() => {
+    preloadedUrlsRef.current.clear();
+  }, []);
+
+  // 当书签列表变化时自动预加载
+  useEffect(() => {
+    if (!enabled) return;
+
+    // 使用requestIdleCallback在浏览器空闲时预加载
+    const schedulePreload = () => {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => {
+          preloadIcons();
+        }, { timeout: 5000 });
+      } else {
+        // 降级到setTimeout
+        setTimeout(preloadIcons, 1000);
+      }
+    };
+
+    schedulePreload();
+
+    // 清理函数
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [preloadIcons, enabled]);
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  return {
+    preloadIcons: triggerPreload,
+    getStats,
+    clearPreloadedUrls,
+    isPreloading: preloadingRef.current,
+  };
+};
+
+export default useIconPreloader;
