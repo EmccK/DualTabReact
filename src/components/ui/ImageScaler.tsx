@@ -179,8 +179,8 @@ export function ImageScaler({
   }, [config, onConfigChange]);
 
   return (
-    <Card className={className}>
-      <CardContent className="p-4 space-y-4">
+    <div className={className}>
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">图片缩放调整</Label>
           <Button
@@ -193,11 +193,11 @@ export function ImageScaler({
           </Button>
         </div>
 
-        {/* 预览区域 */}
+        {/* 预览区域 - 缩小尺寸 */}
         <div className="flex justify-center">
           <div 
             className="relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden cursor-move"
-            style={{ width: size * 2, height: size * 2 }}
+            style={{ width: size * 1.5, height: size * 1.5 }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -212,51 +212,88 @@ export function ImageScaler({
             />
             {isDragging && (
               <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                <Move className="w-6 h-6 text-blue-600" />
+                <Move className="w-4 h-4 text-blue-600" />
               </div>
             )}
           </div>
         </div>
 
-        {/* 控制面板 */}
-        <div className="space-y-3">
-          {/* 缩放控制 */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">缩放比例</Label>
-              <span className="text-xs text-gray-500">{(config.scale * 100).toFixed(0)}%</span>
+        {/* 控制面板 - 紧凑布局 */}
+        <div className="space-y-2">
+          {/* 缩放和旋转在一行 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">缩放</Label>
+                <span className="text-xs text-gray-500">{(config.scale * 100).toFixed(0)}%</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onConfigChange({ ...config, scale: Math.max(0.1, config.scale - 0.1) })}
+                  disabled={config.scale <= 0.1}
+                  className="h-6 w-6 p-0"
+                >
+                  <ZoomOut className="w-3 h-3" />
+                </Button>
+                <Slider
+                  value={[config.scale]}
+                  onValueChange={([value]) => onConfigChange({ ...config, scale: value })}
+                  min={0.1}
+                  max={3}
+                  step={0.1}
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onConfigChange({ ...config, scale: Math.min(3, config.scale + 0.1) })}
+                  disabled={config.scale >= 3}
+                  className="h-6 w-6 p-0"
+                >
+                  <ZoomIn className="w-3 h-3" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onConfigChange({ ...config, scale: Math.max(0.1, config.scale - 0.1) })}
-                disabled={config.scale <= 0.1}
-              >
-                <ZoomOut className="w-3 h-3" />
-              </Button>
-              <Slider
-                value={[config.scale]}
-                onValueChange={([value]) => onConfigChange({ ...config, scale: value })}
-                min={0.1}
-                max={3}
-                step={0.1}
-                className="flex-1"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onConfigChange({ ...config, scale: Math.min(3, config.scale + 0.1) })}
-                disabled={config.scale >= 3}
-              >
-                <ZoomIn className="w-3 h-3" />
-              </Button>
+            
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">旋转</Label>
+                <span className="text-xs text-gray-500">{config.rotation || 0}°</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => rotateImage(-90)}
+                  className="h-6 w-6 p-0"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </Button>
+                <Slider
+                  value={[config.rotation || 0]}
+                  onValueChange={([value]) => onConfigChange({ ...config, rotation: value })}
+                  min={0}
+                  max={360}
+                  step={15}
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => rotateImage(90)}
+                  className="h-6 w-6 p-0"
+                >
+                  <RotateCw className="w-3 h-3" />
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* 位置控制 */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label className="text-xs">水平位置</Label>
               <Slider
                 value={[config.offsetX]}
@@ -266,7 +303,7 @@ export function ImageScaler({
                 step={1}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label className="text-xs">垂直位置</Label>
               <Slider
                 value={[config.offsetY]}
@@ -278,101 +315,65 @@ export function ImageScaler({
             </div>
           </div>
 
-          {/* 旋转控制 */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">旋转角度</Label>
-              <span className="text-xs text-gray-500">{config.rotation || 0}°</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => rotateImage(-90)}
-              >
-                <RotateCcw className="w-3 h-3" />
-              </Button>
-              <Slider
-                value={[config.rotation || 0]}
-                onValueChange={([value]) => onConfigChange({ ...config, rotation: value })}
-                min={0}
-                max={360}
-                step={15}
-                className="flex-1"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => rotateImage(90)}
-              >
-                <RotateCw className="w-3 h-3" />
-              </Button>
-            </div>
-          </div>
+          {/* 背景设置 - 折叠显示 */}
+          <div className="border-t pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              {/* 背景颜色 */}
+              <div className="space-y-1">
+                <Label className="text-xs">背景颜色</Label>
+                <div className="flex items-center space-x-1">
+                  <input
+                    type="color"
+                    value={config.backgroundColor || '#ffffff'}
+                    onChange={(e) => onConfigChange({
+                      ...config,
+                      backgroundColor: e.target.value,
+                      backgroundOpacity: config.backgroundOpacity ?? 100
+                    })}
+                    className="w-6 h-6 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <Input
+                    value={config.backgroundColor || '#ffffff'}
+                    onChange={(e) => onConfigChange({
+                      ...config,
+                      backgroundColor: e.target.value,
+                      backgroundOpacity: config.backgroundOpacity ?? 100
+                    })}
+                    placeholder="#ffffff"
+                    className="flex-1 font-mono text-xs h-6"
+                    maxLength={7}
+                  />
+                </div>
+              </div>
 
-          {/* 背景设置 */}
-          <div className="space-y-3 pt-2 border-t">
-            <div className="flex items-center space-x-2">
-              <Palette className="w-4 h-4 text-gray-500" />
-              <Label className="text-xs font-medium">背景设置</Label>
-            </div>
-
-            {/* 背景颜色 */}
-            <div className="space-y-2">
-              <Label className="text-xs">背景颜色</Label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="color"
-                  value={config.backgroundColor || '#ffffff'}
-                  onChange={(e) => onConfigChange({
-                    ...config,
-                    backgroundColor: e.target.value,
-                    backgroundOpacity: config.backgroundOpacity ?? 100
+              {/* 背景透明度 */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">透明度</Label>
+                  <span className="text-xs text-gray-500">{config.backgroundOpacity ?? 100}%</span>
+                </div>
+                <Slider
+                  value={[config.backgroundOpacity ?? 100]}
+                  onValueChange={([value]) => onConfigChange({ 
+                    ...config, 
+                    backgroundOpacity: value,
+                    backgroundColor: config.backgroundColor || '#ffffff'
                   })}
-                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
-                />
-                <Input
-                  value={config.backgroundColor || '#ffffff'}
-                  onChange={(e) => onConfigChange({
-                    ...config,
-                    backgroundColor: e.target.value,
-                    backgroundOpacity: config.backgroundOpacity ?? 100
-                  })}
-                  placeholder="#ffffff"
-                  className="flex-1 font-mono text-xs"
-                  maxLength={7}
+                  min={0}
+                  max={100}
+                  step={5}
+                  className="w-full"
                 />
               </div>
-            </div>
-
-            {/* 背景透明度 */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">背景透明度</Label>
-                <span className="text-xs text-gray-500">{config.backgroundOpacity ?? 100}%</span>
-              </div>
-              <Slider
-                value={[config.backgroundOpacity ?? 100]}
-                onValueChange={([value]) => onConfigChange({ 
-                  ...config, 
-                  backgroundOpacity: value,
-                  // 如果没有背景颜色但设置了透明度，给一个默认颜色
-                  backgroundColor: config.backgroundColor || '#ffffff'
-                })}
-                min={0}
-                max={100}
-                step={5}
-                className="w-full"
-              />
             </div>
           </div>
         </div>
 
         {/* 提示信息 */}
         <div className="text-xs text-gray-500 text-center">
-          拖拽预览区域调整位置，使用滑块精确控制
+          拖拽预览区域调整位置
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

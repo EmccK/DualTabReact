@@ -190,7 +190,25 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
           backgroundColor: '#ffffff',
           backgroundOpacity: 100
         };
-        setFormData(prev => ({ ...prev, imageScale: defaultConfig }));
+        
+        // 立即生成缩放后的图片以更新预览
+        compressAndScaleImage(result, defaultConfig, 64, 64, 0.9)
+          .then(scaledData => {
+            setFormData(prev => ({ 
+              ...prev, 
+              iconImage: scaledData,
+              imageScale: defaultConfig 
+            }));
+          })
+          .catch(error => {
+            console.error('图片处理失败:', error);
+            // 如果处理失败，直接使用原图
+            setFormData(prev => ({ 
+              ...prev, 
+              iconImage: result,
+              imageScale: defaultConfig 
+            }));
+          });
       }
     };
     reader.readAsDataURL(file);
@@ -393,99 +411,79 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
               </TabsContent>
 
               {/* 图片图标 */}
-              <TabsContent value="image" className="space-y-4">
-                <div className="space-y-4">
-                  {/* 图片来源选择 */}
+              <TabsContent value="image" className="space-y-3">
+                <div className="space-y-3">
+                  {/* 图片来源选择 - 紧凑版 */}
                   <div className="space-y-3">
-                    {/* 图片URL输入 */}
-                    <div>
-                      <Label htmlFor="iconImage">图片URL</Label>
-                      <Input
-                        id="iconImage"
-                        value={formData.iconImage || ''}
-                        onChange={(e) => handleInputChange('iconImage', e.target.value)}
-                        placeholder="https://example.com/icon.png"
-                        className="mt-1"
-                      />
-                    </div>
-
-                    {/* 或者上传本地图片 */}
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">或者</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label>上传本地图片</Label>
-                      <div className="mt-1">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          id="image-upload"
+                    {/* 选择方式标签 */}
+                    <div className="flex border rounded-lg overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('image-upload')?.click()}
+                        className="flex-1 p-3 bg-gray-50 hover:bg-gray-100 transition-colors border-r flex items-center justify-center gap-2"
+                      >
+                        <Upload className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-700">上传文件</span>
+                      </button>
+                      <div className="flex-1 p-3 bg-white">
+                        <Input
+                          value={formData.iconImage || ''}
+                          onChange={(e) => handleInputChange('iconImage', e.target.value)}
+                          placeholder="或输入图片链接"
+                          className="border-0 p-0 h-auto text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById('image-upload')?.click()}
-                          className="w-full"
-                        >
-                          <Upload className="w-4 h-4 mr-2" />
-                          选择图片文件
-                        </Button>
                       </div>
                     </div>
+                    
+                    {/* 隐藏的文件输入 */}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                    />
                   </div>
 
-                  {/* 图片调整控制 */}
+                  {/* 图片调整功能 */}
                   {formData.iconImage && (
-                    <div className="border rounded-lg p-3 bg-gray-50">
-                      <div className="flex items-center justify-between">
+                    <div className="border rounded-lg overflow-hidden">
+                      {/* 调整切换按钮 */}
+                      <div className="bg-gray-50 p-3 flex items-center justify-between">
                         <Label className="text-sm font-medium">图片调整</Label>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const imageUrl = originalImageData || formData.iconImage!;
-                            handleUrlImageScale(imageUrl);
+                            if (showImageScaler) {
+                              setShowImageScaler(false);
+                            } else {
+                              const imageUrl = originalImageData || formData.iconImage!;
+                              handleUrlImageScale(imageUrl);
+                            }
                           }}
+                          className="text-xs h-7 px-3"
                         >
-                          <Settings className="w-4 h-4 mr-1" />
-                          调整
+                          <Settings className="w-3 h-3 mr-1" />
+                          {showImageScaler ? '完成' : '调整图片'}
                         </Button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        点击"调整"按钮可以缩放、旋转图片并设置背景
-                      </p>
-                    </div>
-                  )}
 
-                  {/* 图片缩放器 */}
-                  {showImageScaler && originalImageData && formData.imageScale && (
-                    <div className="border rounded-lg p-3 bg-gray-50">
-                      <ImageScaler
-                        imageUrl={originalImageData}
-                        config={formData.imageScale}
-                        onConfigChange={handleImageScaleChange}
-                        size={64}
-                        className="w-full"
-                      />
-                      <div className="flex justify-end mt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowImageScaler(false)}
-                          className="text-xs"
-                        >
-                          完成编辑
-                        </Button>
-                      </div>
+                      {/* 图片缩放器 */}
+                      {showImageScaler && originalImageData && formData.imageScale && (
+                        <div className="border-t bg-white">
+                          <div className="p-3">
+                            <ImageScaler
+                              imageUrl={originalImageData}
+                              config={formData.imageScale}
+                              onConfigChange={handleImageScaleChange}
+                              size={48}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
