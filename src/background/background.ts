@@ -37,6 +37,32 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ success: true })
       break
       
+    case 'get_selected_category':
+      // 获取newtab页面当前选中的分类
+      if (DEBUG) {
+        console.log('[DEBUG] Getting selected category from newtab')
+      }
+      chrome.tabs.query({}, (tabs) => {
+        const newtabTabs = tabs.filter(tab => 
+          tab.url && tab.url.includes('newtab.html')
+        )
+        
+        if (newtabTabs.length > 0) {
+          // 向第一个新标签页请求选中的分类
+          chrome.tabs.sendMessage(newtabTabs[0].id!, { action: 'get_selected_category' })
+            .then((response) => {
+              sendResponse({ success: true, selectedCategoryId: response?.selectedCategoryId })
+            })
+            .catch((error) => {
+              sendResponse({ success: false, error: 'No newtab response' })
+            })
+        } else {
+          sendResponse({ success: false, error: 'No newtab found' })
+        }
+      })
+      return true // 保持异步响应
+      break
+      
     default:
       if (DEBUG) {
         console.log('[DEBUG] Unknown message action:', message.action)

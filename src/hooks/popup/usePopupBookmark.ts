@@ -3,20 +3,36 @@
  * 复用主应用的书签功能，适配Popup场景
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useBookmarks, useCategories } from '@/hooks';
 import type { Bookmark } from '@/types';
 import type { QuickBookmarkFormData } from '@/types/popup/tab.types';
 import { validateQuickBookmarkForm, isInternalUrl } from '@/utils/popup/urlHelpers';
 import { sanitizeUrl } from '@/utils/popup/tabHelpers';
+import { loadSelectedCategoryId } from '@/utils/storage';
 
 export function usePopupBookmark() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   
   // 复用主应用的Hook
   const { addBookmark, loading: bookmarksLoading } = useBookmarks();
   const { categories, loading: categoriesLoading } = useCategories();
+
+  // 初始化时获取选中分类
+  useEffect(() => {
+    if (categories.length > 0 && selectedCategoryId === null) {
+      loadSelectedCategoryId().then((result) => {
+        if (result.success && result.data && categories.find(cat => cat.id === result.data)) {
+          setSelectedCategoryId(result.data);
+        } else if (categories.length > 0) {
+          // 如果没有获取到或分类不存在，使用第一个分类
+          setSelectedCategoryId(categories[0].id);
+        }
+      });
+    }
+  }, [categories]);
 
   // 快速添加书签
   const quickAddBookmark = useCallback(async (formData: QuickBookmarkFormData): Promise<{
@@ -104,6 +120,7 @@ export function usePopupBookmark() {
     // 数据
     categories,
     defaultCategory: getDefaultCategory(),
+    selectedCategoryId,
     
     // 方法
     quickAddBookmark,

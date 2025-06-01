@@ -472,6 +472,22 @@ function NewTabApp() {
     }
   }, [contextMenu.visible, hideContextMenu])
 
+  // 监听来自background的消息
+  useEffect(() => {
+    const handleMessage = (message: any, _sender: any, sendResponse: any) => {
+      if (message.action === 'get_selected_category') {
+        sendResponse({ selectedCategoryId })
+        return true
+      }
+      return false
+    }
+
+    chrome.runtime.onMessage.addListener(handleMessage)
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage)
+    }
+  }, [selectedCategoryId])
+
   // 如果设置还在加载，显示加载状态
   if (settingsLoading) {
     return (

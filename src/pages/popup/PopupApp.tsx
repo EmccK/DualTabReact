@@ -33,6 +33,7 @@ function PopupApp() {
     loading: bookmarkLoading,
     categories,
     defaultCategory,
+    selectedCategoryId,
     quickAddBookmark,
     clearError
   } = usePopupBookmark();
@@ -138,7 +139,7 @@ function PopupApp() {
             initialName={canAccessCurrentTab ? suggestedBookmarkName : ''}
             initialUrl={canAccessCurrentTab ? currentUrl : ''}
             categories={categories}
-            defaultCategoryId={defaultCategory?.id}
+            defaultCategoryId={selectedCategoryId || defaultCategory?.id}
             isSubmitting={isSubmitting}
             submitError={submitError}
             onSubmit={handleSubmit}
