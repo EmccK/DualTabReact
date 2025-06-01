@@ -58,11 +58,6 @@ export interface AppSettings {
   enableBlur: boolean;
   enableAnimations: boolean;
   autoSync: boolean;
-  webdav_config?: {
-    url: string;
-    username: string;
-    password: string;
-  };
   [key: string]: any;
 }
 
@@ -97,6 +92,3 @@ export interface OperationResult<T = any> {
 
 // 搜索相关类型
 export * from './search';
-
-// WebDAV相关类型
-export * from './webdav';

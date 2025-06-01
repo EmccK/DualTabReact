@@ -486,13 +486,7 @@ export async function restoreFromBackup(backupData: BackupData): Promise<Operati
     }
 
     if (backupData.settings) {
-      // 保留当前WebDAV配置
-      const currentSettings = await loadSettings();
-      const mergedSettings = {
-        ...backupData.settings,
-        webdav_config: currentSettings.data?.webdav_config,
-      };
-      restorePromises.push(saveSettings(mergedSettings));
+      restorePromises.push(saveSettings(backupData.settings));
     }
 
     const results = await Promise.all(restorePromises);

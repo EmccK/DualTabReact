@@ -59,21 +59,10 @@ export interface BackgroundSettings {
   };
 }
 
-export interface SyncSettings {
-  webdavEnabled: boolean;
-  autoSync: boolean;
-  syncInterval: number;
-  lastSyncTime?: string;
-  serverUrl?: string;
-  username?: string;
-  basePath?: string;
-}
-
 export interface AppSettings {
   preferences: AppPreferences;
   bookmarks: BookmarkSettings;
   background: BackgroundSettings;
-  sync: SyncSettings;
   _version?: string; // 设置版本号，用于迁移
 }
 
@@ -128,11 +117,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
       blur: 0,
       brightness: 100,
     },
-  },
-  sync: {
-    webdavEnabled: false,
-    autoSync: false,
-    syncInterval: 30,
   },
   _version: '2.0.0', // 当前版本号
 };
