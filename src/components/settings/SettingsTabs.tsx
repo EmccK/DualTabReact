@@ -4,10 +4,11 @@ import {
   Palette, 
   BookOpen, 
   Image,
+  Cloud,
   Settings as SettingsIcon
 } from 'lucide-react';
 
-export type SettingsTab = 'preferences' | 'bookmarks' | 'background';
+export type SettingsTab = 'preferences' | 'bookmarks' | 'background' | 'sync';
 
 interface SettingsTabsProps {
   activeTab: SettingsTab;
@@ -40,6 +41,12 @@ const TABS: TabItem[] = [
     label: '背景图片',
     icon: Image,
     description: '背景类型、渐变设置、随机图片',
+  },
+  {
+    id: 'sync',
+    label: '数据同步',
+    icon: Cloud,
+    description: 'WebDAV同步、备份恢复、冲突解决',
   },
 ];
 

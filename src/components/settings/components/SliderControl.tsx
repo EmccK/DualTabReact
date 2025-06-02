@@ -36,13 +36,13 @@ export function SliderControl({
     if (valueFormatter) {
       return valueFormatter(val);
     }
-    return val.toString();
+    return (val || 0).toString();
   };
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
       <Slider
-        value={[value]}
+        value={[value || 0]}
         onValueChange={handleValueChange}
         min={min}
         max={max}

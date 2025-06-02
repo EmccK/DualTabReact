@@ -269,7 +269,7 @@ export class AutoSwitchService {
     const nextSwitchTime = this.calculateNextSwitchTime(settings);
     const delay = nextSwitchTime - Date.now();
 
-    this.timerId = window.setTimeout(async () => {
+    this.timerId = setTimeout(async () => {
       await this.performSwitch();
       
       // 如果服务仍然启用，调度下次切换

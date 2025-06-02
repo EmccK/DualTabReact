@@ -11,6 +11,7 @@ import { SettingsTabs, type SettingsTab } from './SettingsTabs';
 import { AppPreferences } from './sections/AppPreferences';
 import { BookmarkSettings } from './sections/BookmarkSettings';
 import { BackgroundSettings } from './sections/BackgroundSettings';
+import { WebDAVSettings } from './sections/webdav/WebDAVSettings';
 import { useSettings } from '@/hooks/useSettings';
 import { Settings, Save, RotateCcw, X } from 'lucide-react';
 
@@ -27,7 +28,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   // 直接从localStorage读取初始activeTab
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
     const saved = localStorage.getItem('settingsLastActiveTab') as SettingsTab;
-    return saved && ['preferences', 'bookmarks', 'background'].includes(saved) 
+    return saved && ['preferences', 'bookmarks', 'background', 'sync'].includes(saved) 
       ? saved 
       : 'preferences';
   });
@@ -95,6 +96,8 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
         );
       case 'background':
         return <BackgroundSettings />;
+      case 'sync':
+        return <WebDAVSettings />;
       default:
         return null;
     }

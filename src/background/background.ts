@@ -1,11 +1,26 @@
 // DualTab 后台服务Worker
 // 处理插件的后台逻辑和消息通信
 
+import { initializeSyncManager } from '../services/sync/sync-manager';
+
 // 调试模式检查
 const DEBUG = process.env.NODE_ENV === 'development'
 
 if (DEBUG) {
   console.log('[DEBUG] DualTab background service worker started')
+}
+
+// 初始化WebDAV同步管理器
+let syncManager: any = null;
+try {
+  syncManager = initializeSyncManager();
+  if (DEBUG) {
+    console.log('[DEBUG] WebDAV sync manager initialized')
+  }
+} catch (error) {
+  if (DEBUG) {
+    console.error('[DEBUG] Failed to initialize sync manager:', error)
+  }
 }
 
 // 监听来自content script或popup的消息
@@ -62,6 +77,57 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       })
       return true // 保持异步响应
       break
+
+    // WebDAV同步相关消息 - 交给同步管理器处理
+    case 'webdav_sync':
+    case 'webdav_upload':
+    case 'webdav_download':
+    case 'webdav_test_connection':
+    case 'webdav_get_status':
+    case 'webdav_update_config':
+    case 'webdav_resolve_conflict':
+    case 'webdav_enable_auto_sync':
+    case 'webdav_clear_sync_data':
+      // 这些消息由同步管理器处理，不在这里处理
+      return false
+      
+    case 'storage_changed':
+      // 处理存储变化通知
+      if (DEBUG) {
+        console.log('[DEBUG] Storage changed notification')
+      }
+      // 向所有扩展页面广播存储变化
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.url && tab.url.startsWith('chrome-extension://')) {
+            chrome.tabs.sendMessage(tab.id!, message)
+              .catch(() => {
+                // 忽略发送失败的情况
+              })
+          }
+        })
+      })
+      sendResponse({ success: true })
+      break
+
+    case 'sync_status_changed':
+      // 处理同步状态变化通知
+      if (DEBUG) {
+        console.log('[DEBUG] Sync status changed:', message.data?.status)
+      }
+      // 向所有扩展页面广播状态变化
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.url && tab.url.startsWith('chrome-extension://')) {
+            chrome.tabs.sendMessage(tab.id!, message)
+              .catch(() => {
+                // 忽略发送失败的情况
+              })
+          }
+        })
+      })
+      sendResponse({ success: true })
+      break
       
     default:
       if (DEBUG) {
@@ -83,12 +149,44 @@ chrome.runtime.onInstalled.addListener((details) => {
     if (DEBUG) {
       console.log('[DEBUG] First time installation')
     }
-    // 可以在这里初始化默认数据
+    // 初始化默认WebDAV配置
+    chrome.storage.local.set({
+      'webdav_config': {
+        serverUrl: '',
+        username: '',
+        password: '',
+        syncPath: '/DualTab',
+        enabled: false,
+        autoSyncInterval: 30,
+      }
+    }).catch((error) => {
+      if (DEBUG) {
+        console.error('[DEBUG] Failed to initialize WebDAV config:', error)
+      }
+    })
   } else if (details.reason === 'update') {
     if (DEBUG) {
       console.log('[DEBUG] Extension updated')
     }
-    // 可以在这里处理数据迁移
+    // 清理过期的同步锁和状态
+    chrome.storage.local.remove(['sync_lock']).catch(() => {
+      // 忽略错误
+    })
+    
+    // 重新初始化同步管理器
+    if (syncManager) {
+      try {
+        syncManager.stop()
+        syncManager = initializeSyncManager()
+        if (DEBUG) {
+          console.log('[DEBUG] Sync manager reinitialized after update')
+        }
+      } catch (error) {
+        if (DEBUG) {
+          console.error('[DEBUG] Failed to reinitialize sync manager:', error)
+        }
+      }
+    }
   }
 })
 
