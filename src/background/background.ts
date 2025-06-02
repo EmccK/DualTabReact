@@ -88,7 +88,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     case 'webdav_resolve_conflict':
     case 'webdav_enable_auto_sync':
     case 'webdav_clear_sync_data':
-      // 这些消息由同步管理器处理，不在这里处理
+      // 这些消息由同步管理器处理，返回false让同步管理器的监听器处理
+      if (DEBUG) {
+        console.log('[DEBUG] WebDAV message forwarded to sync manager:', message.action)
+      }
       return false
       
     case 'storage_changed':

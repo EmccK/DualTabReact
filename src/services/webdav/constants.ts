@@ -148,41 +148,6 @@ export const SUCCESS_MESSAGES = {
   CONFLICT_RESOLVED: '冲突已解决',
 } as const;
 
-/**
- * WebDAV服务商预设配置
- */
-export const WEBDAV_PROVIDERS = {
-  NEXTCLOUD: {
-    name: 'Nextcloud',
-    pathTemplate: '/remote.php/dav/files/{username}',
-    defaultPort: 443,
-    supportedFeatures: ['etag', 'lock', 'quota'],
-  },
-  OWNCLOUD: {
-    name: 'ownCloud',
-    pathTemplate: '/remote.php/webdav',
-    defaultPort: 443,
-    supportedFeatures: ['etag', 'lock'],
-  },
-  SYNOLOGY: {
-    name: 'Synology',
-    pathTemplate: '/webdav',
-    defaultPort: 5006,
-    supportedFeatures: ['etag'],
-  },
-  QNAP: {
-    name: 'QNAP',
-    pathTemplate: '/webdav',
-    defaultPort: 8080,
-    supportedFeatures: ['etag'],
-  },
-  GENERIC: {
-    name: '通用WebDAV',
-    pathTemplate: '/',
-    defaultPort: 443,
-    supportedFeatures: [],
-  },
-} as const;
 
 /**
  * 设备平台识别

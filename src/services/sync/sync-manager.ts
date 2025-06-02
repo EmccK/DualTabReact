@@ -145,10 +145,21 @@ export class SyncManager {
    */
   private async initialize(): Promise<void> {
     try {
+      if (DEBUG_ENABLED) {
+        console.log('[Sync Manager] Starting initialization...');
+      }
+
       // 加载WebDAV配置
       const config = await this.storage.loadWebDAVConfig();
       if (config && validateWebDAVConfig(config)) {
         await this.updateConfig(config);
+        if (DEBUG_ENABLED) {
+          console.log('[Sync Manager] WebDAV config loaded and validated');
+        }
+      } else {
+        if (DEBUG_ENABLED) {
+          console.log('[Sync Manager] No valid WebDAV config found');
+        }
       }
 
       // 清理过期的同步锁
@@ -158,7 +169,7 @@ export class SyncManager {
       this.setupMessageListeners();
 
       if (DEBUG_ENABLED) {
-        console.log('[Sync Manager] Initialized');
+        console.log('[Sync Manager] Initialized successfully');
       }
     } catch (error) {
       if (DEBUG_ENABLED) {
@@ -177,15 +188,33 @@ export class SyncManager {
         return false;
       }
 
+      if (DEBUG_ENABLED) {
+        console.log('[Sync Manager] Handling message:', message.action);
+      }
+
       this.handleMessage(message)
-        .then(result => sendResponse(result))
-        .catch(error => sendResponse({ 
-          success: false, 
-          error: error.message || 'Unknown error' 
-        }));
+        .then(result => {
+          if (DEBUG_ENABLED) {
+            console.log('[Sync Manager] Message result:', result);
+          }
+          sendResponse(result);
+        })
+        .catch(error => {
+          if (DEBUG_ENABLED) {
+            console.error('[Sync Manager] Message error:', error);
+          }
+          sendResponse({ 
+            success: false, 
+            error: error.message || 'Unknown error' 
+          });
+        });
 
       return true; // 保持异步响应
     });
+
+    if (DEBUG_ENABLED) {
+      console.log('[Sync Manager] Message listeners set up');
+    }
   }
 
   /**

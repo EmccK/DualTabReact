@@ -111,7 +111,12 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
         ...data,
       });
       
-      if (!response.success && response.error) {
+      // 检查响应是否存在
+      if (!response) {
+        throw new Error('No response from background script');
+      }
+      
+      if (response.success === false && response.error) {
         throw new Error(response.error);
       }
       
@@ -161,14 +166,16 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
     try {
       const response = await sendMessage('webdav_get_status');
       
-      setState(prev => ({
-        ...prev,
-        syncStatus: response.status || 'idle',
-        lastSyncTime: response.lastSyncTime || 0,
-        hasConflict: response.hasConflict || false,
-        message: response.message || null,
-        error: null,
-      }));
+      if (response && response.success) {
+        setState(prev => ({
+          ...prev,
+          syncStatus: response.status || 'idle',
+          lastSyncTime: response.lastSyncTime || 0,
+          hasConflict: response.hasConflict || false,
+          message: response.message || null,
+          error: null,
+        }));
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to get status';
       setState(prev => ({
@@ -187,15 +194,18 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
       
       const response = await sendMessage('webdav_update_config', { config });
       
-      setState(prev => ({
-        ...prev,
-        config,
-        isConfigured: !!(config.serverUrl && config.username),
-        isLoading: false,
-        message: 'Configuration updated successfully',
-      }));
-      
-      return true;
+      if (response && response.success) {
+        setState(prev => ({
+          ...prev,
+          config,
+          isConfigured: !!(config.serverUrl && config.username),
+          isLoading: false,
+          message: 'Configuration updated successfully',
+        }));
+        return true;
+      } else {
+        throw new Error(response?.error || 'Failed to update config');
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update config';
       setState(prev => ({
@@ -215,14 +225,14 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
       setState(prev => ({ ...prev, isTesting: true, error: null }));
       
       const response = await sendMessage('webdav_test_connection');
-      const isConnected = response.success;
+      const isConnected = response && response.success;
       
       setState(prev => ({
         ...prev,
         isTesting: false,
         isConnected,
         message: isConnected ? 'Connection successful' : 'Connection failed',
-        error: isConnected ? null : (response.error || 'Connection failed'),
+        error: isConnected ? null : (response?.error || 'Connection failed'),
       }));
       
       return isConnected;
@@ -246,22 +256,26 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       const response = await sendMessage('webdav_sync', { options });
-      const result = response.result;
+      const result = response?.result;
       
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        syncStatus: result?.status || 'idle',
-        hasConflict: result?.hasConflict || false,
-        message: result?.message || 'Sync completed',
-        error: result?.error || null,
-      }));
-      
-      if (result && onSyncComplete) {
-        onSyncComplete(result);
+      if (response && response.success) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          syncStatus: result?.status || 'idle',
+          hasConflict: result?.hasConflict || false,
+          message: result?.message || 'Sync completed',
+          error: null,
+        }));
+        
+        if (result && onSyncComplete) {
+          onSyncComplete(result);
+        }
+        
+        return result;
+      } else {
+        throw new Error(response?.error || 'Sync failed');
       }
-      
-      return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Sync failed';
       setState(prev => ({
@@ -282,16 +296,20 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       const response = await sendMessage('webdav_upload', { options });
-      const result = response.result;
+      const result = response?.result;
       
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        message: result?.message || 'Upload completed',
-        error: result?.error || null,
-      }));
-      
-      return result;
+      if (response && response.success) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          message: result?.message || 'Upload completed',
+          error: null,
+        }));
+        
+        return result;
+      } else {
+        throw new Error(response?.error || 'Upload failed');
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Upload failed';
       setState(prev => ({
@@ -311,16 +329,20 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       const response = await sendMessage('webdav_download');
-      const result = response.result;
+      const result = response?.result;
       
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        message: result?.message || 'Download completed',
-        error: result?.error || null,
-      }));
-      
-      return result;
+      if (response && response.success) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          message: result?.message || 'Download completed',
+          error: null,
+        }));
+        
+        return result;
+      } else {
+        throw new Error(response?.error || 'Download failed');
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Download failed';
       setState(prev => ({
@@ -341,14 +363,18 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
       
       const response = await sendMessage('webdav_resolve_conflict', { resolution });
       
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        hasConflict: false,
-        message: 'Conflict resolved successfully',
-      }));
-      
-      return response.success;
+      if (response && response.success) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          hasConflict: false,
+          message: 'Conflict resolved successfully',
+        }));
+        
+        return true;
+      } else {
+        throw new Error(response?.error || 'Failed to resolve conflict');
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to resolve conflict';
       setState(prev => ({
@@ -367,12 +393,16 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
     try {
       const response = await sendMessage('webdav_enable_auto_sync', { enabled, interval });
       
-      setState(prev => ({
-        ...prev,
-        message: enabled ? 'Auto sync enabled' : 'Auto sync disabled',
-      }));
-      
-      return response.success;
+      if (response && response.success) {
+        setState(prev => ({
+          ...prev,
+          message: enabled ? 'Auto sync enabled' : 'Auto sync disabled',
+        }));
+        
+        return true;
+      } else {
+        throw new Error(response?.error || 'Failed to toggle auto sync');
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to toggle auto sync';
       setState(prev => ({
@@ -388,15 +418,20 @@ export function useWebDAVSync(options: UseWebDAVSyncOptions = {}): [WebDAVSyncSt
    */
   const clearConfig = useCallback(async (): Promise<void> => {
     try {
-      await sendMessage('webdav_clear_sync_data');
-      await chrome.storage.local.remove(['webdav_config']);
+      const response = await sendMessage('webdav_clear_sync_data');
       
-      setState(prev => ({
-        ...prev,
-        config: null,
-        isConfigured: false,
-        message: 'Configuration cleared',
-      }));
+      if (response && response.success) {
+        await chrome.storage.local.remove(['webdav_config']);
+        
+        setState(prev => ({
+          ...prev,
+          config: null,
+          isConfigured: false,
+          message: 'Configuration cleared',
+        }));
+      } else {
+        throw new Error(response?.error || 'Failed to clear config');
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to clear config';
       setState(prev => ({

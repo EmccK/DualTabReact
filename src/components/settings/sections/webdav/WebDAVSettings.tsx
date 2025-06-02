@@ -15,7 +15,7 @@ import { Badge } from '../../../ui/badge';
 import { Alert } from '../../../ui/alert';
 import { useWebDAVSync } from '../../../../hooks/webdav';
 import type { WebDAVConfig, ConflictResolution } from '../../../../services/webdav';
-import { WEBDAV_PROVIDERS } from '../../../../services/webdav';
+import { DEFAULT_WEBDAV_CONFIG } from '../../../../services/webdav';
 
 /**
  * 组件属性
@@ -24,16 +24,6 @@ interface WebDAVSettingsProps {
   className?: string;
 }
 
-/**
- * WebDAV预设服务商
- */
-const PROVIDER_OPTIONS = [
-  { value: 'NEXTCLOUD', label: 'Nextcloud', icon: '☁️' },
-  { value: 'OWNCLOUD', label: 'ownCloud', icon: '🌐' },
-  { value: 'SYNOLOGY', label: 'Synology NAS', icon: '🗄️' },
-  { value: 'QNAP', label: 'QNAP NAS', icon: '💾' },
-  { value: 'GENERIC', label: '通用WebDAV', icon: '🔗' },
-];
 
 /**
  * 冲突解决策略选项
@@ -72,14 +62,7 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
   });
 
   // 表单状态
-  const [formData, setFormData] = useState<WebDAVConfig>({
-    serverUrl: '',
-    username: '',
-    password: '',
-    syncPath: '/DualTab',
-    enabled: false,
-    autoSyncInterval: 30,
-  });
+  const [formData, setFormData] = useState<WebDAVConfig>(DEFAULT_WEBDAV_CONFIG);
 
   const [advancedSettings, setAdvancedSettings] = useState({
     conflictResolution: 'manual' as ConflictResolution,
@@ -88,7 +71,6 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
     networkTimeout: 30,
   });
 
-  const [selectedProvider, setSelectedProvider] = useState<string>('GENERIC');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -98,36 +80,16 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
   useEffect(() => {
     if (state.config) {
       setFormData({
-        serverUrl: state.config.serverUrl || '',
-        username: state.config.username || '',
-        password: state.config.password || '',
-        syncPath: state.config.syncPath || '/DualTab',
-        enabled: state.config.enabled || false,
-        autoSyncInterval: state.config.autoSyncInterval || 30,
+        serverUrl: state.config.serverUrl || DEFAULT_WEBDAV_CONFIG.serverUrl,
+        username: state.config.username || DEFAULT_WEBDAV_CONFIG.username,
+        password: state.config.password || DEFAULT_WEBDAV_CONFIG.password,
+        syncPath: state.config.syncPath || DEFAULT_WEBDAV_CONFIG.syncPath,
+        enabled: state.config.enabled || DEFAULT_WEBDAV_CONFIG.enabled,
+        autoSyncInterval: state.config.autoSyncInterval || DEFAULT_WEBDAV_CONFIG.autoSyncInterval,
       });
     }
   }, [state.config]);
 
-  /**
-   * 处理提供商选择
-   */
-  const handleProviderChange = (providerKey: string) => {
-    setSelectedProvider(providerKey);
-    const provider = WEBDAV_PROVIDERS[providerKey as keyof typeof WEBDAV_PROVIDERS];
-    
-    if (provider && formData.serverUrl) {
-      // 根据提供商模板更新同步路径
-      let newSyncPath = formData.syncPath;
-      if (provider.pathTemplate !== '/') {
-        newSyncPath = provider.pathTemplate.replace('{username}', formData.username) + '/DualTab';
-      }
-      
-      setFormData(prev => ({
-        ...prev,
-        syncPath: newSyncPath,
-      }));
-    }
-  };
 
   /**
    * 处理表单字段变化
@@ -205,30 +167,23 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
   const handleClearConfig = async () => {
     if (confirm('确定要清除WebDAV配置吗？这将删除所有同步设置。')) {
       await actions.clearConfig();
-      setFormData({
-        serverUrl: '',
-        username: '',
-        password: '',
-        syncPath: '/DualTab',
-        enabled: false,
-        autoSyncInterval: 30,
-      });
+      setFormData(DEFAULT_WEBDAV_CONFIG);
     }
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       {/* 标题和状态 */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">WebDAV同步</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <h3 className="text-base font-semibold">WebDAV同步</h3>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
             通过WebDAV服务同步您的书签和设置
           </p>
         </div>
         <div className="flex items-center space-x-2">
           {state.isConfigured && (
-            <Badge variant={state.syncStatus === 'success' ? 'default' : 'secondary'}>
+            <Badge variant={state.syncStatus === 'success' ? 'default' : 'secondary'} className="text-xs">
               {state.syncStatus === 'idle' && '空闲'}
               {state.syncStatus === 'syncing' && '同步中'}
               {state.syncStatus === 'success' && '同步成功'}
@@ -271,101 +226,90 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
       )}
 
       {/* 基本配置 */}
-      <Card className="p-6">
-        <div className="space-y-4">
-          <h4 className="font-medium">服务器配置</h4>
+      <Card className="p-4">
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium">服务器配置</h4>
           
-          {/* 服务商选择 */}
-          <div className="space-y-2">
-            <Label htmlFor="provider">WebDAV服务商</Label>
-            <Select value={selectedProvider} onValueChange={handleProviderChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="选择WebDAV服务商" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROVIDER_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <span className="flex items-center space-x-2">
-                      <span>{option.icon}</span>
-                      <span>{option.label}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* 服务器地址 */}
-          <div className="space-y-2">
-            <Label htmlFor="serverUrl">服务器地址</Label>
-            <Input
-              id="serverUrl"
-              type="url"
-              placeholder="https://your-server.com"
-              value={formData.serverUrl}
-              onChange={(e) => handleFieldChange('serverUrl', e.target.value)}
-            />
-          </div>
-
-          {/* 用户名 */}
-          <div className="space-y-2">
-            <Label htmlFor="username">用户名</Label>
-            <Input
-              id="username"
-              type="text"
-              placeholder="your-username"
-              value={formData.username}
-              onChange={(e) => handleFieldChange('username', e.target.value)}
-            />
-          </div>
-
-          {/* 密码 */}
-          <div className="space-y-2">
-            <Label htmlFor="password">密码</Label>
-            <div className="relative">
+          {/* 服务器配置表单 - 使用网格布局 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* 服务器地址 */}
+            <div className="space-y-1">
+              <Label htmlFor="serverUrl" className="text-xs">服务器地址</Label>
               <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="your-password"
-                value={formData.password}
-                onChange={(e) => handleFieldChange('password', e.target.value)}
+                id="serverUrl"
+                type="url"
+                placeholder="https://your-server.com"
+                value={formData.serverUrl}
+                onChange={(e) => handleFieldChange('serverUrl', e.target.value)}
+                className="h-8"
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-2 top-1/2 -translate-y-1/2"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
-              </Button>
+            </div>
+
+            {/* 同步路径 */}
+            <div className="space-y-1">
+              <Label htmlFor="syncPath" className="text-xs">同步路径</Label>
+              <Input
+                id="syncPath"
+                type="text"
+                placeholder="/DualTab"
+                value={formData.syncPath}
+                onChange={(e) => handleFieldChange('syncPath', e.target.value)}
+                className="h-8"
+              />
+            </div>
+
+            {/* 用户名 */}
+            <div className="space-y-1">
+              <Label htmlFor="username" className="text-xs">用户名</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="your-username"
+                value={formData.username}
+                onChange={(e) => handleFieldChange('username', e.target.value)}
+                className="h-8"
+              />
+            </div>
+
+            {/* 密码 */}
+            <div className="space-y-1">
+              <Label htmlFor="password" className="text-xs">密码</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="your-password"
+                  value={formData.password}
+                  onChange={(e) => handleFieldChange('password', e.target.value)}
+                  className="h-8 pr-8"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  <span className="text-xs">{showPassword ? '👁️' : '👁️‍🗨️'}</span>
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* 同步路径 */}
-          <div className="space-y-2">
-            <Label htmlFor="syncPath">同步路径</Label>
-            <Input
-              id="syncPath"
-              type="text"
-              placeholder="/DualTab"
-              value={formData.syncPath}
-              onChange={(e) => handleFieldChange('syncPath', e.target.value)}
-            />
-          </div>
-
           {/* 操作按钮 */}
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={handleTestConnection}
               disabled={state.isTesting || !formData.serverUrl || !formData.username}
               variant="outline"
+              size="sm"
             >
               {state.isTesting ? '测试中...' : '测试连接'}
             </Button>
             <Button
               onClick={handleSaveConfig}
               disabled={state.isLoading || !formData.serverUrl}
+              size="sm"
             >
               保存配置
             </Button>
@@ -384,34 +328,32 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
 
       {/* 同步设置 */}
       {state.isConfigured && (
-        <Card className="p-6">
-          <div className="space-y-4">
-            <h4 className="font-medium">同步设置</h4>
+        <Card className="p-4">
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">同步设置</h4>
             
-            {/* 自动同步间隔 */}
-            <div className="space-y-2">
-              <Label htmlFor="autoSyncInterval">自动同步间隔</Label>
-              <Select
-                value={formData.autoSyncInterval?.toString() || '30'}
-                onValueChange={(value) => handleFieldChange('autoSyncInterval', parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SYNC_INTERVAL_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value.toString()}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+              {/* 自动同步间隔 */}
+              <div className="space-y-1">
+                <Label htmlFor="autoSyncInterval" className="text-xs">自动同步间隔</Label>
+                <Select
+                  value={formData.autoSyncInterval?.toString() || '30'}
+                  onValueChange={(value) => handleFieldChange('autoSyncInterval', parseInt(value))}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SYNC_INTERVAL_OPTIONS.map(option => (
+                      <SelectItem key={option.value} value={option.value.toString()}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* 手动同步操作 */}
-            <Separator />
-            <div className="space-y-3">
-              <h5 className="text-sm font-medium">手动同步</h5>
+              {/* 手动同步操作 */}
               <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={handleManualSync}
@@ -426,7 +368,7 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
                   variant="outline"
                   size="sm"
                 >
-                  上传数据
+                  上传
                 </Button>
                 <Button
                   onClick={handleDownload}
@@ -434,15 +376,15 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
                   variant="outline"
                   size="sm"
                 >
-                  下载数据
+                  下载
                 </Button>
               </div>
             </div>
 
             {/* 最后同步时间 */}
             {state.lastSyncTime > 0 && (
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                最后同步时间: {new Date(state.lastSyncTime).toLocaleString()}
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                最后同步: {new Date(state.lastSyncTime).toLocaleString()}
               </div>
             )}
           </div>
@@ -451,98 +393,105 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
 
       {/* 高级设置 */}
       {state.isConfigured && (
-        <Card className="p-6">
-          <div className="space-y-4">
+        <Card className="p-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium">高级设置</h4>
+              <h4 className="text-sm font-medium">高级设置</h4>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAdvanced(!showAdvanced)}
+                className="h-6 px-2 text-xs"
               >
                 {showAdvanced ? '收起' : '展开'}
               </Button>
             </div>
 
             {showAdvanced && (
-              <div className="space-y-4">
-                {/* 冲突解决策略 */}
-                <div className="space-y-2">
-                  <Label htmlFor="conflictResolution">冲突解决策略</Label>
-                  <Select
-                    value={advancedSettings.conflictResolution}
-                    onValueChange={(value) => 
-                      setAdvancedSettings(prev => ({
-                        ...prev,
-                        conflictResolution: value as ConflictResolution
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CONFLICT_RESOLUTION_OPTIONS.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div>
-                            <div>{option.label}</div>
-                            <div className="text-xs text-gray-500">{option.description}</div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* 自动备份 */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="enableBackup">创建备份</Label>
-                    <p className="text-xs text-gray-500">同步前自动创建数据备份</p>
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* 冲突解决策略 */}
+                  <div className="space-y-1">
+                    <Label htmlFor="conflictResolution" className="text-xs">冲突解决策略</Label>
+                    <Select
+                      value={advancedSettings.conflictResolution}
+                      onValueChange={(value) => 
+                        setAdvancedSettings(prev => ({
+                          ...prev,
+                          conflictResolution: value as ConflictResolution
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONFLICT_RESOLUTION_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div>
+                              <div className="text-xs">{option.label}</div>
+                              <div className="text-xs text-gray-500">{option.description}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Switch
-                    id="enableBackup"
-                    checked={advancedSettings.enableBackup}
-                    onCheckedChange={(checked) =>
-                      setAdvancedSettings(prev => ({ ...prev, enableBackup: checked }))
-                    }
-                  />
+
+                  {/* 网络超时 */}
+                  <div className="space-y-1">
+                    <Label htmlFor="networkTimeout" className="text-xs">网络超时（秒）</Label>
+                    <Input
+                      id="networkTimeout"
+                      type="number"
+                      min="5"
+                      max="300"
+                      value={advancedSettings.networkTimeout}
+                      onChange={(e) =>
+                        setAdvancedSettings(prev => ({
+                          ...prev,
+                          networkTimeout: parseInt(e.target.value) || 30
+                        }))
+                      }
+                      className="h-8"
+                    />
+                  </div>
                 </div>
 
-                {/* 网络超时 */}
-                <div className="space-y-2">
-                  <Label htmlFor="networkTimeout">网络超时（秒）</Label>
-                  <Input
-                    id="networkTimeout"
-                    type="number"
-                    min="5"
-                    max="300"
-                    value={advancedSettings.networkTimeout}
-                    onChange={(e) =>
-                      setAdvancedSettings(prev => ({
-                        ...prev,
-                        networkTimeout: parseInt(e.target.value) || 30
-                      }))
-                    }
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* 自动备份开关 */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="enableBackup" className="text-xs">创建备份</Label>
+                      <p className="text-xs text-gray-500">同步前自动备份</p>
+                    </div>
+                    <Switch
+                      id="enableBackup"
+                      checked={advancedSettings.enableBackup}
+                      onCheckedChange={(checked) =>
+                        setAdvancedSettings(prev => ({ ...prev, enableBackup: checked }))
+                      }
+                    />
+                  </div>
 
-                {/* 重试次数 */}
-                <div className="space-y-2">
-                  <Label htmlFor="maxRetries">最大重试次数</Label>
-                  <Input
-                    id="maxRetries"
-                    type="number"
-                    min="0"
-                    max="10"
-                    value={advancedSettings.maxRetries}
-                    onChange={(e) =>
-                      setAdvancedSettings(prev => ({
-                        ...prev,
-                        maxRetries: parseInt(e.target.value) || 3
-                      }))
-                    }
-                  />
+                  {/* 重试次数 */}
+                  <div className="space-y-1">
+                    <Label htmlFor="maxRetries" className="text-xs">最大重试次数</Label>
+                    <Input
+                      id="maxRetries"
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={advancedSettings.maxRetries}
+                      onChange={(e) =>
+                        setAdvancedSettings(prev => ({
+                          ...prev,
+                          maxRetries: parseInt(e.target.value) || 3
+                        }))
+                      }
+                      className="h-8"
+                    />
+                  </div>
                 </div>
               </div>
             )}
