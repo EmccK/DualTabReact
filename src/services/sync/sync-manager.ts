@@ -5,11 +5,13 @@
 
 import { WebDAVSyncService, createWebDAVSyncService } from '../webdav/sync';
 import { StorageBridge, storageBridge } from '../webdav/storage-bridge';
-import { 
+import type { 
   WebDAVConfig, 
   SyncResult, 
   SyncStatus, 
-  ConflictResolution,
+  ConflictResolution
+} from '../webdav/types';
+import { 
   DEFAULT_WEBDAV_CONFIG,
   DEFAULT_SYNC_CONFIG 
 } from '../webdav/types';

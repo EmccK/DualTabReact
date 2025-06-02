@@ -3,7 +3,7 @@
  * 处理所有WebDAV请求，避免浏览器认证弹窗
  */
 
-import { 
+import type { 
   WebDAVRequestOptions, 
   WebDAVResponse, 
   WebDAVFileInfo, 

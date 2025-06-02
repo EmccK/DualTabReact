@@ -14,7 +14,8 @@ import { Separator } from '../../../ui/separator';
 import { Badge } from '../../../ui/badge';
 import { Alert } from '../../../ui/alert';
 import { useWebDAVSync } from '../../../../hooks/webdav';
-import { WebDAVConfig, ConflictResolution, WEBDAV_PROVIDERS } from '../../../../services/webdav';
+import type { WebDAVConfig, ConflictResolution } from '../../../../services/webdav';
+import { WEBDAV_PROVIDERS } from '../../../../services/webdav';
 
 /**
  * 组件属性

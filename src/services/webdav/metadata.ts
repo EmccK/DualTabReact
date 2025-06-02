@@ -3,7 +3,7 @@
  * 处理同步时间戳、数据哈希、设备信息等元数据
  */
 
-import { SyncMetadata, DeviceInfo, SyncDataPackage } from './types';
+import type { SyncMetadata, DeviceInfo, SyncDataPackage } from './types';
 import { SYNC_CONSTANTS, DEVICE_PLATFORMS, BROWSERS, DEBUG_ENABLED } from './constants';
 
 /**

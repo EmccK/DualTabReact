@@ -3,7 +3,7 @@
  * 连接WebDAV同步服务和Chrome存储系统
  */
 
-import { SyncDataPackage } from './types';
+import type { SyncDataPackage } from './types';
 import { STORAGE_KEYS, DEBUG_ENABLED } from './constants';
 
 /**

@@ -4,7 +4,7 @@
  */
 
 import { WebDAVClient } from './client';
-import { 
+import type { 
   WebDAVConfig, 
   SyncResult, 
   SyncDataPackage, 

@@ -3,7 +3,7 @@
  * 处理数据同步过程中的各种冲突情况
  */
 
-import { 
+import type { 
   ConflictInfo, 
   ConflictResolution, 
   SyncDataPackage, 

@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { WebDAVConfig, SyncResult, SyncStatus, ConflictResolution } from '../../services/webdav';
+import type { WebDAVConfig, SyncResult, SyncStatus, ConflictResolution } from '../../services/webdav';
 
 /**
  * 同步状态接口
