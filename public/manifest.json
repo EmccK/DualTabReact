@@ -5,10 +5,8 @@
     "description": "可自定义内外网地址的新标签页",
     "permissions": [
         "storage",
-        "unlimitedStorage",
         "tabs",
-        "activeTab",
-        "alarms"
+        "activeTab"
     ],
     "action": {
         "default_popup": "popup.html",
@@ -25,7 +23,6 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "images/backgrounds/*",
                 "assets/*"
             ],
             "matches": [

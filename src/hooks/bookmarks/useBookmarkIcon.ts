@@ -75,7 +75,6 @@ export const useBookmarkIcon = ({
 
   const updateIconType = (type: IconType) => {
     // 这里应该更新书签数据，但由于这是Hook，我们只记录
-    console.log('更新图标类型:', type);
   };
 
   const uploadImage = async (file: File) => {
@@ -87,8 +86,6 @@ export const useBookmarkIcon = ({
 
       const imageData = await fileToBase64(file);
       const compressedData = await compressImage(imageData);
-      
-      console.log('图片上传成功:', compressedData.substring(0, 50) + '...');
     } catch (error) {
       console.error('图片上传失败:', error);
       throw error;
@@ -96,11 +93,9 @@ export const useBookmarkIcon = ({
   };
 
   const updateTextConfig = (text: string, backgroundColor?: string, textColor?: string) => {
-    console.log('更新文字配置:', { text, backgroundColor, textColor });
   };
 
   const resetIcon = () => {
-    console.log('重置图标');
   };
 
   return {

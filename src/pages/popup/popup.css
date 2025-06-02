@@ -2,13 +2,6 @@
  * Popup专用样式
  */
 
-/* 响应式弹窗内容 */
-.popup-content {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
 /* 平滑的焦点过渡 */
 .popup-input {
   transition: all 0.2s ease-in-out;
@@ -16,37 +9,4 @@
 
 .popup-input:focus {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-/* 成功动画 */
-.popup-success-icon {
-  animation: successPulse 0.6s ease-in-out;
-}
-
-@keyframes successPulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* 倒计时数字动画 */
-.popup-countdown {
-  animation: countdownPulse 1s ease-in-out infinite;
-}
-
-@keyframes countdownPulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
 }

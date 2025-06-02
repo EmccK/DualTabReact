@@ -87,7 +87,6 @@ export function CategorySidebar({
   }, [categories, onReorderCategories])
 
   const handleCategoryClick = useCallback((categoryId: string) => {
-    console.log('分类点击测试:', categoryId)
     onCategorySelect(categoryId)
   }, [onCategorySelect])
 

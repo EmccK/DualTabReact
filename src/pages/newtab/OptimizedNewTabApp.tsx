@@ -106,7 +106,6 @@ function OptimizedNewTabApp() {
   const handleNetworkModeChange = useCallback(async (mode: NetworkMode) => {
     try {
       await setNetworkMode(mode)
-      console.log(`网络模式已切换到: ${mode}`)
     } catch (error) {
       console.error('网络模式切换失败:', error)
     }
@@ -117,10 +116,7 @@ function OptimizedNewTabApp() {
   }, [])
 
   const handleRefreshBackground = useCallback(async () => {
-    console.log('刷新背景图片')
-    
     if (settings.background.type !== 'random') {
-      console.log('当前不是随机图片模式，跳过刷新')
       return
     }
     
@@ -144,8 +140,6 @@ function OptimizedNewTabApp() {
       
       const imageUrl = backgroundImageManager.getImageUrl(image, 'large')
       await setOnlineImageBackground(image, imageUrl)
-      
-      console.log('背景图片刷新成功:', image.id)
     } catch (error) {
       console.error('刷新背景图片失败:', error)
     }
@@ -280,7 +274,6 @@ function OptimizedNewTabApp() {
   const handleBookmarksReorder = useCallback(async (reorderedBookmarks: Bookmark[]) => {
     try {
       await reorderBookmarks(reorderedBookmarks)
-      console.log('书签重排序成功')
     } catch (error) {
       console.error('书签重排序失败:', error)
     }
@@ -310,7 +303,6 @@ function OptimizedNewTabApp() {
     try {
       const result = await deleteCategory(categoryId)
       if (result.success) {
-        console.log('分类删除成功')
         hideContextMenu()
         if (selectedCategoryId === categoryId) {
           const remainingCategory = categories.find(cat => cat.id !== categoryId)
@@ -336,7 +328,6 @@ function OptimizedNewTabApp() {
     try {
       const result = await addCategory(categoryData)
       if (result.success) {
-        console.log('分类添加成功')
       } else {
         console.error('分类添加失败:', result.error)
       }
@@ -350,7 +341,6 @@ function OptimizedNewTabApp() {
     try {
       const result = await updateCategory(id, updates)
       if (result.success) {
-        console.log('分类更新成功')
       } else {
         console.error('分类更新失败:', result.error)
       }
@@ -364,7 +354,6 @@ function OptimizedNewTabApp() {
     try {
       const result = await reorderCategories(reorderedCategories)
       if (result.success) {
-        console.log('分类重排序成功')
       } else {
         console.error('分类重排序失败:', result.error)
       }
@@ -379,7 +368,6 @@ function OptimizedNewTabApp() {
       try {
         const result = await deleteBookmark(bookmark.id)
         if (result.success) {
-          console.log('书签删除成功')
           hideContextMenu()
         } else {
           console.error('书签删除失败:', result.error)

@@ -41,7 +41,6 @@ export function IconSelector({
   // 处理颜色变化（兼容旧接口）
   const handleColorChange = (color: string) => {
     // 旧接口没有专门的颜色回调，暂时忽略
-    console.log('Color changed:', color);
   };
 
   return (

@@ -49,7 +49,6 @@ export function SimpleCategorySidebar({
   // 隐藏边栏 - 考虑右键菜单状态
   const hideSidebar = useCallback(() => {
     if (categorySettings.sidebarVisible === 'auto' && !isPinned && !isContextMenuOpen) {
-      console.log('边栏立即隐藏')
       clearHideTimeout()
       setIsVisible(false)
     }
@@ -69,7 +68,6 @@ export function SimpleCategorySidebar({
   // 显示边栏
   const showSidebar = useCallback(() => {
     if (categorySettings.sidebarVisible === 'auto') {
-      console.log('显示边栏')
       clearHideTimeout()
       setIsVisible(true)
     }
@@ -101,7 +99,6 @@ export function SimpleCategorySidebar({
 
     const handleMouseMove = (e: MouseEvent) => {
       const inArea = isMouseInSidebarArea(e.clientX)
-      console.log('鼠标位置:', e.clientX, '窗口宽度:', window.innerWidth, '在边栏区域:', inArea)
       
       if (inArea && !isVisible) {
         // 只有在边栏未显示时才触发显示

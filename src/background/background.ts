@@ -11,7 +11,7 @@ if (DEBUG) {
 }
 
 // 初始化WebDAV同步管理器
-let syncManager: any = null;
+let syncManager = null;
 try {
   syncManager = initializeSyncManager();
   if (DEBUG) {
@@ -68,7 +68,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             .then((response) => {
               sendResponse({ success: true, selectedCategoryId: response?.selectedCategoryId })
             })
-            .catch((error) => {
+            .catch(() => {
               sendResponse({ success: false, error: 'No newtab response' })
             })
         } else {

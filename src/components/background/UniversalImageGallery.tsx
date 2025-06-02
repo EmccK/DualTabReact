@@ -6,7 +6,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
   Select, 
   SelectContent, 
@@ -16,13 +15,9 @@ import {
 } from '@/components/ui/select';
 import { 
   RefreshCw, 
-  Download, 
   Info, 
-  Loader2,
-  AlertCircle,
   Grid,
-  List,
-  Settings
+  List
 } from 'lucide-react';
 
 import { backgroundImageManager } from '@/services/background';
@@ -62,7 +57,7 @@ export function UniversalImageGallery({
   maxHistory = 12
 }: UniversalImageGalleryProps) {
   const { settings, updateSettings } = useSettings();
-  const [selectedSource, setSelectedSource] = useState<BackgroundImageSource>(initialSource);
+  const [selectedSource] = useState<BackgroundImageSource>(initialSource);
   const [selectedCategory, setSelectedCategory] = useState(settings.background.randomImageCategory || initialCategory);
   const [selectedTheme, setSelectedTheme] = useState(settings.background.randomImageTheme || initialTheme);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
