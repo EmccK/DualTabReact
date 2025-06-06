@@ -517,8 +517,8 @@ function OptimizedNewTabApp() {
           {/* 书签网格区域 - 使用优化后的组件 */}
           <div className="flex-1 flex items-start justify-center pt-16 px-4 relative z-10">
             <div className="w-full max-w-5xl">
-              {/* 只有在页面准备好且分类已初始化时才显示书签网格 */}
-              {isPageReady && categoryInitialized ? (
+              {/* 只有在页面准备好且分类已初始化且不在加载状态时才显示书签网格 */}
+              {isPageReady && categoryInitialized && !bookmarksLoading ? (
                 <OptimizedBookmarkGridV3
                   bookmarks={bookmarks}
                   selectedCategoryId={selectedCategoryId}
@@ -529,15 +529,15 @@ function OptimizedNewTabApp() {
                   onBookmarkReorder={handleBookmarksReorder}
                   className="min-h-[200px]"
                 />
-              ) : (
-                // 加载状态
+              ) : bookmarksLoading ? (
+                // 书签加载状态
                 <div className="flex items-center justify-center py-8">
                   <div className="text-white/50 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white/50 mx-auto mb-2"></div>
                     <div className="text-sm">加载书签中...</div>
                   </div>
                 </div>
-              )}
+              ) : null}
               
               {/* 添加书签按钮 - 当没有书签时显示 */}
               {displayBookmarks.length === 0 && !bookmarksLoading && categoryInitialized && (

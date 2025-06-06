@@ -50,8 +50,8 @@ const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
 
   // 初始加载完成后设置标志
   useEffect(() => {
-    if (isInitialLoad && bookmarks.length > 0) {
-      // 使用较短的延迟来避免初始闪烁
+    if (isInitialLoad) {
+      // 使用较短的延迟来避免初始闪烁，不管是否有书签都要结束初始加载状态
       const timer = setTimeout(() => {
         setIsInitialLoad(false);
       }, 100);
