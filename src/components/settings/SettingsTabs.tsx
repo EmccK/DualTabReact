@@ -4,8 +4,7 @@ import {
   Palette, 
   BookOpen, 
   Image,
-  Cloud,
-  Settings as SettingsIcon
+  Cloud
 } from 'lucide-react';
 
 export type SettingsTab = 'preferences' | 'bookmarks' | 'background' | 'sync';

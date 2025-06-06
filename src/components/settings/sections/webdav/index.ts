@@ -4,4 +4,3 @@
 
 export { WebDAVSettings } from './WebDAVSettings';
 export { AutoSyncConfig } from './AutoSyncConfig';
-export { CompactAutoSyncConfig } from './CompactAutoSyncConfig';

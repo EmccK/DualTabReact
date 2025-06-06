@@ -8,7 +8,6 @@ import type {
   BookmarkCategory, 
   NetworkMode, 
   AppSettings, 
-  ApiLimits, 
   BackupData,
   StorageResponse,
   OperationResult 

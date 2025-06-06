@@ -8,7 +8,6 @@ import type {
   WebDAVConfig, 
   SyncResult, 
   SyncDataPackage, 
-  SyncMetadata,
   DeviceInfo,
   ConflictResolution 
 } from './types';
@@ -28,7 +27,6 @@ import {
 import { 
   detectConflict, 
   resolveConflict, 
-  getRecommendedResolution,
   autoResolveConflict 
 } from './conflict-resolver';
 
@@ -509,7 +507,7 @@ export class WebDAVSyncService {
   async testConnection(): Promise<boolean> {
     try {
       return await this.client.testConnection();
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -520,7 +518,7 @@ export class WebDAVSyncService {
   async listRemoteFiles(): Promise<any[]> {
     try {
       return await this.client.listDirectory('/');
-    } catch (error) {
+    } catch {
       return [];
     }
   }

@@ -6,7 +6,6 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import type { ColorStop } from '@/types/gradient';
-import { isLightColor } from '@/utils/gradient';
 
 interface ColorStopNodeProps {
   colorStop: ColorStop;
@@ -38,7 +37,6 @@ export function ColorStopNode({
     }
   };
 
-  const _isLight = isLightColor(colorStop.color);
 
   return (
     <div 

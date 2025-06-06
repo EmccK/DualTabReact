@@ -22,8 +22,7 @@ export function BackgroundSettings() {
     backgroundSettings, 
     setGradientBackground, 
     setOnlineImageBackground,
-    updateBackground,
-    updateDisplaySettings 
+    updateBackground
   } = useBackground();
   
   // 监听背景类型变化，同步选项选择

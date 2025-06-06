@@ -71,7 +71,7 @@ const BookmarkGrid: React.FC<BookmarkGridProps> = ({
   }, []);
 
   // 拖拽结束
-  const handleDragEnd = useCallback((_bookmarkId: string, _event: React.DragEvent) => {
+  const handleDragEnd = useCallback(() => {
     setDragState({
       isDragging: false,
       draggedId: null,

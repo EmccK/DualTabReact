@@ -46,7 +46,6 @@ export function CacheManagement() {
     preloadImages,
     getUsagePercentage,
     formatSize,
-    getCacheHealth,
     getRecommendedCleanupStrategy,
     categorySummary,
     cacheHealth
@@ -68,7 +67,7 @@ export function CacheManagement() {
       } else {
         alert(`清理失败: ${result.message}`);
       }
-    } catch (err) {
+    } catch {
       alert('清理操作失败，请重试');
     }
   };
@@ -81,7 +80,7 @@ export function CacheManagement() {
       } else {
         alert(`预加载失败: ${result.message}`);
       }
-    } catch (err) {
+    } catch {
       alert('预加载操作失败，请重试');
     }
   };

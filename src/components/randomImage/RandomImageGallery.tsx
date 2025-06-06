@@ -61,11 +61,9 @@ export function RandomImageGallery({
     history,
     fetchRandomWallpaper,
     fetchRandomWallpapers,
-    selectFromHistory: _selectFromHistory,
     clearError,
     retry,
     getImageInfo,
-    getRecommendedSettings: _getRecommendedSettings,
     hasHistory
   } = useRandomImage({
     categoryId: selectedCategory,

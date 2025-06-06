@@ -38,17 +38,15 @@ export const IconSelector: React.FC<IconSelectorProps> = ({
   iconText = '',
   iconData,
   iconColor,
-  url: _url = '',
   imageScale,
   onIconTypeChange,
   onIconTextChange,
   onIconColorChange,
   onIconUpload,
-  onImageScaleChange: _onImageScaleChange,
   className
 }) => {
   const [uploadFileName, setUploadFileName] = useState<string>('');
-  const [_isUploading, setIsUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 处理图标类型选择
@@ -125,7 +123,7 @@ export const IconSelector: React.FC<IconSelectorProps> = ({
     };
 
     switch (iconType) {
-      case ICON_TYPES.TEXT:
+      case ICON_TYPES.TEXT: {
         const text = iconText || 'A';
         const backgroundColor = iconColor || generateDefaultIconColor(text);
         return (
@@ -140,6 +138,7 @@ export const IconSelector: React.FC<IconSelectorProps> = ({
             {text.charAt(0).toUpperCase()}
           </div>
         );
+      }
 
       case ICON_TYPES.UPLOAD:
         return iconData ? (

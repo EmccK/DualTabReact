@@ -82,7 +82,7 @@ const OptimizedBookmarkGrid: React.FC<BookmarkGridProps> = ({
     });
   }, []);
 
-  const handleDragEnd = useCallback((_bookmarkId: string, _event: React.DragEvent) => {
+  const handleDragEnd = useCallback(() => {
     startTransition(() => {
       setDragState({
         isDragging: false,

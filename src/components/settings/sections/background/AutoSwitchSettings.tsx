@@ -54,7 +54,6 @@ const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周�
 export function AutoSwitchSettings() {
   const {
     settings,
-    state,
     loading,
     switching,
     error,
@@ -70,7 +69,6 @@ export function AutoSwitchSettings() {
     lastSwitchTime,
     timeUntilNext,
     todayHistory,
-    categoryStats,
     inScheduledTime,
     validateSchedule
   } = useAutoSwitch();
@@ -78,7 +76,7 @@ export function AutoSwitchSettings() {
   const handleIntervalChange = async (minutes: number) => {
     try {
       await updateSettings({ intervalMinutes: minutes });
-    } catch (err) {
+    } catch {
       alert('保存切换间隔失败，请重试');
     }
   };
@@ -86,7 +84,7 @@ export function AutoSwitchSettings() {
   const handleModeChange = async (mode: 'random' | 'sequential' | 'favorite') => {
     try {
       await updateSettings({ mode });
-    } catch (err) {
+    } catch {
       alert('保存切换模式失败，请重试');
     }
   };
@@ -96,7 +94,7 @@ export function AutoSwitchSettings() {
       await updateSettings({ 
         source: { ...settings?.source, categories } 
       });
-    } catch (err) {
+    } catch {
       alert('保存分类设置失败，请重试');
     }
   };
@@ -114,7 +112,7 @@ export function AutoSwitchSettings() {
       }
 
       await updateSettings({ schedule: newSchedule });
-    } catch (err) {
+    } catch {
       alert('保存时间段设置失败，请重试');
     }
   };
@@ -136,7 +134,7 @@ export function AutoSwitchSettings() {
       } else {
         alert(`切换失败: ${result.error}`);
       }
-    } catch (err) {
+    } catch {
       alert('手动切换失败，请重试');
     }
   };

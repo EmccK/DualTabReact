@@ -241,7 +241,7 @@ export function SimpleCategorySidebar({
             setIsVisible(false)
             clearHideTimeout()
           }}
-          onMouseMove={(_e) => {
+          onMouseMove={() => {
             // 确保鼠标在遮罩层上时会隐藏边栏，但要考虑右键菜单状态
             if (!isPinned && !isContextMenuOpen) {
               hideSidebar()

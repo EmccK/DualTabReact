@@ -20,12 +20,10 @@ import {
   List
 } from 'lucide-react';
 
-import { backgroundImageManager } from '@/services/background';
 import { useSettings } from '@/hooks/useSettings';
 import type { 
   BackgroundImage, 
   BackgroundImageSource,
-  BackgroundImageFilters
 } from '@/types/background';
 import { RANDOM_IMAGE_CATEGORIES, RANDOM_IMAGE_THEMES } from '@/types/randomImage';
 
@@ -39,75 +37,16 @@ interface UniversalImageGalleryProps {
   maxHistory?: number;
 }
 
-interface GalleryState {
-  images: BackgroundImage[];
-  currentImage: BackgroundImage | null;
-  isLoading: boolean;
-  error: string | null;
-  selectedImages: Set<string>;
-}
 
 export function UniversalImageGallery({
-  onSelect: _onSelect,
-  onSelectMultiple: _onSelectMultiple,
   className = '',
-  initialSource = 'random',
   initialCategory = 'all',
-  initialTheme = 'all',
-  maxHistory = 12
+  initialTheme = 'all'
 }: UniversalImageGalleryProps) {
   const { settings, updateSettings } = useSettings();
-  const [selectedSource] = useState<BackgroundImageSource>(initialSource);
   const [selectedCategory, setSelectedCategory] = useState(settings.background.randomImageCategory || initialCategory);
   const [selectedTheme, setSelectedTheme] = useState(settings.background.randomImageTheme || initialTheme);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
-  const [_state, setState] = useState<GalleryState>({
-    images: [],
-    currentImage: null,
-    isLoading: false,
-    error: null,
-    selectedImages: new Set()
-  });
-
-  // 获取单张图片
-  const _fetchSingle = async () => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const filters: BackgroundImageFilters = {
-        category: selectedCategory !== 'all' ? selectedCategory : undefined,
-        theme: selectedTheme !== 'all' ? selectedTheme : undefined
-      };
-
-      const image = await backgroundImageManager.getRandomImageFromSource(selectedSource, filters);
-      
-      // 验证图片
-      if (!backgroundImageManager.isValidBackgroundImage(image)) {
-        throw new Error('获取到的图片不适合作为背景');
-      }
-
-      // 预加载图片
-      const preloadSuccess = await backgroundImageManager.preloadImage(image);
-      if (!preloadSuccess) {
-        throw new Error('图片预加载失败');
-      }
-
-      setState(prev => ({
-        ...prev,
-        currentImage: image,
-        images: [image, ...prev.images.slice(0, maxHistory - 1)],
-        isLoading: false
-      }));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '获取图片失败';
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage
-      }));
-    }
-  };
 
 
 

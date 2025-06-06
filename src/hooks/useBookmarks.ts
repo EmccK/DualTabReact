@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Bookmark, OperationResult } from '../types';
+import type { Bookmark } from '../types';
 import { 
-  loadBookmarks, 
   saveBookmarks, 
   loadCategories,
   saveCategories

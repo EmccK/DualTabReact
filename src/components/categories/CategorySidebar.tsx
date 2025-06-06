@@ -21,12 +21,9 @@ export function CategorySidebar({
   selectedCategoryId,
   onCategorySelect,
   onAddCategory,
-  onEditCategory: _onEditCategory,
-  onDeleteCategory: _onDeleteCategory,
   onReorderCategories,
   onCategoryContextMenu,
-  loading = false,
-  categorySettings: _categorySettings
+  loading = false
 }: CategorySidebarProps) {
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null)
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)

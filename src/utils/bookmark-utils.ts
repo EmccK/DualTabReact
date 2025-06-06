@@ -10,7 +10,6 @@ import {
   loadCategories, 
   saveCategories 
 } from './storage';
-import { validateCategory } from '../models/BookmarkCategory';
 
 /**
  * 生成书签唯一ID

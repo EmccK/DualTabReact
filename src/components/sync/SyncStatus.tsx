@@ -58,24 +58,12 @@ function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
 }
 
-/**
- * 格式化文件大小
- */
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
 
 /**
  * 紧凑版同步状态组件
  */
 export function CompactSyncStatus({ className }: { className?: string }) {
-  const [state, actions] = useWebDAVSync({
+  const [state] = useWebDAVSync({
     autoLoadConfig: true,
     autoRefreshStatus: true,
     refreshInterval: 10000,
@@ -300,7 +288,7 @@ export function SyncStatus({
  * 同步状态监控器（用于在其他组件中嵌入状态显示）
  */
 export function SyncStatusMonitor({ onStatusChange }: { onStatusChange?: (status: any) => void }) {
-  const [state] = useWebDAVSync({
+  useWebDAVSync({
     autoLoadConfig: true,
     autoRefreshStatus: true,
     refreshInterval: 30000,

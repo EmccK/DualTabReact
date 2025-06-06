@@ -73,7 +73,7 @@ export const useBookmarkIcon = ({
     console.warn('图标加载错误:', error.message);
   };
 
-  const updateIconType = (type: IconType) => {
+  const updateIconType = () => {
     // 这里应该更新书签数据，但由于这是Hook，我们只记录
   };
 
@@ -85,14 +85,14 @@ export const useBookmarkIcon = ({
       }
 
       const imageData = await fileToBase64(file);
-      const compressedData = await compressImage(imageData);
+      await compressImage(imageData);
     } catch (error) {
       console.error('图片上传失败:', error);
       throw error;
     }
   };
 
-  const updateTextConfig = (text: string, backgroundColor?: string, textColor?: string) => {
+  const updateTextConfig = () => {
   };
 
   const resetIcon = () => {

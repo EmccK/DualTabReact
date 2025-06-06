@@ -12,8 +12,6 @@ import {
   RefreshCw, 
   Trash2, 
   Download, 
-  Upload, 
-  AlertTriangle, 
   CheckCircle, 
   Clock,
   BarChart3,
