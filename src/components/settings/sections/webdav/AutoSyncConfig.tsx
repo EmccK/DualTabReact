@@ -47,12 +47,13 @@ interface TimeRecord {
  */
 interface AutoSyncConfigProps {
   className?: string;
+  onConfigChange?: (config: AutoSyncConfig) => void;
 }
 
 /**
  * 自动同步配置组件
  */
-export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
+export function AutoSyncConfig({ className = '', onConfigChange }: AutoSyncConfigProps) {
   const [config, setConfig] = useState<AutoSyncConfig>({
     enableAutoUpload: true,
     enableAutoDownload: true,
@@ -68,7 +69,6 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -90,6 +90,8 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
         
         if (loadedConfig) {
           setConfig(loadedConfig);
+          // 通知外层组件初始配置
+          onConfigChange?.(loadedConfig);
         }
         
         if (loadedTimeRecord) {
@@ -105,32 +107,6 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
     }
   };
 
-  /**
-   * 保存配置
-   */
-  const saveConfig = async () => {
-    try {
-      setIsSaving(true);
-      setError(null);
-      setMessage(null);
-
-      const response = await chrome.runtime.sendMessage({
-        action: 'webdav_update_auto_sync_config',
-        config,
-      });
-
-      if (response && response.success) {
-        setMessage('配置已保存');
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        throw new Error(response?.error || 'Failed to save config');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to save config');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   /**
    * 测试自动同步
@@ -181,10 +157,13 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
    * 更新配置项
    */
   const updateConfig = (key: keyof AutoSyncConfig, value: any) => {
-    setConfig(prev => ({
-      ...prev,
+    const newConfig = {
+      ...config,
       [key]: value,
-    }));
+    };
+    setConfig(newConfig);
+    // 通知外层配置变更
+    onConfigChange?.(newConfig);
   };
 
   // 初始化
@@ -397,24 +376,6 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
           </>
         )}
 
-        {/* 保存按钮 */}
-        <div className="flex justify-end pt-2">
-          <Button 
-            onClick={saveConfig} 
-            disabled={isSaving}
-            size="sm"
-            className="h-7 px-3 text-xs"
-          >
-            {isSaving ? (
-              <>
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                保存中
-              </>
-            ) : (
-              '保存配置'
-            )}
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

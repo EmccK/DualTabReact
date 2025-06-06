@@ -34,6 +34,9 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   });
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const { settings, updateSettings, resetSettings, isLoading, isDirty } = useSettings();
+  
+  // 存储各个组件的保存函数
+  const [componentSaveFunctions, setComponentSaveFunctions] = useState<Record<string, () => Promise<void>>>({});
 
   const handleTabChange = (tab: SettingsTab) => {
     setActiveTab(tab);
@@ -42,11 +45,31 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
 
   const handleSave = async () => {
     try {
-      // 设置会自动保存，这里主要是用户反馈
+      // 执行所有组件的保存函数
+      const savePromises = Object.values(componentSaveFunctions).map(saveFn => saveFn());
+      await Promise.all(savePromises);
+      
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to save settings:', error);
     }
+  };
+
+  // 注册组件保存函数
+  const registerSaveFunction = (componentId: string, saveFn: () => Promise<void>) => {
+    setComponentSaveFunctions(prev => ({
+      ...prev,
+      [componentId]: saveFn
+    }));
+  };
+
+  // 注销组件保存函数
+  const unregisterSaveFunction = (componentId: string) => {
+    setComponentSaveFunctions(prev => {
+      const newFunctions = { ...prev };
+      delete newFunctions[componentId];
+      return newFunctions;
+    });
   };
 
   const handleReset = async () => {
@@ -97,7 +120,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
       case 'background':
         return <BackgroundSettings />;
       case 'sync':
-        return <WebDAVSettings />;
+        return <WebDAVSettings onRegisterSave={registerSaveFunction} onUnregisterSave={unregisterSaveFunction} />;
       default:
         return null;
     }

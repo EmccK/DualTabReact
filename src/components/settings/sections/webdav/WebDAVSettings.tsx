@@ -22,13 +22,15 @@ import { DEFAULT_WEBDAV_CONFIG } from '../../../../services/webdav';
  */
 interface WebDAVSettingsProps {
   className?: string;
+  onRegisterSave?: (componentId: string, saveFn: () => Promise<void>) => void;
+  onUnregisterSave?: (componentId: string) => void;
 }
 
 
 /**
  * WebDAV设置组件
  */
-export function WebDAVSettings({ className }: WebDAVSettingsProps) {
+export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: WebDAVSettingsProps) {
   const [state, actions] = useWebDAVSync({
     autoLoadConfig: true,
     autoRefreshStatus: true,
@@ -40,6 +42,7 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
   // 表单状态
   const [formData, setFormData] = useState<WebDAVConfig>(DEFAULT_WEBDAV_CONFIG);
   const [showPassword, setShowPassword] = useState(false);
+  const [autoSyncConfig, setAutoSyncConfig] = useState<any>(null);
 
   /**
    * 从state加载配置到表单
@@ -56,6 +59,21 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
       });
     }
   }, [state.config]);
+
+  /**
+   * 注册/注销保存函数
+   */
+  useEffect(() => {
+    const componentId = 'webdav-settings';
+    
+    // 注册保存函数
+    onRegisterSave?.(componentId, handleSaveAllConfig);
+    
+    // 清理函数：组件卸载时注销
+    return () => {
+      onUnregisterSave?.(componentId);
+    };
+  }, [autoSyncConfig, formData]); // 依赖这些值，确保保存函数是最新的
 
 
   /**
@@ -81,11 +99,43 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
   };
 
   /**
-   * 保存配置
+   * 保存配置 - 统一保存函数
+   */
+  const handleSaveAllConfig = async () => {
+    // 保存WebDAV基本配置
+    await actions.updateConfig(formData);
+    
+    // 同时保存智能同步配置
+    if (autoSyncConfig) {
+      try {
+        const response = await chrome.runtime.sendMessage({
+          action: 'webdav_update_auto_sync_config',
+          config: autoSyncConfig,
+        });
+        
+        if (!response?.success) {
+          console.error('Failed to save auto sync config:', response?.error);
+        }
+      } catch (error) {
+        console.error('Failed to save auto sync config:', error);
+      }
+    }
+  };
+
+  /**
+   * 保存基本配置（原来的保存按钮）
    */
   const handleSaveConfig = async () => {
     await actions.updateConfig(formData);
   };
+
+  /**
+   * 处理智能同步配置变更
+   */
+  const handleAutoSyncConfigChange = (config: any) => {
+    setAutoSyncConfig(config);
+  };
+
 
   /**
    * 启用WebDAV同步
@@ -335,7 +385,9 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
       {state.isConfigured && (
         <>
           <Separator />
-          <AutoSyncConfig />
+          <AutoSyncConfig 
+            onConfigChange={handleAutoSyncConfigChange}
+          />
         </>
       )}
     </div>
