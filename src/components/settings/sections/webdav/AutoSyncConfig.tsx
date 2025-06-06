@@ -254,12 +254,12 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
           </div>
         )}
 
-        {/* 基本配置 - 网格布局 */}
-        <div className="space-y-3 text-xs">
-          {/* 自动上传 */}
-          <div className="space-y-2">
+        {/* 基本配置 - 左右分布布局 */}
+        <div className="grid grid-cols-2 gap-4 text-xs">
+          {/* 左侧：自动上传配置 */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="flex items-center space-x-1.5">
+              <Label className="flex items-center space-x-1.5 text-xs">
                 <Upload className="h-3 w-3" />
                 <span>自动上传</span>
               </Label>
@@ -269,8 +269,11 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
               />
             </div>
             {config.enableAutoUpload && (
-              <div className="flex items-center justify-between px-1">
-                <span className="text-muted-foreground text-xs">上传延迟</span>
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center space-x-1.5 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  <span>上传延迟</span>
+                </Label>
                 <div className="flex items-center space-x-1">
                   <Input
                     type="number"
@@ -279,7 +282,7 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
                     step="500"
                     value={config.uploadDelay}
                     onChange={(e) => updateConfig('uploadDelay', parseInt(e.target.value) || 2000)}
-                    className="w-24 h-5 text-xs"
+                    className="w-20 h-6 text-xs"
                   />
                   <span className="text-muted-foreground text-xs">ms</span>
                 </div>
@@ -287,10 +290,10 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
             )}
           </div>
 
-          {/* 自动下载 */}
-          <div className="space-y-2">
+          {/* 右侧：自动下载配置 */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="flex items-center space-x-1.5">
+              <Label className="flex items-center space-x-1.5 text-xs">
                 <Download className="h-3 w-3" />
                 <span>自动下载</span>
               </Label>
@@ -300,8 +303,11 @@ export function AutoSyncConfig({ className = '' }: AutoSyncConfigProps) {
               />
             </div>
             {config.enableAutoDownload && (
-              <div className="flex items-center justify-between px-1">
-                <span className="text-muted-foreground text-xs">新标签页触发</span>
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center space-x-1.5 text-xs text-muted-foreground">
+                  <Zap className="h-3 w-3" />
+                  <span>新标签页触发</span>
+                </Label>
                 <Switch
                   checked={config.downloadOnTabOpen}
                   onCheckedChange={(checked) => updateConfig('downloadOnTabOpen', checked)}
