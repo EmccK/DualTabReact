@@ -76,6 +76,9 @@ export class StorageBridge {
 
       // 触发存储变化事件，通知UI更新
       this.notifyStorageChange(storageData);
+      
+      // 触发自动同步数据变更事件
+      this.triggerAutoSyncDataChange();
     } catch (error) {
       if (DEBUG_ENABLED) {
         console.error('[Storage Bridge] Failed to save local data:', error);
@@ -89,6 +92,13 @@ export class StorageBridge {
    */
   async restoreFromSyncPackage(syncPackage: SyncDataPackage): Promise<void> {
     try {
+      if (DEBUG_ENABLED) {
+        console.log('[Storage Bridge] Restoring from sync package...');
+        console.log('[Storage Bridge] Categories count:', syncPackage.categories?.length || 0);
+        console.log('[Storage Bridge] Bookmarks count:', syncPackage.bookmarks?.length || 0);
+        console.log('[Storage Bridge] Settings:', syncPackage.settings ? 'present' : 'missing');
+      }
+
       await this.saveLocalData({
         categories: syncPackage.categories,
         bookmarks: syncPackage.bookmarks,
@@ -99,7 +109,7 @@ export class StorageBridge {
       await this.saveSyncMetadata(syncPackage.metadata);
 
       if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Restored from sync package');
+        console.log('[Storage Bridge] Successfully restored from sync package');
       }
     } catch (error) {
       if (DEBUG_ENABLED) {
@@ -420,6 +430,29 @@ export class StorageBridge {
         console.error('[Storage Bridge] Failed to clear sync data:', error);
       }
       throw error;
+    }
+  }
+
+  /**
+   * 触发自动同步数据变更事件
+   */
+  private triggerAutoSyncDataChange(): void {
+    try {
+      // 通知自动同步调度器数据已变更
+      chrome.runtime.sendMessage({
+        action: 'auto_sync_data_changed',
+        eventType: 'storage_change',
+        timestamp: Date.now(),
+      }).catch(() => {
+        // 忽略发送失败，不影响主要功能
+        if (DEBUG_ENABLED) {
+          console.log('[Storage Bridge] Failed to trigger auto sync data change');
+        }
+      });
+    } catch (error) {
+      if (DEBUG_ENABLED) {
+        console.warn('[Storage Bridge] Failed to trigger auto sync:', error);
+      }
     }
   }
 

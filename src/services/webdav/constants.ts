@@ -177,7 +177,7 @@ export const BROWSERS = {
 /**
  * 调试模式标识
  */
-export const DEBUG_ENABLED = process.env.NODE_ENV === 'development';
+export const DEBUG_ENABLED = true; // 强制启用调试日志
 
 /**
  * 日志级别

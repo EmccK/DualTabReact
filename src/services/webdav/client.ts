@@ -247,6 +247,11 @@ export class WebDAVClient {
    */
   async getFile(path: string): Promise<string | ArrayBuffer> {
     const url = this.buildUrl(path);
+    
+    if (DEBUG_ENABLED) {
+      console.log('[WebDAV Client] Getting file:', path, 'from URL:', url);
+    }
+    
     const response = await this.request({
       method: 'GET',
       url,
@@ -255,14 +260,26 @@ export class WebDAVClient {
       },
     });
 
-    if (response.status !== WEBDAV_STATUS.OK) {
+    if (DEBUG_ENABLED) {
+      console.log('[WebDAV Client] File response status:', response.status);
+      console.log('[WebDAV Client] File response data length:', typeof response.data === 'string' ? response.data.length : (response.data?.byteLength || 0));
+    }
+
+    // WebDAV服务器可能返回200或207状态码
+    if (response.status !== WEBDAV_STATUS.OK && response.status !== WEBDAV_STATUS.MULTI_STATUS) {
       if (response.status === WEBDAV_STATUS.NOT_FOUND) {
         throw new Error(ERROR_MESSAGES.FILE_NOT_FOUND);
       }
       throw new Error(`${ERROR_MESSAGES.SERVER_ERROR}: ${response.status}`);
     }
 
-    return response.data || '';
+    const data = response.data || '';
+    
+    if (DEBUG_ENABLED) {
+      console.log('[WebDAV Client] Returning file data:', typeof data === 'string' ? data.substring(0, 200) + '...' : 'Binary data');
+    }
+
+    return data;
   }
 
   /**

@@ -5,6 +5,7 @@
 
 import { WebDAVSyncService, createWebDAVSyncService } from '../webdav/sync';
 import { StorageBridge, storageBridge } from '../webdav/storage-bridge';
+import { AutoSyncScheduler, initializeAutoSyncScheduler } from './auto-sync-scheduler';
 import type { 
   WebDAVConfig, 
   SyncResult, 
@@ -112,6 +113,7 @@ export class SyncManager {
   private syncService: WebDAVSyncService | null = null;
   private storage: StorageBridge;
   private scheduler: SyncScheduler;
+  private autoSyncScheduler: AutoSyncScheduler | null = null;
   private currentTask: SyncTask | null = null;
   private taskQueue: SyncTask[] = [];
   private isProcessing = false;
@@ -164,6 +166,18 @@ export class SyncManager {
 
       // 清理过期的同步锁
       await this.storage.clearSyncLock();
+
+      // 初始化自动同步调度器
+      try {
+        this.autoSyncScheduler = await initializeAutoSyncScheduler();
+        if (DEBUG_ENABLED) {
+          console.log('[Sync Manager] Auto sync scheduler initialized');
+        }
+      } catch (error) {
+        if (DEBUG_ENABLED) {
+          console.warn('[Sync Manager] Failed to initialize auto sync scheduler:', error);
+        }
+      }
 
       // 设置消息监听器
       this.setupMessageListeners();
@@ -248,6 +262,15 @@ export class SyncManager {
 
       case 'webdav_clear_sync_data':
         return await this.clearSyncData();
+
+      case 'webdav_trigger_auto_sync':
+        return await this.triggerAutoSync(message.eventType);
+
+      case 'webdav_get_auto_sync_config':
+        return await this.getAutoSyncConfig();
+
+      case 'webdav_update_auto_sync_config':
+        return await this.updateAutoSyncConfig(message.config);
 
       default:
         throw new Error(`Unknown action: ${message.action}`);
@@ -657,12 +680,85 @@ export class SyncManager {
    */
   stop(): void {
     this.scheduler.stop();
+    if (this.autoSyncScheduler) {
+      this.autoSyncScheduler.stop();
+    }
     this.currentTask = null;
     this.taskQueue = [];
     this.isProcessing = false;
     
     if (DEBUG_ENABLED) {
       console.log('[Sync Manager] Stopped');
+    }
+  }
+
+  /**
+   * 触发自动同步事件
+   */
+  async triggerAutoSync(eventType: string = 'manual'): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!this.autoSyncScheduler) {
+        return { success: false, error: 'Auto sync scheduler not initialized' };
+      }
+
+      if (eventType === 'data_changed') {
+        await this.autoSyncScheduler.triggerDataChange('manual');
+      } else if (eventType === 'tab_opened') {
+        await this.autoSyncScheduler.triggerTabOpened();
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to trigger auto sync'
+      };
+    }
+  }
+
+  /**
+   * 获取自动同步配置
+   */
+  async getAutoSyncConfig(): Promise<{ success: boolean; config?: any; error?: string }> {
+    try {
+      if (!this.autoSyncScheduler) {
+        return { success: false, error: 'Auto sync scheduler not initialized' };
+      }
+
+      const config = this.autoSyncScheduler.getConfig();
+      const timeRecord = this.autoSyncScheduler.getTimeRecord();
+
+      return {
+        success: true,
+        config: {
+          ...config,
+          timeRecord,
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get auto sync config'
+      };
+    }
+  }
+
+  /**
+   * 更新自动同步配置
+   */
+  async updateAutoSyncConfig(config: any): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!this.autoSyncScheduler) {
+        return { success: false, error: 'Auto sync scheduler not initialized' };
+      }
+
+      await this.autoSyncScheduler.updateConfig(config);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update auto sync config'
+      };
     }
   }
 }

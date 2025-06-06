@@ -4,7 +4,7 @@
 import { initializeSyncManager } from '../services/sync/sync-manager';
 
 // 调试模式检查
-const DEBUG = process.env.NODE_ENV === 'development'
+const DEBUG = true // 强制启用调试日志
 
 if (DEBUG) {
   console.log('[DEBUG] DualTab background service worker started')
@@ -88,6 +88,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     case 'webdav_resolve_conflict':
     case 'webdav_enable_auto_sync':
     case 'webdav_clear_sync_data':
+    case 'webdav_trigger_auto_sync':
+    case 'webdav_get_auto_sync_config':
+    case 'webdav_update_auto_sync_config':
       // 这些消息由同步管理器处理，返回false让同步管理器的监听器处理
       if (DEBUG) {
         console.log('[DEBUG] WebDAV message forwarded to sync manager:', message.action)
@@ -112,6 +115,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       })
       sendResponse({ success: true })
       break
+
+    case 'auto_sync_tab_opened':
+    case 'auto_sync_data_changed':
+      // 自动同步调度器消息 - 交给同步管理器处理
+      if (DEBUG) {
+        console.log('[DEBUG] Auto sync message forwarded to sync manager:', message.action)
+      }
+      return false
 
     case 'sync_status_changed':
       // 处理同步状态变化通知
@@ -194,13 +205,58 @@ chrome.runtime.onInstalled.addListener((details) => {
 })
 
 // 监听标签页更新事件
-chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     if (DEBUG) {
       console.log('[DEBUG] Tab updated:', tab.url)
     }
-    // 可以在这里处理特定URL的逻辑
+    
+    // 检查是否是新标签页
+    if (tab.url.includes('newtab.html')) {
+      if (DEBUG) {
+        console.log('[DEBUG] New tab page opened, triggering auto download')
+      }
+      
+      // 触发自动同步调度器的新标签页事件
+      chrome.runtime.sendMessage({
+        action: 'auto_sync_tab_opened'
+      }).then(response => {
+        if (DEBUG) {
+          console.log('[DEBUG] Auto sync tab opened message sent successfully:', response)
+        }
+      }).catch((error) => {
+        if (DEBUG) {
+          console.log('[DEBUG] Failed to send auto sync tab opened message:', error)
+        }
+      })
+    }
   }
+})
+
+// 监听标签页创建事件（额外保障）
+chrome.tabs.onCreated.addListener((tab) => {
+  if (DEBUG) {
+    console.log('[DEBUG] Tab created:', tab.url)
+  }
+  
+  // Chrome扩展的新标签页创建时URL可能还未设置，延迟检查
+  setTimeout(() => {
+    chrome.tabs.get(tab.id!).then((updatedTab) => {
+      if (updatedTab.url && updatedTab.url.includes('newtab.html')) {
+        if (DEBUG) {
+          console.log('[DEBUG] New tab page created, triggering auto download')
+        }
+        
+        chrome.runtime.sendMessage({
+          action: 'auto_sync_tab_opened'
+        }).catch(() => {
+          // 忽略发送失败
+        })
+      }
+    }).catch(() => {
+      // 忽略错误
+    })
+  }, 100)
 })
 
 export {}

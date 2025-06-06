@@ -14,7 +14,7 @@ import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
 import { AttributionOverlay } from '@/components/background'
 
-import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground } from '@/hooks'
+import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground, useBookmarkDataChangeDetection, useSettingsDataChangeDetection } from '@/hooks'
 import { useCategorySwitch, usePageLoadState } from '@/hooks/useOptimizedCategories'
 import { backgroundImageManager } from '@/services/background'
 import type { BackgroundImageFilters } from '@/types/background'
@@ -101,6 +101,26 @@ function OptimizedNewTabApp() {
     type: null,
     target: null
   })
+
+  // 页面加载时触发自动同步
+  useEffect(() => {
+    const triggerAutoSync = async () => {
+      try {
+        console.log('[NewTab] Page loaded, triggering auto sync...');
+        const response = await chrome.runtime.sendMessage({
+          action: 'auto_sync_tab_opened'
+        });
+        console.log('[NewTab] Auto sync triggered:', response);
+      } catch (error) {
+        console.log('[NewTab] Failed to trigger auto sync:', error);
+      }
+    };
+
+    // 延迟一点触发，确保页面组件已经初始化
+    const timer = setTimeout(triggerAutoSync, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []); // 只在组件初始加载时执行一次
 
   // 网络模式切换处理
   const handleNetworkModeChange = useCallback(async (mode: NetworkMode) => {
@@ -408,6 +428,18 @@ function OptimizedNewTabApp() {
       chrome.runtime.onMessage.removeListener(handleMessage)
     }
   }, [selectedCategoryId])
+
+  // 数据变更检测 - 自动触发同步上传
+  useBookmarkDataChangeDetection(bookmarks, categories, {
+    enabled: !bookmarksLoading && !categoriesLoading && categoryInitialized,
+    debounceDelay: 2000,
+  })
+
+  // 设置变更检测 - 自动触发同步上传
+  useSettingsDataChangeDetection(settings, {
+    enabled: !settingsLoading,
+    debounceDelay: 3000,
+  })
 
   // 如果设置还在加载，显示加载状态
   if (settingsLoading) {

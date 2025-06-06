@@ -9,12 +9,12 @@ import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
 import { Switch } from '../../../ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
 import { Separator } from '../../../ui/separator';
 import { Badge } from '../../../ui/badge';
 import { Alert } from '../../../ui/alert';
+import { AutoSyncConfig } from './AutoSyncConfig';
 import { useWebDAVSync } from '../../../../hooks/webdav';
-import type { WebDAVConfig, ConflictResolution } from '../../../../services/webdav';
+import type { WebDAVConfig } from '../../../../services/webdav';
 import { DEFAULT_WEBDAV_CONFIG } from '../../../../services/webdav';
 
 /**
@@ -24,30 +24,6 @@ interface WebDAVSettingsProps {
   className?: string;
 }
 
-
-/**
- * 冲突解决策略选项
- */
-const CONFLICT_RESOLUTION_OPTIONS = [
-  { value: 'manual', label: '手动解决', description: '发生冲突时提示用户选择' },
-  { value: 'use_local', label: '使用本地数据', description: '总是保留本地数据' },
-  { value: 'use_remote', label: '使用远程数据', description: '总是使用远程数据' },
-  { value: 'merge', label: '自动合并', description: '尝试自动合并数据' },
-];
-
-/**
- * 同步间隔选项
- */
-const SYNC_INTERVAL_OPTIONS = [
-  { value: 5, label: '5分钟' },
-  { value: 15, label: '15分钟' },
-  { value: 30, label: '30分钟' },
-  { value: 60, label: '1小时' },
-  { value: 180, label: '3小时' },
-  { value: 360, label: '6小时' },
-  { value: 720, label: '12小时' },
-  { value: 1440, label: '24小时' },
-];
 
 /**
  * WebDAV设置组件
@@ -63,15 +39,6 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
 
   // 表单状态
   const [formData, setFormData] = useState<WebDAVConfig>(DEFAULT_WEBDAV_CONFIG);
-
-  const [advancedSettings, setAdvancedSettings] = useState({
-    conflictResolution: 'manual' as ConflictResolution,
-    enableBackup: true,
-    maxRetries: 3,
-    networkTimeout: 30,
-  });
-
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   /**
@@ -140,8 +107,8 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
    */
   const handleManualSync = async () => {
     await actions.sync({
-      createBackup: advancedSettings.enableBackup,
-      conflictResolution: advancedSettings.conflictResolution,
+      createBackup: true, // 默认创建备份
+      conflictResolution: 'manual', // 默认手动处理冲突
     });
   };
 
@@ -150,7 +117,7 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
    */
   const handleUpload = async () => {
     await actions.upload({
-      createBackup: advancedSettings.enableBackup,
+      createBackup: true,
     });
   };
 
@@ -313,52 +280,15 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
             >
               保存配置
             </Button>
-            {state.isConfigured && (
-              <Button
-                onClick={handleClearConfig}
-                variant="destructive"
-                size="sm"
-              >
-                清除配置
-              </Button>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {/* 同步设置 */}
-      {state.isConfigured && (
-        <Card className="p-4">
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">同步设置</h4>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-              {/* 自动同步间隔 */}
-              <div className="space-y-1">
-                <Label htmlFor="autoSyncInterval" className="text-xs">自动同步间隔</Label>
-                <Select
-                  value={formData.autoSyncInterval?.toString() || '30'}
-                  onValueChange={(value) => handleFieldChange('autoSyncInterval', parseInt(value))}
-                >
-                  <SelectTrigger className="h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SYNC_INTERVAL_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value.toString()}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 手动同步操作 */}
-              <div className="flex flex-wrap gap-2">
+            {/* 手动同步操作 - 移到这里 */}
+            {state.isConfigured && (
+              <>
                 <Button
                   onClick={handleManualSync}
                   disabled={state.isLoading}
                   size="sm"
+                  variant="secondary"
                 >
                   {state.isLoading ? '同步中...' : '立即同步'}
                 </Button>
@@ -378,125 +308,35 @@ export function WebDAVSettings({ className }: WebDAVSettingsProps) {
                 >
                   下载
                 </Button>
-              </div>
-            </div>
-
-            {/* 最后同步时间 */}
-            {state.lastSyncTime > 0 && (
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                最后同步: {new Date(state.lastSyncTime).toLocaleString()}
-              </div>
+              </>
             )}
-          </div>
-        </Card>
-      )}
-
-      {/* 高级设置 */}
-      {state.isConfigured && (
-        <Card className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium">高级设置</h4>
+            
+            {state.isConfigured && (
               <Button
-                variant="ghost"
+                onClick={handleClearConfig}
+                variant="destructive"
                 size="sm"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="h-6 px-2 text-xs"
               >
-                {showAdvanced ? '收起' : '展开'}
+                清除配置
               </Button>
-            </div>
-
-            {showAdvanced && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* 冲突解决策略 */}
-                  <div className="space-y-1">
-                    <Label htmlFor="conflictResolution" className="text-xs">冲突解决策略</Label>
-                    <Select
-                      value={advancedSettings.conflictResolution}
-                      onValueChange={(value) => 
-                        setAdvancedSettings(prev => ({
-                          ...prev,
-                          conflictResolution: value as ConflictResolution
-                        }))
-                      }
-                    >
-                      <SelectTrigger className="h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CONFLICT_RESOLUTION_OPTIONS.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div>
-                              <div className="text-xs">{option.label}</div>
-                              <div className="text-xs text-gray-500">{option.description}</div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* 网络超时 */}
-                  <div className="space-y-1">
-                    <Label htmlFor="networkTimeout" className="text-xs">网络超时（秒）</Label>
-                    <Input
-                      id="networkTimeout"
-                      type="number"
-                      min="5"
-                      max="300"
-                      value={advancedSettings.networkTimeout}
-                      onChange={(e) =>
-                        setAdvancedSettings(prev => ({
-                          ...prev,
-                          networkTimeout: parseInt(e.target.value) || 30
-                        }))
-                      }
-                      className="h-8"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* 自动备份开关 */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="enableBackup" className="text-xs">创建备份</Label>
-                      <p className="text-xs text-gray-500">同步前自动备份</p>
-                    </div>
-                    <Switch
-                      id="enableBackup"
-                      checked={advancedSettings.enableBackup}
-                      onCheckedChange={(checked) =>
-                        setAdvancedSettings(prev => ({ ...prev, enableBackup: checked }))
-                      }
-                    />
-                  </div>
-
-                  {/* 重试次数 */}
-                  <div className="space-y-1">
-                    <Label htmlFor="maxRetries" className="text-xs">最大重试次数</Label>
-                    <Input
-                      id="maxRetries"
-                      type="number"
-                      min="0"
-                      max="10"
-                      value={advancedSettings.maxRetries}
-                      onChange={(e) =>
-                        setAdvancedSettings(prev => ({
-                          ...prev,
-                          maxRetries: parseInt(e.target.value) || 3
-                        }))
-                      }
-                      className="h-8"
-                    />
-                  </div>
-                </div>
-              </div>
             )}
           </div>
-        </Card>
+          
+          {/* 最后同步时间 - 移到这里 */}
+          {state.lastSyncTime > 0 && (
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              最后同步: {new Date(state.lastSyncTime).toLocaleString()}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* 智能自动同步配置 */}
+      {state.isConfigured && (
+        <>
+          <Separator />
+          <AutoSyncConfig />
+        </>
       )}
     </div>
   );
