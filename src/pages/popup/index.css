@@ -21,3 +21,9 @@ body {
   box-sizing: border-box;
 }
 
+/* 针对popup的小尺寸优化 */
+.popup-container {
+  width: 400px;
+  height: 600px;
+  overflow-y: auto;
+}

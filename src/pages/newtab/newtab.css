@@ -5,6 +5,11 @@
   z-index: 1000;
 }
 
+.drag-over {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
 /* 书签卡片拖拽动画 */
 .bookmark-card {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -21,6 +26,25 @@
   z-index: 1000;
 }
 
+/* 插入指示线动画 */
+.insert-indicator {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 毛玻璃效果增强 */
+.glass-effect {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
 
 /* 书签网格响应式间距 */
 .bookmark-grid {
@@ -39,6 +63,94 @@
   }
 }
 
+/* 加载状态动画 */
+.loading-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* 书签图标过渡效果 */
+.bookmark-icon {
+  transition: all 0.3s ease;
+}
+
+.bookmark-icon:hover {
+  transform: scale(1.1);
+}
+
+/* 搜索框增强 */
+.search-box {
+  transition: all 0.3s ease;
+}
+
+.search-box:focus-within {
+  transform: scale(1.02);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* 按钮悬停效果 */
+.floating-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-button:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.floating-button:active {
+  transform: translateY(0) scale(0.95);
+}
+
+/* 网络模式指示器 */
+.network-indicator {
+  transition: all 0.3s ease;
+}
+
+.network-indicator.internal {
+  box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+}
+
+.network-indicator.external {
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+}
+
+/* 错误状态样式 */
+.error-container {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* 成功状态动画 */
+.success-notification {
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+@keyframes slideInFromTop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
 /* 响应式设计增强 */
 @media (max-width: 640px) {

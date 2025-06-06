@@ -3,4 +3,22 @@
  */
 
 @layer utilities {
+  /* 隐藏滚动条但保持功能 */
+  .hide-scrollbar {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+
+  /* 通用过渡动画 */
+  .smooth-transition {
+    transition: all 0.3s ease;
+  }
+
+  .smooth-transition-fast {
+    transition: all 0.2s ease;
+  }
 }
