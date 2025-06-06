@@ -21,12 +21,12 @@ export function CategorySidebar({
   selectedCategoryId,
   onCategorySelect,
   onAddCategory,
-  onEditCategory,
-  onDeleteCategory,
+  onEditCategory: _onEditCategory,
+  onDeleteCategory: _onDeleteCategory,
   onReorderCategories,
   onCategoryContextMenu,
   loading = false,
-  categorySettings
+  categorySettings: _categorySettings
 }: CategorySidebarProps) {
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null)
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)
@@ -90,31 +90,7 @@ export function CategorySidebar({
     onCategorySelect(categoryId)
   }, [onCategorySelect])
 
-  const handleEditClick = useCallback((e: React.MouseEvent, category: BookmarkCategory) => {
-    e.stopPropagation()
-    onEditCategory(category)
-  }, [onEditCategory])
 
-  const handleDeleteClick = useCallback((e: React.MouseEvent, categoryId: string) => {
-    e.stopPropagation()
-    
-    // 只有一个分类时不可删除
-    if (categories.length <= 1) {
-      return
-    }
-    
-    const category = categories.find(cat => cat.id === categoryId)
-    const bookmarkCount = category?.bookmarks.length || 0
-    
-    let confirmMessage = '确定要删除这个分类吗？'
-    if (bookmarkCount > 0) {
-      confirmMessage = `确定要删除这个分类吗？分类中的 ${bookmarkCount} 个书签也会被删除。`
-    }
-    
-    if (confirm(confirmMessage)) {
-      onDeleteCategory(categoryId)
-    }
-  }, [onDeleteCategory, categories])
 
   const handleCategoryContextMenu = useCallback((e: React.MouseEvent, category: BookmarkCategory) => {
     e.preventDefault()

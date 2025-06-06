@@ -20,7 +20,7 @@ const TextIcon: React.FC<TextIconProps> = ({
   className = '',
   style = {},
   onLoad,
-  onError,
+  onError: _onError,
 }) => {
   // 计算显示的文字
   const displayText = useMemo(() => {

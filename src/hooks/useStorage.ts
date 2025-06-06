@@ -4,20 +4,12 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import type { 
-  NetworkMode, 
-  AppSettings, 
-  ApiLimits, 
-  BackupData,
-  OperationResult 
+import type {
+  AppSettings
 } from '../types';
-import { 
-  loadNetworkMode,
-  saveNetworkMode,
+import {
   loadSettings,
-  saveSettings,
-  backupData,
-  restoreFromBackup
+  saveSettings
 } from '../utils/storage';
 
 

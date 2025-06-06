@@ -6,12 +6,11 @@
 import React, { useMemo, useTransition, useEffect, useState } from 'react';
 import OptimizedBookmarkGrid from './OptimizedBookmarkGrid';
 import { adaptBookmarkToItem, extractBookmarkStyleSettings } from '@/utils/bookmark-adapter';
-import type { Bookmark, NetworkMode } from '@/types';
+import type { Bookmark } from '@/types';
 import type { BookmarkSettings } from '@/types/settings';
 
 interface OptimizedBookmarkGridV3Props {
   bookmarks: Bookmark[];
-  networkMode: NetworkMode;
   bookmarkSettings: BookmarkSettings;
   selectedCategoryId?: string | null;
   onBookmarkClick?: (bookmark: Bookmark) => void;
@@ -22,7 +21,6 @@ interface OptimizedBookmarkGridV3Props {
 
 const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
   bookmarks,
-  networkMode,
   bookmarkSettings,
   selectedCategoryId,
   onBookmarkClick,

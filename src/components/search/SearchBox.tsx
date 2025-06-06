@@ -13,7 +13,7 @@ interface SearchBoxProps {
  * 搜索框组件
  * 支持多种搜索引擎切换，始终使用毛玻璃效果
  */
-export function SearchBox({ preferences, className = '' }: SearchBoxProps) {
+export function SearchBox({ preferences: _preferences, className = '' }: SearchBoxProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { currentEngine, switchSearchEngine, performSearch } = useSearchEngine();
 

@@ -2,7 +2,7 @@
  * 新版书签样式常量
  */
 
-import type { BookmarkStyleType, BookmarkStyleSettings } from '@/types/bookmark-style.types';
+import type { BookmarkStyleSettings } from '@/types/bookmark-style.types';
 
 // 书签样式类型常量
 export const BOOKMARK_STYLE_TYPES = {

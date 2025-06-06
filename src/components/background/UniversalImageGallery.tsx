@@ -48,8 +48,8 @@ interface GalleryState {
 }
 
 export function UniversalImageGallery({
-  onSelect,
-  onSelectMultiple,
+  onSelect: _onSelect,
+  onSelectMultiple: _onSelectMultiple,
   className = '',
   initialSource = 'random',
   initialCategory = 'all',
@@ -62,7 +62,7 @@ export function UniversalImageGallery({
   const [selectedTheme, setSelectedTheme] = useState(settings.background.randomImageTheme || initialTheme);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  const [state, setState] = useState<GalleryState>({
+  const [_state, setState] = useState<GalleryState>({
     images: [],
     currentImage: null,
     isLoading: false,
@@ -71,7 +71,7 @@ export function UniversalImageGallery({
   });
 
   // 获取单张图片
-  const fetchSingle = async () => {
+  const _fetchSingle = async () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -109,103 +109,7 @@ export function UniversalImageGallery({
     }
   };
 
-  // 获取多张图片
-  const fetchMultiple = async () => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-    try {
-      const filters: BackgroundImageFilters = {
-        category: selectedCategory !== 'all' ? selectedCategory : undefined,
-        theme: selectedTheme !== 'all' ? selectedTheme : undefined
-      };
-
-      const images = await backgroundImageManager.getRandomImagesFromSource(selectedSource, 6, filters);
-      
-      // 过滤有效图片
-      const validImages = images.filter(img => backgroundImageManager.isValidBackgroundImage(img));
-
-      if (validImages.length === 0) {
-        throw new Error('未获取到有效的背景图片');
-      }
-
-      setState(prev => ({
-        ...prev,
-        currentImage: validImages[0],
-        images: validImages.slice(0, maxHistory),
-        isLoading: false
-      }));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '批量获取图片失败';
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage
-      }));
-    }
-  };
-
-  // 选择图片
-  const handleSelectImage = (image: BackgroundImage) => {
-    if (onSelect) {
-      const imageUrl = backgroundImageManager.getImageUrl(image, 'large');
-      onSelect(image, imageUrl);
-    }
-  };
-
-  // 切换图片选中状态
-  const toggleImageSelection = (imageId: string) => {
-    setState(prev => {
-      const newSelection = new Set(prev.selectedImages);
-      if (newSelection.has(imageId)) {
-        newSelection.delete(imageId);
-      } else {
-        newSelection.add(imageId);
-      }
-      return {
-        ...prev,
-        selectedImages: newSelection
-      };
-    });
-  };
-
-  // 应用多选
-  const handleApplySelection = () => {
-    if (onSelectMultiple && state.selectedImages.size > 0) {
-      const selectedImageList = state.images.filter(img => state.selectedImages.has(img.id));
-      onSelectMultiple(selectedImageList);
-      setState(prev => ({ ...prev, selectedImages: new Set() }));
-    }
-  };
-
-  // 下载图片
-  const handleDownloadImage = async (image: BackgroundImage) => {
-    try {
-      const imageUrl = backgroundImageManager.getImageUrl(image, 'original');
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `background_${image.id}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('下载图片失败:', error);
-      alert('下载失败，请重试');
-    }
-  };
-
-  // 重试
-  const handleRetry = () => {
-    setState(prev => ({ ...prev, error: null }));
-    fetchSingle();
-  };
-
-  // 获取可用源
-  const availableSources = backgroundImageManager.getAvailableSources();
 
   return (
     <div className={`space-y-4 ${className}`}>

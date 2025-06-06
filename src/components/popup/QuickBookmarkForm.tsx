@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { QuickBookmarkFormData } from '@/types/popup/tab.types';
 import type { BookmarkCategory } from '@/types';
 import { validateQuickBookmarkForm } from '@/utils/popup/urlHelpers';
-import { Bookmark, Plus, AlertCircle } from 'lucide-react';
+import { Plus, AlertCircle } from 'lucide-react';
 
 interface QuickBookmarkFormProps {
   // 初始数据

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Globe, Image, Type, AlertCircle } from 'lucide-react';
+import { Globe, Image, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
   getBookmarkIconUrl, 

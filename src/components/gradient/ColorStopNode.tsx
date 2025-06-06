@@ -38,7 +38,7 @@ export function ColorStopNode({
     }
   };
 
-  const isLight = isLightColor(colorStop.color);
+  const _isLight = isLightColor(colorStop.color);
 
   return (
     <div 

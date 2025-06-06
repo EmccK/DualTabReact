@@ -14,7 +14,7 @@ import {
   getGradientsByCategory 
 } from '@/utils/gradientUtils';
 import { CustomGradientEditor } from '@/components/gradient';
-import { createDefaultCustomGradient, generateCustomGradientCSS } from '@/utils/gradient';
+
 import type { BackgroundSettings } from '@/types/settings';
 import type { CustomGradient } from '@/types/gradient';
 

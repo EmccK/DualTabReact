@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, Type, Globe, Settings } from 'lucide-react';
+import { Upload, Type, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
   validateImageFile, 
@@ -38,17 +38,17 @@ export const IconSelector: React.FC<IconSelectorProps> = ({
   iconText = '',
   iconData,
   iconColor,
-  url = '',
+  url: _url = '',
   imageScale,
   onIconTypeChange,
   onIconTextChange,
   onIconColorChange,
   onIconUpload,
-  onImageScaleChange,
+  onImageScaleChange: _onImageScaleChange,
   className
 }) => {
   const [uploadFileName, setUploadFileName] = useState<string>('');
-  const [isUploading, setIsUploading] = useState(false);
+  const [_isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 处理图标类型选择

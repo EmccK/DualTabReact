@@ -20,7 +20,7 @@ interface IconSelectorProps {
   onIconTextChange: (text: string) => void;
   onIconUpload: (data: string) => void;
   onImageScaleChange?: (config: ImageScaleConfig) => void;
-  onImageUrlChange?: (url: string) => void;
+
   className?: string;
 }
 
@@ -35,11 +35,11 @@ export function IconSelector({
   onIconTextChange,
   onIconUpload,
   onImageScaleChange,
-  onImageUrlChange,
+
   className
 }: IconSelectorProps) {
   // 处理颜色变化（兼容旧接口）
-  const handleColorChange = (color: string) => {
+  const handleColorChange = () => {
     // 旧接口没有专门的颜色回调，暂时忽略
   };
 

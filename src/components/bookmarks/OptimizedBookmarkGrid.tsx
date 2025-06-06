@@ -72,7 +72,7 @@ const OptimizedBookmarkGrid: React.FC<BookmarkGridProps> = ({
   const handleDragStart = useCallback((bookmarkId: string, event: React.DragEvent) => {
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', bookmarkId);
-    
+
     startTransition(() => {
       setDragState({
         isDragging: true,
@@ -82,7 +82,7 @@ const OptimizedBookmarkGrid: React.FC<BookmarkGridProps> = ({
     });
   }, []);
 
-  const handleDragEnd = useCallback((bookmarkId: string, event: React.DragEvent) => {
+  const handleDragEnd = useCallback((_bookmarkId: string, _event: React.DragEvent) => {
     startTransition(() => {
       setDragState({
         isDragging: false,

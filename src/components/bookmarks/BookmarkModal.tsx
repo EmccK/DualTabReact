@@ -57,7 +57,8 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   const [urlError, setUrlError] = useState('');
   const [showImageScaler, setShowImageScaler] = useState(false);
   const [originalImageData, setOriginalImageData] = useState('');
-  const [originalImageUrl, setOriginalImageUrl] = useState(''); // 保存原始URL
+  const [_originalImageUrl, setOriginalImageUrl] = useState('');
+
   const [imageScale, setImageScale] = useState<ImageScaleConfig>({
     scale: 1,
     offsetX: 0,

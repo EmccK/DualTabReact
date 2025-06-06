@@ -66,17 +66,7 @@ export const AttributionOverlay: React.FC<AttributionOverlayProps> = ({
     opacity: isHovered ? 1 : fullConfig.opacity
   });
 
-  /**
-   * 处理链接点击
-   */
-  const handleLinkClick = (url: string, linkType: 'profile' | 'photo') => {
-    // 在Chrome扩展环境中安全地打开外部链接
-    if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.create({ url, active: false });
-    } else {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  };
+
 
   /**
    * 渲染归属信息内容

@@ -5,7 +5,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Share } from 'lucide-react';
+import { Copy, Download } from 'lucide-react';
 import type { CustomGradient } from '@/types/gradient';
 import { generateCustomGradientCSS } from '@/utils/gradient';
 

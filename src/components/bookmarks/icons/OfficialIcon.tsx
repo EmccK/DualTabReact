@@ -6,8 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Globe, AlertCircle } from 'lucide-react';
 import IconBackground from './IconBackground';
-import { FAVICON_SERVICE_URLS, ICON_RETRY_CONFIG } from '@/constants';
-import { getUrlDomain } from '@/utils/url-utils';
+import { ICON_RETRY_CONFIG } from '@/constants';
 import { getFaviconFallbackUrls } from '@/utils/icon-utils';
 import type { BaseIconProps, OfficialIconConfig, IconStatus } from '@/types/bookmark-icon.types';
 

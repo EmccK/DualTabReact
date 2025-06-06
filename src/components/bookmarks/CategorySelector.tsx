@@ -1,10 +1,9 @@
 import React, { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Plus, Check, Tag } from 'lucide-react'
+import { Plus, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { theme, themeClasses } from '@/styles/theme'
+import { theme } from '@/styles/theme'
 import type { BookmarkCategory } from '@/types'
 
 interface CategorySelectorProps {

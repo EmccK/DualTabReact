@@ -13,11 +13,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { 
-  RefreshCw, 
-  Download, 
-  Heart, 
-  Info, 
+import {
+  RefreshCw,
+  Download,
+  Info,
   Loader2,
   AlertCircle,
   Grid,
@@ -62,11 +61,11 @@ export function RandomImageGallery({
     history,
     fetchRandomWallpaper,
     fetchRandomWallpapers,
-    selectFromHistory,
+    selectFromHistory: _selectFromHistory,
     clearError,
     retry,
     getImageInfo,
-    getRecommendedSettings,
+    getRecommendedSettings: _getRecommendedSettings,
     hasHistory
   } = useRandomImage({
     categoryId: selectedCategory,
