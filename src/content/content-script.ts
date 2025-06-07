@@ -5,12 +5,10 @@
 const DEBUG = process.env.NODE_ENV === 'development'
 
 if (DEBUG) {
-  console.log('[DEBUG] DualTab content script loaded on:', window.location.href)
 }
 
 // 监听来自background script的消息
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  console.log('[DEBUG] Content script received message:', message)
   
   switch (message.action) {
     case 'get_page_info':
@@ -21,18 +19,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         favicon: getFaviconUrl(),
         description: getPageDescription()
       }
-      console.log('[DEBUG] Sending page info:', pageInfo)
       sendResponse(pageInfo)
       break
       
     case 'refresh_bookmarks':
       // 如果当前页面是新标签页，可以处理刷新逻辑
-      console.log('[DEBUG] Bookmark refresh message received')
       sendResponse({ success: true })
       break
       
     default:
-      console.log('[DEBUG] Unknown message action:', message.action)
       sendResponse({ success: false, error: 'Unknown action' })
   }
   
@@ -75,7 +70,6 @@ if (document.readyState === 'loading') {
 
 function initialize() {
   if (DEBUG) {
-    console.log('[DEBUG] Content script initialized')
   }
   // 这里可以添加页面加载完成后的初始化逻辑
 }

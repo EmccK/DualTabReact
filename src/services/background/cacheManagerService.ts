@@ -56,7 +56,6 @@ export class CacheManagerService {
         ...(result[STORAGE_KEYS.CACHE_SETTINGS] || {})
       };
     } catch (error) {
-      console.error('Failed to get cache settings:', error);
       return DEFAULT_CACHE_SETTINGS;
     }
   }
@@ -81,7 +80,6 @@ export class CacheManagerService {
         await this.checkAndCleanup();
       }
     } catch (error) {
-      console.error('Failed to save cache settings:', error);
       throw error;
     }
   }
@@ -102,7 +100,6 @@ export class CacheManagerService {
       
       return stats;
     } catch (error) {
-      console.error('Failed to get cache stats:', error);
       return DEFAULT_CACHE_STATS;
     }
   }
@@ -144,7 +141,6 @@ export class CacheManagerService {
         [STORAGE_KEYS.CACHE_STATS]: stats
       });
     } catch (error) {
-      console.error('Failed to update real-time stats:', error);
     }
   }
 
@@ -247,7 +243,6 @@ export class CacheManagerService {
         }
       };
     } catch (error) {
-      console.error('Failed to cleanup cache:', error);
       return {
         success: false,
         message: '缓存清理失败',
@@ -277,7 +272,6 @@ export class CacheManagerService {
         await this.cleanupCache(settings.autoCleanup.strategy);
       }
     } catch (error) {
-      console.error('Failed to check and cleanup cache:', error);
     }
   }
 
@@ -307,7 +301,6 @@ export class CacheManagerService {
         [STORAGE_KEYS.CACHE_STATS]: stats
       });
     } catch (error) {
-      console.error('Failed to record cache access:', error);
     }
   }
 

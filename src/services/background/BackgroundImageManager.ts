@@ -175,7 +175,6 @@ export class BackgroundImageManager {
         const adapter = this.getAdapter(source);
         return await adapter.searchImages(query, { ...filters, perPage: 5 });
       } catch (error) {
-        console.warn(`Failed to search from ${source}:`, error);
         return [];
       }
     });
@@ -206,7 +205,6 @@ export class BackgroundImageManager {
         const adapter = this.getAdapter(source);
         return await adapter.getRandomImages(imagesPerSource, filters);
       } catch (error) {
-        console.warn(`Failed to get images from ${source}:`, error);
         return [];
       }
     });

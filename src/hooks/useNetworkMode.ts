@@ -32,12 +32,10 @@ export function useNetworkMode(): UseNetworkModeReturn {
         if (result.success && result.data) {
           setNetworkModeState(result.data)
         } else {
-          console.warn('加载网络模式失败，使用默认值:', result.error)
           setNetworkModeState('external')
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : '加载网络模式时发生未知错误'
-        console.error('网络模式初始化失败:', errorMessage)
         setError(errorMessage)
         setNetworkModeState('external') // 使用默认值
       } finally {
@@ -63,10 +61,8 @@ export function useNetworkMode(): UseNetworkModeReturn {
         throw new Error(result.error || '保存网络模式失败')
       }
       
-      console.log(`网络模式已切换到: ${mode}`)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '设置网络模式时发生未知错误'
-      console.error('设置网络模式失败:', errorMessage)
       setError(errorMessage)
       
       // 回滚状态

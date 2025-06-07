@@ -28,7 +28,6 @@ export function useSettings(): SettingsContextType {
         setSettings(mergedSettings);
       }
     } catch (error) {
-      console.error('Failed to load settings:', error);
       setSettings(DEFAULT_SETTINGS);
     } finally {
       setIsLoading(false);
@@ -45,7 +44,6 @@ export function useSettings(): SettingsContextType {
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error('Failed to save settings:', error);
       throw error;
     }
   }, []);

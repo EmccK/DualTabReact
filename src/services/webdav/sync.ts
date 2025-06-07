@@ -15,7 +15,6 @@ import {
   SYNC_FILES, 
   ERROR_MESSAGES, 
   SUCCESS_MESSAGES, 
-  DEBUG_ENABLED 
 } from './constants';
 import { 
   createSyncDataPackage, 
@@ -112,10 +111,6 @@ export class WebDAVSyncService {
     };
 
     try {
-      if (DEBUG_ENABLED) {
-        console.log('[WebDAV Sync] Starting sync with options:', options);
-      }
-
       // 步骤1: 测试连接
       this.updateSyncState('测试连接', 10);
       const connectionOk = await this.client.testConnection();
@@ -165,10 +160,6 @@ export class WebDAVSyncService {
         return result;
       }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Sync] Sync failed:', error);
-      }
-      
       return {
         status: 'error',
         error: error instanceof Error ? error.message : ERROR_MESSAGES.NETWORK_ERROR,
@@ -187,10 +178,6 @@ export class WebDAVSyncService {
     options: SyncOptions = {}
   ): Promise<SyncResult> {
     try {
-      if (DEBUG_ENABLED) {
-        console.log('[WebDAV Sync] Starting upload');
-      }
-
       this.updateSyncState('上传数据', 50);
       
       const dataPackage = await createSyncDataPackage(
@@ -225,10 +212,6 @@ export class WebDAVSyncService {
    */
   async download(): Promise<SyncResult & { data?: SyncDataPackage }> {
     try {
-      if (DEBUG_ENABLED) {
-        console.log('[WebDAV Sync] Starting download');
-      }
-
       this.updateSyncState('下载数据', 50);
       
       const remoteDataPackage = await this.downloadRemoteData();
@@ -260,11 +243,7 @@ export class WebDAVSyncService {
    */
   private updateSyncState(step: string, progress: number): void {
     this.syncState.currentStep = step;
-    this.syncState.progress = progress;
-    
-    if (DEBUG_ENABLED) {
-      console.log(`[WebDAV Sync] ${step} (${progress}%)`);
-    }
+    this.syncState.progress = progress; 
   }
 
   /**
@@ -274,9 +253,6 @@ export class WebDAVSyncService {
     try {
       const dataExists = await this.client.exists(`/${SYNC_FILES.DATA}`);
       if (!dataExists) {
-        if (DEBUG_ENABLED) {
-          console.log('[WebDAV Sync] No remote data file found');
-        }
         return null;
       }
 
@@ -288,10 +264,6 @@ export class WebDAVSyncService {
       const dataPackage = JSON.parse(fileContent);
       
       if (!validateSyncDataPackage(dataPackage)) {
-        if (DEBUG_ENABLED) {
-          console.warn('[WebDAV Sync] Invalid remote data package, attempting repair');
-        }
-        
         // 尝试修复数据包
         const repairedMetadata = await repairMetadata(
           {
@@ -310,15 +282,8 @@ export class WebDAVSyncService {
         }
       }
 
-      if (DEBUG_ENABLED) {
-        console.log('[WebDAV Sync] Downloaded remote data:', getMetadataSummary(dataPackage.metadata));
-      }
-
       return dataPackage;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Sync] Failed to download remote data:', error);
-      }
       throw error;
     }
   }
@@ -331,13 +296,7 @@ export class WebDAVSyncService {
       const content = JSON.stringify(dataPackage, null, 2);
       await this.client.putFile(`/${SYNC_FILES.DATA}`, content, 'application/json');
       
-      if (DEBUG_ENABLED) {
-        console.log('[WebDAV Sync] Uploaded data package:', getMetadataSummary(dataPackage.metadata));
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Sync] Failed to upload data package:', error);
-      }
       throw error;
     }
   }
@@ -353,13 +312,7 @@ export class WebDAVSyncService {
       
       await this.client.putFile(`/${backupFileName}`, content, 'application/json');
       
-      if (DEBUG_ENABLED) {
-        console.log('[WebDAV Sync] Created backup:', backupFileName);
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.warn('[WebDAV Sync] Failed to create backup:', error);
-      }
       // 备份失败不影响主要同步流程
     }
   }
@@ -489,15 +442,9 @@ export class WebDAVSyncService {
       for (const file of backupFiles) {
         if (file.lastModified < cutoffDate) {
           await this.client.delete(file.path);
-          if (DEBUG_ENABLED) {
-            console.log('[WebDAV Sync] Cleaned up old backup:', file.name);
-          }
         }
       }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.warn('[WebDAV Sync] Failed to cleanup backups:', error);
-      }
     }
   }
 

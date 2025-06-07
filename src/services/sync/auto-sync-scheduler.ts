@@ -5,7 +5,6 @@
 
 import { SyncManager } from './sync-manager';
 import { storageBridge } from '../webdav/storage-bridge';
-import { DEBUG_ENABLED } from '../webdav/constants';
 
 /**
  * 同步事件类型
@@ -103,13 +102,7 @@ export class AutoSyncScheduler {
       
       this.isInitialized = true;
       
-      if (DEBUG_ENABLED) {
-        console.log('[Auto Sync Scheduler] Initialized with config:', this.config);
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Auto Sync Scheduler] Initialization failed:', error);
-      }
       throw error;
     }
   }
@@ -125,9 +118,6 @@ export class AutoSyncScheduler {
         ...result.auto_sync_config,
       };
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.warn('[Auto Sync Scheduler] Failed to load config, using defaults');
-      }
       this.config = DEFAULT_AUTO_SYNC_CONFIG;
     }
   }
@@ -143,13 +133,7 @@ export class AutoSyncScheduler {
         auto_sync_config: this.config,
       });
       
-      if (DEBUG_ENABLED) {
-        console.log('[Auto Sync Scheduler] Config updated:', this.config);
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Auto Sync Scheduler] Failed to save config:', error);
-      }
     }
   }
 
@@ -172,9 +156,6 @@ export class AutoSyncScheduler {
         this.timeRecord.deviceId = metadata?.deviceId || '';
       }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.warn('[Auto Sync Scheduler] Failed to load time record');
-      }
     }
   }
 
@@ -187,9 +168,6 @@ export class AutoSyncScheduler {
         sync_time_record: this.timeRecord,
       });
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Auto Sync Scheduler] Failed to save time record:', error);
-      }
     }
   }
 
@@ -197,9 +175,6 @@ export class AutoSyncScheduler {
    * 设置监听器
    */
   private setupListeners(): void {
-    if (DEBUG_ENABLED) {
-      console.log('[Auto Sync Scheduler] Setting up listeners...');
-    }
 
     // 监听storage变化（数据变更）
     chrome.storage.onChanged.addListener((changes, namespace) => {
@@ -216,9 +191,6 @@ export class AutoSyncScheduler {
 
     // 监听消息
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (DEBUG_ENABLED) {
-        console.log('[Auto Sync Scheduler] Received message:', message.action);
-      }
 
       switch (message.action) {
         case 'auto_sync_data_changed':
@@ -232,9 +204,6 @@ export class AutoSyncScheduler {
           break;
           
         case 'auto_sync_tab_opened':
-          if (DEBUG_ENABLED) {
-            console.log('[Auto Sync Scheduler] Processing auto_sync_tab_opened message');
-          }
           this.onTabOpened();
           sendResponse({ success: true });
           break;
@@ -263,9 +232,6 @@ export class AutoSyncScheduler {
       return false;
     });
 
-    if (DEBUG_ENABLED) {
-      console.log('[Auto Sync Scheduler] Listeners set up successfully');
-    }
   }
 
   /**
@@ -279,9 +245,6 @@ export class AutoSyncScheduler {
     const now = Date.now();
     this.timeRecord.lastDataChangeTime = now;
     
-    if (DEBUG_ENABLED) {
-      console.log(`[Auto Sync Scheduler] Data changed (${eventType}) at:`, new Date(now));
-    }
 
     // 清除已有的上传定时器
     if (this.uploadTimer) {
@@ -301,31 +264,15 @@ export class AutoSyncScheduler {
    * 处理新标签页打开事件
    */
   private onTabOpened(): void {
-    if (DEBUG_ENABLED) {
-      console.log('[Auto Sync Scheduler] Tab opened event received');
-      console.log('  enableAutoDownload:', this.config.enableAutoDownload);
-      console.log('  downloadOnTabOpen:', this.config.downloadOnTabOpen);
-      console.log('  isInitialized:', this.isInitialized);
-      console.log('  current config:', JSON.stringify(this.config, null, 2));
-    }
 
     if (!this.isInitialized) {
-      if (DEBUG_ENABLED) {
-        console.log('[Auto Sync Scheduler] Scheduler not initialized, skipping auto download');
-      }
       return;
     }
 
     if (!this.config.enableAutoDownload || !this.config.downloadOnTabOpen) {
-      if (DEBUG_ENABLED) {
-        console.log('[Auto Sync Scheduler] Auto download disabled, skipping');
-      }
       return;
     }
 
-    if (DEBUG_ENABLED) {
-      console.log('[Auto Sync Scheduler] New tab opened, checking for download');
-    }
 
     // 执行下载检查
     this.performAutoDownload();
@@ -341,15 +288,9 @@ export class AutoSyncScheduler {
       // 检查WebDAV是否配置
       const webdavConfig = await storageBridge.loadWebDAVConfig();
       if (!webdavConfig?.enabled) {
-        if (DEBUG_ENABLED) {
-          console.log('[Auto Sync Scheduler] WebDAV not configured, skipping auto upload');
-        }
         return;
       }
 
-      if (DEBUG_ENABLED) {
-        console.log('[Auto Sync Scheduler] Performing auto upload...');
-      }
 
       // 执行上传
       const result = await this.syncManager.upload({
@@ -361,18 +302,9 @@ export class AutoSyncScheduler {
         this.timeRecord.lastUploadTime = now;
         await this.saveTimeRecord();
         
-        if (DEBUG_ENABLED) {
-          console.log('[Auto Sync Scheduler] Auto upload completed successfully');
-        }
       } else {
-        if (DEBUG_ENABLED) {
-          console.warn('[Auto Sync Scheduler] Auto upload failed:', result.error);
-        }
       }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Auto Sync Scheduler] Auto upload error:', error);
-      }
     } finally {
       this.uploadTimer = null;
     }
@@ -388,15 +320,9 @@ export class AutoSyncScheduler {
       // 检查WebDAV是否配置
       const webdavConfig = await storageBridge.loadWebDAVConfig();
       if (!webdavConfig?.enabled) {
-        if (DEBUG_ENABLED) {
-          console.log('[Auto Sync Scheduler] WebDAV not configured, skipping auto download');
-        }
         return;
       }
 
-      if (DEBUG_ENABLED) {
-        console.log('[Auto Sync Scheduler] Performing auto download (always download on tab open)...');
-      }
 
       // 更新下载时间
       this.timeRecord.lastDownloadTime = now;
@@ -409,18 +335,9 @@ export class AutoSyncScheduler {
         // 通知前端刷新
         this.notifyDataRefresh();
         
-        if (DEBUG_ENABLED) {
-          console.log('[Auto Sync Scheduler] Auto download completed successfully');
-        }
       } else {
-        if (DEBUG_ENABLED) {
-          console.warn('[Auto Sync Scheduler] Auto download failed:', result.error);
-        }
       }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Auto Sync Scheduler] Auto download error:', error);
-      }
     }
   }
 
@@ -433,29 +350,16 @@ export class AutoSyncScheduler {
       // 获取远程数据的元数据（不下载完整数据）
       const remoteMetadata = await this.getRemoteMetadata();
       if (!remoteMetadata) {
-        if (DEBUG_ENABLED) {
-          console.log('[Auto Sync Scheduler] No remote data found');
-        }
         return false; // 远程没有数据
       }
 
       const remoteChangeTime = remoteMetadata.lastSyncTime || 0;
       const localLastSyncTime = this.timeRecord.lastDownloadTime || this.timeRecord.lastUploadTime || 0;
       
-      if (DEBUG_ENABLED) {
-        console.log('[Auto Sync Scheduler] Time comparison:');
-        console.log('  Remote change time (C):', new Date(remoteChangeTime));
-        console.log('  Local last sync time:', new Date(localLastSyncTime));
-        console.log('  Current time (D):', new Date());
-        console.log('  Should download (remote > local):', remoteChangeTime > localLastSyncTime);
-      }
 
       // 如果远程数据比本地最后同步时间更新，则需要下载
       return remoteChangeTime > localLastSyncTime;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Auto Sync Scheduler] Failed to check download need:', error);
-      }
       return false;
     }
   }
@@ -468,9 +372,6 @@ export class AutoSyncScheduler {
       // 通过同步管理器获取远程文件信息
       const syncService = (this.syncManager as any).syncService;
       if (!syncService) {
-        if (DEBUG_ENABLED) {
-          console.log('[Auto Sync Scheduler] No sync service available');
-        }
         return null;
       }
 
@@ -479,9 +380,6 @@ export class AutoSyncScheduler {
       const dataFile = files.find(file => file.name === 'dualtab-data.json');
       
       if (!dataFile) {
-        if (DEBUG_ENABLED) {
-          console.log('[Auto Sync Scheduler] No remote dualtab-data.json file found');
-        }
         return null;
       }
 
@@ -499,9 +397,6 @@ export class AutoSyncScheduler {
           }
         }
       } catch (downloadError) {
-        if (DEBUG_ENABLED) {
-          console.warn('[Auto Sync Scheduler] Failed to download remote data for metadata, using file timestamp:', downloadError);
-        }
       }
 
       // 如果无法获取数据内容，则使用文件的修改时间作为备选
@@ -510,9 +405,6 @@ export class AutoSyncScheduler {
         size: dataFile.size,
       };
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Auto Sync Scheduler] Failed to get remote metadata:', error);
-      }
       return null;
     }
   }
@@ -569,9 +461,6 @@ export class AutoSyncScheduler {
     
     this.isInitialized = false;
     
-    if (DEBUG_ENABLED) {
-      console.log('[Auto Sync Scheduler] Stopped');
-    }
   }
 
   /**

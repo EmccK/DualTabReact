@@ -17,7 +17,6 @@ import {
   MKCOL_BODY,
   SYNC_CONSTANTS,
   ERROR_MESSAGES,
-  DEBUG_ENABLED 
 } from './constants';
 import { createAuthHeader, createAuthConfigFromWebDAV } from './auth';
 
@@ -85,13 +84,6 @@ export class WebDAVClient {
   async request(options: WebDAVRequestOptions): Promise<WebDAVResponse> {
     const { method, url, headers = {}, body, timeout = SYNC_CONSTANTS.DEFAULT_TIMEOUT } = options;
     
-    if (DEBUG_ENABLED) {
-      console.log('[WebDAV Client] Request:', {
-        method,
-        url,
-        headers: this.sanitizeHeaders(headers),
-      });
-    }
 
     try {
       const controller = new AbortController();
@@ -127,20 +119,9 @@ export class WebDAVClient {
         data,
       };
 
-      if (DEBUG_ENABLED) {
-        console.log('[WebDAV Client] Response:', {
-          status: result.status,
-          statusText: result.statusText,
-          headers: result.headers,
-          dataType: typeof data,
-          dataLength: data instanceof ArrayBuffer ? data.byteLength : (data?.length || 0),
-        });
-      }
 
       return result;
     } catch (error) {
-      // Always log basic error info
-      console.error('[WebDAV Client] Request failed:', error);
       
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error(ERROR_MESSAGES.TIMEOUT);
@@ -148,23 +129,7 @@ export class WebDAVClient {
       
       // 提供更详细的错误信息用于调试
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[WebDAV Client] Error details:', {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: errorMessage,
-        url: options.url,
-        method: options.method,
-      });
       
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Client] Full error details:', {
-          name: error instanceof Error ? error.name : 'Unknown',
-          message: errorMessage,
-          stack: error instanceof Error ? error.stack : undefined,
-          url: options.url,
-          method: options.method,
-          headers: this.sanitizeHeaders(options.headers || {}),
-        });
-      }
       
       throw new Error(`${ERROR_MESSAGES.NETWORK_ERROR}: ${errorMessage}`);
     }
@@ -216,9 +181,6 @@ export class WebDAVClient {
 
       return response.status === WEBDAV_STATUS.CREATED || response.status === WEBDAV_STATUS.OK;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Client] Failed to create directory:', path, error);
-      }
       return false;
     }
   }
@@ -248,9 +210,6 @@ export class WebDAVClient {
   async getFile(path: string): Promise<string | ArrayBuffer> {
     const url = this.buildUrl(path);
     
-    if (DEBUG_ENABLED) {
-      console.log('[WebDAV Client] Getting file:', path, 'from URL:', url);
-    }
     
     const response = await this.request({
       method: 'GET',
@@ -260,10 +219,6 @@ export class WebDAVClient {
       },
     });
 
-    if (DEBUG_ENABLED) {
-      console.log('[WebDAV Client] File response status:', response.status);
-      console.log('[WebDAV Client] File response data length:', typeof response.data === 'string' ? response.data.length : (response.data?.byteLength || 0));
-    }
 
     // WebDAV服务器可能返回200或207状态码
     if (response.status !== WEBDAV_STATUS.OK && response.status !== WEBDAV_STATUS.MULTI_STATUS) {
@@ -275,9 +230,6 @@ export class WebDAVClient {
 
     const data = response.data || '';
     
-    if (DEBUG_ENABLED) {
-      console.log('[WebDAV Client] Returning file data:', typeof data === 'string' ? data.substring(0, 200) + '...' : 'Binary data');
-    }
 
     return data;
   }
@@ -326,9 +278,6 @@ export class WebDAVClient {
 
       return response.status === WEBDAV_STATUS.NO_CONTENT || response.status === WEBDAV_STATUS.OK;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Client] Failed to delete:', path, error);
-      }
       return false;
     }
   }
@@ -356,9 +305,6 @@ export class WebDAVClient {
       const xmlData = response.data as string;
       return this.parseFileInfoFromXML(xmlData, path);
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Client] Failed to get file info:', path, error);
-      }
       return null;
     }
   }
@@ -393,9 +339,6 @@ export class WebDAVClient {
         etag: etag.replace(/"/g, ''), // 移除引号
       };
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Client] Failed to parse XML:', error);
-      }
       return null;
     }
   }
@@ -422,9 +365,6 @@ export class WebDAVClient {
       const xmlData = response.data as string;
       return this.parseDirectoryListingFromXML(xmlData);
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Client] Failed to list directory:', path, error);
-      }
       return [];
     }
   }
@@ -467,9 +407,6 @@ export class WebDAVClient {
 
       return files;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Client] Failed to parse directory listing:', error);
-      }
       return [];
     }
   }
@@ -481,15 +418,6 @@ export class WebDAVClient {
     try {
       const testUrl = this.baseUrl + (this.config.syncPath || '/DualTab');
       
-      if (DEBUG_ENABLED) {
-        console.log('[WebDAV Client] Testing connection to:', testUrl);
-        console.log('[WebDAV Client] Config:', {
-          serverUrl: this.config.serverUrl,
-          username: this.config.username,
-          syncPath: this.config.syncPath,
-          baseUrl: this.baseUrl,
-        });
-      }
       
       // 首先尝试一个简单的OPTIONS请求来测试基本连接
       try {
@@ -499,16 +427,7 @@ export class WebDAVClient {
           headers: {},
         });
         
-        if (DEBUG_ENABLED) {
-          console.log('[WebDAV Client] OPTIONS request result:', {
-            status: optionsResponse.status,
-            headers: optionsResponse.headers,
-          });
-        }
       } catch (optionsError) {
-        if (DEBUG_ENABLED) {
-          console.log('[WebDAV Client] OPTIONS request failed, trying PROPFIND:', optionsError);
-        }
       }
       
       const response = await this.request({
@@ -524,29 +443,9 @@ export class WebDAVClient {
                        response.status === WEBDAV_STATUS.MULTI_STATUS ||
                        response.status === WEBDAV_STATUS.NOT_FOUND; // 目录不存在但连接正常
       
-      if (DEBUG_ENABLED) {
-        console.log('[WebDAV Client] Connection test result:', {
-          status: response.status,
-          statusText: response.statusText,
-          isSuccess,
-        });
-      }
       
       return isSuccess;
     } catch (error) {
-      // Always log connection test failures for debugging
-      console.error('[WebDAV Client] Connection test failed:', error);
-      if (DEBUG_ENABLED) {
-        console.error('[WebDAV Client] Connection test failed details:', {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          config: {
-            serverUrl: this.config.serverUrl,
-            username: this.config.username,
-            syncPath: this.config.syncPath,
-          }
-        });
-      }
       return false;
     }
   }

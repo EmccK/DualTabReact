@@ -4,7 +4,7 @@
  */
 
 import type { SyncMetadata, DeviceInfo, SyncDataPackage } from './types';
-import { SYNC_CONSTANTS, DEVICE_PLATFORMS, BROWSERS, DEBUG_ENABLED } from './constants';
+import { SYNC_CONSTANTS, DEVICE_PLATFORMS, BROWSERS } from './constants';
 
 /**
  * 生成数据哈希
@@ -22,7 +22,6 @@ export async function generateDataHash(data: any): Promise<string> {
     return hashHex;
   } catch (error) {
     // 降级到简单哈希
-    console.warn('[Metadata] Failed to generate crypto hash, using fallback:', error);
     return simpleHash(JSON.stringify(data));
   }
 }
@@ -226,9 +225,6 @@ export async function verifyDataIntegrity(data: any, expectedHash: string): Prom
     const actualHash = await generateDataHash(data);
     return actualHash === expectedHash;
   } catch (error) {
-    if (DEBUG_ENABLED) {
-      console.error('[Metadata] Failed to verify data integrity:', error);
-    }
     return false;
   }
 }
@@ -329,13 +325,6 @@ export function detectTimestampTrap(
 ): boolean {
   // 如果本地数据为空但时间戳更新，很可能是时间戳陷阱
   if (localDataIsEmpty && localTimestamp > remoteTimestamp) {
-    if (DEBUG_ENABLED) {
-      console.warn('[Metadata] Detected timestamp trap:', {
-        localTimestamp,
-        remoteTimestamp,
-        localDataIsEmpty,
-      });
-    }
     return true;
   }
   
@@ -352,10 +341,6 @@ export async function repairMetadata(
 ): Promise<SyncMetadata> {
   const now = Date.now();
   
-  if (DEBUG_ENABLED) {
-    console.log('[Metadata] Repairing metadata:', partialMetadata);
-  }
-
   // 重新生成哈希
   const dataHash = await generateDataHash(data);
   

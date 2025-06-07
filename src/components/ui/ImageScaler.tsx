@@ -167,7 +167,6 @@ export function ImageScaler({
           onImageGenerated?.(dataUrl);
         }
       } catch (error) {
-        console.error('生成图片失败:', error);
       } finally {
         setIsProcessing(false);
       }

@@ -4,7 +4,7 @@
  */
 
 import type { SyncDataPackage } from './types';
-import { STORAGE_KEYS, DEBUG_ENABLED } from './constants';
+import { STORAGE_KEYS } from './constants';
 
 /**
  * Chrome存储接口封装
@@ -60,22 +60,6 @@ export class StorageBridge {
         cache_stats: result.cache_stats || null,
       };
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Loaded local data:', {
-          categoriesCount: result.categories?.length || 0,
-          bookmarksCount: result.bookmarks?.length || 0,
-          hasSettings: !!result.settings,
-          hasAppSettings: !!result.app_settings,
-          networkMode: result.networkMode,
-          selectedCategoryId: result.selectedCategoryId,
-          hasAutoSyncConfig: !!result.auto_sync_config,
-          hasSyncTimeRecord: !!result.sync_time_record,
-          hasAutoSwitchSettings: !!result.auto_switch_settings,
-          hasAutoSwitchState: !!result.auto_switch_state,
-          hasCacheSettings: !!result.cache_settings,
-          hasCacheStats: !!result.cache_stats,
-        });
-      }
 
       return {
         categories: result.categories || [],
@@ -83,9 +67,6 @@ export class StorageBridge {
         settings: mergedSettings,
       };
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to load local data:', error);
-      }
       throw error;
     }
   }
@@ -166,46 +147,22 @@ export class StorageBridge {
       }
 
       await chrome.storage.local.set(storageData);
-      console.log('[STORAGE_BRIDGE_DEBUG] Data saved to chrome.storage.local:', Object.keys(storageData));
 
       // 清除存储缓存，确保后续读取获取最新数据
-      console.log('[STORAGE_BRIDGE_DEBUG] Clearing storage cache');
       try {
         const { clearCache } = await import('@/utils/storage');
         clearCache();
-        console.log('[STORAGE_BRIDGE_DEBUG] Storage cache cleared');
       } catch (error) {
-        console.error('[STORAGE_BRIDGE_DEBUG] Failed to clear cache:', error);
+        // 忽略清除缓存失败的错误
       }
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Saved local data:', {
-          categoriesCount: data.categories.length,
-          bookmarksCount: data.bookmarks.length,
-          hasSettings: !!data.settings,
-          hasAppSettings: !!data.settings?.app_settings,
-          networkMode: data.settings?.networkMode,
-          selectedCategoryId: data.settings?.selectedCategoryId,
-          hasAutoSyncConfig: !!data.settings?.auto_sync_config,
-          hasSyncTimeRecord: !!data.settings?.sync_time_record,
-          hasAutoSwitchSettings: !!data.settings?.auto_switch_settings,
-          hasAutoSwitchState: !!data.settings?.auto_switch_state,
-          hasCacheSettings: !!data.settings?.cache_settings,
-          hasCacheStats: !!data.settings?.cache_stats,
-          storageKeys: Object.keys(storageData),
-        });
-      }
 
       // 触发存储变化事件，通知UI更新
-      console.log('[STORAGE_BRIDGE_DEBUG] About to notify storage change for keys:', Object.keys(storageData));
       this.notifyStorageChange(storageData);
 
       // 触发自动同步数据变更事件
       this.triggerAutoSyncDataChange();
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to save local data:', error);
-      }
       throw error;
     }
   }
@@ -215,38 +172,16 @@ export class StorageBridge {
    */
   async restoreFromSyncPackage(syncPackage: SyncDataPackage): Promise<void> {
     try {
-      console.log('[STORAGE_BRIDGE_DEBUG] Starting restore from sync package');
-      console.log('[STORAGE_BRIDGE_DEBUG] Categories count:', syncPackage.categories?.length || 0);
-      console.log('[STORAGE_BRIDGE_DEBUG] Bookmarks count:', syncPackage.bookmarks?.length || 0);
-      console.log('[STORAGE_BRIDGE_DEBUG] Settings:', syncPackage.settings ? 'present' : 'missing');
-
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Restoring from sync package...');
-        console.log('[Storage Bridge] Categories count:', syncPackage.categories?.length || 0);
-        console.log('[Storage Bridge] Bookmarks count:', syncPackage.bookmarks?.length || 0);
-        console.log('[Storage Bridge] Settings:', syncPackage.settings ? 'present' : 'missing');
-      }
-
-      console.log('[STORAGE_BRIDGE_DEBUG] About to call saveLocalData');
       await this.saveLocalData({
         categories: syncPackage.categories,
         bookmarks: syncPackage.bookmarks,
         settings: syncPackage.settings,
       });
-      console.log('[STORAGE_BRIDGE_DEBUG] saveLocalData completed');
 
       // 保存同步元数据
       await this.saveSyncMetadata(syncPackage.metadata);
 
-      console.log('[STORAGE_BRIDGE_DEBUG] Successfully restored from sync package');
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Successfully restored from sync package');
-      }
     } catch (error) {
-      console.error('[STORAGE_BRIDGE_DEBUG] Failed to restore from sync package:', error);
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to restore from sync package:', error);
-      }
       throw error;
     }
   }
@@ -259,9 +194,6 @@ export class StorageBridge {
       const result = await chrome.storage.local.get([STORAGE_KEYS.WEBDAV_CONFIG]);
       return result[STORAGE_KEYS.WEBDAV_CONFIG] || null;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to load WebDAV config:', error);
-      }
       return null;
     }
   }
@@ -275,13 +207,7 @@ export class StorageBridge {
         [STORAGE_KEYS.WEBDAV_CONFIG]: config,
       });
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Saved WebDAV config');
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to save WebDAV config:', error);
-      }
       throw error;
     }
   }
@@ -294,9 +220,6 @@ export class StorageBridge {
       const result = await chrome.storage.local.get([STORAGE_KEYS.SYNC_METADATA]);
       return result[STORAGE_KEYS.SYNC_METADATA] || null;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to load sync metadata:', error);
-      }
       return null;
     }
   }
@@ -311,13 +234,7 @@ export class StorageBridge {
         [STORAGE_KEYS.LAST_SYNC_TIME]: Date.now(),
       });
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Saved sync metadata');
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to save sync metadata:', error);
-      }
       throw error;
     }
   }
@@ -330,9 +247,6 @@ export class StorageBridge {
       const result = await chrome.storage.local.get([STORAGE_KEYS.SYNC_STATUS]);
       return result[STORAGE_KEYS.SYNC_STATUS] || { status: 'idle' };
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to load sync status:', error);
-      }
       return { status: 'idle' };
     }
   }
@@ -346,16 +260,10 @@ export class StorageBridge {
         [STORAGE_KEYS.SYNC_STATUS]: status,
       });
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Saved sync status:', status.status);
-      }
 
       // 通知状态变化
       this.notifyStatusChange(status);
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to save sync status:', error);
-      }
       throw error;
     }
   }
@@ -368,9 +276,6 @@ export class StorageBridge {
       const result = await chrome.storage.local.get([STORAGE_KEYS.DEVICE_INFO]);
       return result[STORAGE_KEYS.DEVICE_INFO] || null;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to load device info:', error);
-      }
       return null;
     }
   }
@@ -384,13 +289,7 @@ export class StorageBridge {
         [STORAGE_KEYS.DEVICE_INFO]: deviceInfo,
       });
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Saved device info');
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to save device info:', error);
-      }
       throw error;
     }
   }
@@ -403,9 +302,6 @@ export class StorageBridge {
       const result = await chrome.storage.local.get([STORAGE_KEYS.CONFLICT_DATA]);
       return result[STORAGE_KEYS.CONFLICT_DATA] || null;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to load conflict data:', error);
-      }
       return null;
     }
   }
@@ -419,13 +315,7 @@ export class StorageBridge {
         [STORAGE_KEYS.CONFLICT_DATA]: conflictData,
       });
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Saved conflict data');
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to save conflict data:', error);
-      }
       throw error;
     }
   }
@@ -437,13 +327,7 @@ export class StorageBridge {
     try {
       await chrome.storage.local.remove([STORAGE_KEYS.CONFLICT_DATA]);
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Cleared conflict data');
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to clear conflict data:', error);
-      }
       throw error;
     }
   }
@@ -472,9 +356,6 @@ export class StorageBridge {
 
       return true;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to check sync lock:', error);
-      }
       return false;
     }
   }
@@ -496,15 +377,9 @@ export class StorageBridge {
         },
       });
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Set sync lock');
-      }
 
       return true;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to set sync lock:', error);
-      }
       return false;
     }
   }
@@ -516,13 +391,7 @@ export class StorageBridge {
     try {
       await chrome.storage.local.remove([STORAGE_KEYS.SYNC_LOCK]);
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Cleared sync lock');
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to clear sync lock:', error);
-      }
     }
   }
 
@@ -534,9 +403,6 @@ export class StorageBridge {
       const result = await chrome.storage.local.get([STORAGE_KEYS.LAST_SYNC_TIME]);
       return result[STORAGE_KEYS.LAST_SYNC_TIME] || 0;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to get last sync time:', error);
-      }
       return 0;
     }
   }
@@ -554,13 +420,7 @@ export class StorageBridge {
         STORAGE_KEYS.CONFLICT_DATA,
       ]);
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Cleared all sync data');
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to clear sync data:', error);
-      }
       throw error;
     }
   }
@@ -577,14 +437,8 @@ export class StorageBridge {
         timestamp: Date.now(),
       }).catch(() => {
         // 忽略发送失败，不影响主要功能
-        if (DEBUG_ENABLED) {
-          console.log('[Storage Bridge] Failed to trigger auto sync data change');
-        }
       });
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.warn('[Storage Bridge] Failed to trigger auto sync:', error);
-      }
     }
   }
 
@@ -601,35 +455,25 @@ export class StorageBridge {
         },
       };
 
-      console.log('[STORAGE_BRIDGE_DEBUG] Sending storage_changed message:', message);
-
       // 通过Chrome消息系统通知其他页面
-      chrome.runtime.sendMessage(message).catch((error) => {
-        console.log('[STORAGE_BRIDGE_DEBUG] Failed to send runtime message:', error);
+      chrome.runtime.sendMessage(message).catch(() => {
+        // 忽略发送失败的错误
       });
 
       // 在background script中，可能需要向所有tabs发送消息
       if (chrome.tabs) {
         chrome.tabs.query({}, (tabs) => {
-          console.log('[STORAGE_BRIDGE_DEBUG] Found tabs:', tabs.length);
           tabs.forEach((tab) => {
             if (tab.id && tab.url && tab.url.startsWith('chrome-extension://')) {
-              console.log('[STORAGE_BRIDGE_DEBUG] Sending message to tab:', tab.id, tab.url);
-              chrome.tabs.sendMessage(tab.id, message).catch((error) => {
-                console.log('[STORAGE_BRIDGE_DEBUG] Failed to send tab message:', error);
+              chrome.tabs.sendMessage(tab.id, message).catch(() => {
+                // 忽略发送失败的错误
               });
             }
           });
         });
-      } else {
-        console.log('[STORAGE_BRIDGE_DEBUG] chrome.tabs not available');
       }
     } catch (error) {
-      console.error('[STORAGE_BRIDGE_DEBUG] Error in notifyStorageChange:', error);
       // 忽略通知错误，不影响主要功能
-      if (DEBUG_ENABLED) {
-        console.warn('[Storage Bridge] Failed to notify storage change:', error);
-      }
     }
   }
 
@@ -660,9 +504,6 @@ export class StorageBridge {
         });
       }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.warn('[Storage Bridge] Failed to notify status change:', error);
-      }
     }
   }
 
@@ -686,15 +527,9 @@ export class StorageBridge {
         'data_backup': backup,
       });
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Created data backup');
-      }
 
       return backup;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to create backup:', error);
-      }
       throw error;
     }
   }
@@ -717,15 +552,9 @@ export class StorageBridge {
         await this.saveSyncMetadata(backup.metadata);
       }
 
-      if (DEBUG_ENABLED) {
-        console.log('[Storage Bridge] Restored data backup');
-      }
 
       return true;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to restore backup:', error);
-      }
       return false;
     }
   }
@@ -766,9 +595,6 @@ export class StorageBridge {
         percentage: Math.round((usage / quota) * 100),
       };
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Failed to get storage usage:', error);
-      }
       return {
         used: 0,
         quota: 10485760,
@@ -791,9 +617,6 @@ export class StorageBridge {
       
       return result[testKey] === testValue;
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Storage Bridge] Storage availability check failed:', error);
-      }
       return false;
     }
   }

@@ -57,7 +57,6 @@ export const useIconLoader = ({
 
       setIconUrl(favicon);
     } catch (error) {
-      console.warn('图标加载失败:', error);
       setHasError(true);
       setIconUrl(null);
     } finally {

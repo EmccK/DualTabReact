@@ -242,7 +242,6 @@ export async function addCategory(categoryData: Omit<BookmarkCategory, 'id' | 'c
       return { success: false, error: saveResult.error }
     }
   } catch (error) {
-    console.error('添加分类失败:', error)
     return { success: false, error: '添加分类失败' }
   }
 }
@@ -282,7 +281,6 @@ export async function updateCategory(id: string, updates: Partial<BookmarkCatego
       return { success: false, error: saveResult.error }
     }
   } catch (error) {
-    console.error('更新分类失败:', error)
     return { success: false, error: '更新分类失败' }
   }
 }
@@ -306,7 +304,6 @@ export async function deleteCategory(id: string): Promise<OperationResult<void>>
     
     return await saveCategories(filteredCategories)
   } catch (error) {
-    console.error('删除分类失败:', error)
     return { success: false, error: '删除分类失败' }
   }
 }
@@ -324,7 +321,6 @@ export async function reorderCategories(reorderedCategories: BookmarkCategory[])
     
     return await saveCategories(categoriesWithTimestamp)
   } catch (error) {
-    console.error('重排序分类失败:', error)
     return { success: false, error: '重排序分类失败' }
   }
 }

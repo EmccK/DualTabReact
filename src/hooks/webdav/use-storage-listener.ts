@@ -71,15 +71,6 @@ export function useStorageListener(options: UseStorageListenerOptions = {}) {
 
       changeEvents.push(changeEvent);
       affectedKeys.push(key);
-
-      if (debug) {
-        console.log('[Storage Listener] Storage changed:', {
-          key,
-          oldValue: changeEvent.oldValue,
-          newValue: changeEvent.newValue,
-          area: areaName,
-        });
-      }
     }
 
     if (changeEvents.length > 0) {
@@ -105,7 +96,6 @@ export function useStorageListener(options: UseStorageListenerOptions = {}) {
         setLastChangeTime(Date.now());
 
         if (onChange && debug) {
-          console.log('[Storage Listener] Runtime message triggered storage change:', affectedKeys);
         }
       }
     }
@@ -122,20 +112,12 @@ export function useStorageListener(options: UseStorageListenerOptions = {}) {
     // 同时监听来自background script的消息
     chrome.runtime.onMessage.addListener(handleRuntimeMessage);
 
-    if (debug) {
-      console.log('[Storage Listener] Started listening to storage changes', {
-        keys,
-        area,
-      });
-    }
-
     return () => {
       if (listenerRef.current) {
         chrome.storage.onChanged.removeListener(listenerRef.current);
       }
       chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
       if (debug) {
-        console.log('[Storage Listener] Stopped listening to storage changes');
       }
     };
   }, [handleStorageChange, handleRuntimeMessage, keys, area, debug]);
@@ -189,7 +171,6 @@ export function useStorageKey<T = any>(
       const storedValue = result[key];
       setValue(storedValue !== undefined ? storedValue : defaultValue);
     } catch (error) {
-      console.error(`[Storage Key] Failed to load ${key}:`, error);
       setValue(defaultValue);
     } finally {
       setIsLoading(false);
@@ -204,7 +185,6 @@ export function useStorageKey<T = any>(
       await chrome.storage[area].set({ [key]: newValue });
       setValue(newValue);
     } catch (error) {
-      console.error(`[Storage Key] Failed to save ${key}:`, error);
       throw error;
     }
   }, [key, area]);
@@ -284,7 +264,6 @@ export function useMultipleStorageKeys(
       const result = await chrome.storage[area].get(keys);
       setValues(result);
     } catch (error) {
-      console.error('[Multiple Storage Keys] Failed to load values:', error);
     }
   }, [keys, area]);
 

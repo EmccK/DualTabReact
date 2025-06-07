@@ -79,7 +79,6 @@ export function CategorySidebar({
     try {
       await onReorderCategories(newCategories)
     } catch (error) {
-      console.error('分类重排序失败:', error)
     }
   }, [categories, onReorderCategories])
 

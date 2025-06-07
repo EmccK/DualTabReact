@@ -94,7 +94,6 @@ export function usePopupBookmark() {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : '未知错误';
       setSubmitError(errorMsg);
-      console.error('快速添加书签失败:', error);
       return { success: false, error: errorMsg };
     } finally {
       setIsSubmitting(false);

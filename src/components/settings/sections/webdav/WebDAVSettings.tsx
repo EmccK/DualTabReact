@@ -35,7 +35,6 @@ export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: 
     autoLoadConfig: true,
     autoRefreshStatus: true,
     onError: (error) => {
-      console.error('WebDAV Error:', error);
     },
   });
 
@@ -114,10 +113,8 @@ export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: 
         });
         
         if (!response?.success) {
-          console.error('Failed to save auto sync config:', response?.error);
         }
       } catch (error) {
-        console.error('Failed to save auto sync config:', error);
       }
     }
   };

@@ -57,7 +57,6 @@ export function CategoryModal({ isOpen, onClose, mode, category, onSave, onUpdat
       }
       onClose()
     } catch (error) {
-      console.error('保存分类失败:', error)
     } finally {
       setLoading(false)
     }

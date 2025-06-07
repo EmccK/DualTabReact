@@ -64,7 +64,6 @@ export class AutoSwitchService {
         ...(result[STORAGE_KEYS.AUTO_SWITCH_SETTINGS] || {})
       };
     } catch (error) {
-      console.error('Failed to get auto switch settings:', error);
       return DEFAULT_AUTO_SWITCH_SETTINGS;
     }
   }
@@ -91,7 +90,6 @@ export class AutoSwitchService {
         await this.stop();
       }
     } catch (error) {
-      console.error('Failed to save auto switch settings:', error);
       throw error;
     }
   }
@@ -107,7 +105,6 @@ export class AutoSwitchService {
         ...(result[STORAGE_KEYS.AUTO_SWITCH_STATE] || {})
       };
     } catch (error) {
-      console.error('Failed to get auto switch state:', error);
       return DEFAULT_AUTO_SWITCH_STATE;
     }
   }
@@ -127,7 +124,6 @@ export class AutoSwitchService {
         [STORAGE_KEYS.AUTO_SWITCH_STATE]: updatedState
       });
     } catch (error) {
-      console.error('Failed to update auto switch state:', error);
     }
   }
 
@@ -156,9 +152,7 @@ export class AutoSwitchService {
       // 设置定时器
       this.scheduleNextSwitch(settings);
       
-      console.log('Auto switch service started');
     } catch (error) {
-      console.error('Failed to start auto switch service:', error);
     }
   }
 
@@ -177,9 +171,7 @@ export class AutoSwitchService {
         nextSwitchTime: 0
       });
 
-      console.log('Auto switch service stopped');
     } catch (error) {
-      console.error('Failed to stop auto switch service:', error);
     }
   }
 
@@ -345,7 +337,6 @@ export class AutoSwitchService {
         nextScheduledTime: this.calculateNextSwitchTime(settings)
       };
     } catch (error) {
-      console.error('Failed to perform switch:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

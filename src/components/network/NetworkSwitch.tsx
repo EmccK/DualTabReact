@@ -23,7 +23,6 @@ const NetworkSwitch: React.FC<NetworkSwitchProps> = ({
       onNetworkModeChange(newMode)
       setTimeout(() => setIsAnimating(false), 600)
     } catch (error) {
-      console.error('网络模式切换失败:', error)
       setIsAnimating(false)
     }
   }, [networkMode, onNetworkModeChange, isAnimating])

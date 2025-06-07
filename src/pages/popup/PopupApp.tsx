@@ -75,7 +75,6 @@ function PopupApp() {
       }
       // 错误处理由usePopupBookmark Hook处理
     } catch (error) {
-      console.error('提交书签失败:', error);
     }
   }, [quickAddBookmark]);
 

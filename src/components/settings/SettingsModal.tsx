@@ -51,7 +51,6 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
       
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to save settings:', error);
     }
   };
 
@@ -78,7 +77,6 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
         await resetSettings(activeTab);
         setShowResetConfirm(false);
       } catch (error) {
-        console.error('Failed to reset settings:', error);
       }
     } else {
       setShowResetConfirm(true);

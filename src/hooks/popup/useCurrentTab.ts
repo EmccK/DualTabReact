@@ -29,7 +29,6 @@ export function useCurrentTab() {
       const errorMessage = err instanceof Error ? err.message : '未知错误';
       setError(errorMessage);
       setTabInfo(null);
-      console.error('获取当前标签页失败:', err);
     } finally {
       setLoading(false);
     }

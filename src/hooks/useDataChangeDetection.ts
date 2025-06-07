@@ -49,11 +49,9 @@ export function useDataChangeDetection(
       });
       
       if (debug) {
-        console.log('[Data Change Detection] Auto sync triggered');
       }
     } catch (error) {
       if (debug) {
-        console.error('[Data Change Detection] Failed to trigger auto sync:', error);
       }
     }
   };
@@ -95,9 +93,6 @@ export function useDataChangeDetection(
     // 检查是否有变化
     if (hasChanged(debouncedDependencies, lastDependencies.current)) {
       if (debug) {
-        console.log('[Data Change Detection] Data change detected');
-        console.log('Previous:', lastDependencies.current);
-        console.log('Current:', debouncedDependencies);
       }
 
       // 触发自动同步

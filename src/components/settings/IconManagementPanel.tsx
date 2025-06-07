@@ -58,7 +58,6 @@ const IconManagementPanel: React.FC<IconManagementPanelProps> = ({
       const stats = await getIconCacheStats();
       setCacheStats(stats);
     } catch (error) {
-      console.error('Failed to load cache stats:', error);
     }
   };
 
@@ -87,7 +86,6 @@ const IconManagementPanel: React.FC<IconManagementPanelProps> = ({
 
       setQualityStats(stats);
     } catch (error) {
-      console.error('Failed to analyze icon quality:', error);
     } finally {
       setIsAnalyzing(false);
     }
@@ -104,7 +102,6 @@ const IconManagementPanel: React.FC<IconManagementPanelProps> = ({
       await preloadBookmarkIcons(bookmarkData);
       await loadCacheStats();
     } catch (error) {
-      console.error('Failed to preload icons:', error);
     } finally {
       setIsPreloading(false);
     }
@@ -118,7 +115,6 @@ const IconManagementPanel: React.FC<IconManagementPanelProps> = ({
       await loadCacheStats();
       setQualityStats(null);
     } catch (error) {
-      console.error('Failed to clear cache:', error);
     } finally {
       setIsLoading(false);
     }

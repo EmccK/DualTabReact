@@ -46,19 +46,16 @@ export function formatUrl(url: string): string {
   return `https://${trimmedUrl}`
 }export function safeOpenUrl(url: string, target: string = '_blank'): void {
   if (!url || typeof url !== 'string' || url.trim() === '') {
-    console.warn('尝试打开空URL')
     return
   }
   
   const formattedUrl = formatUrl(url)
   if (!isValidUrl(formattedUrl)) {
-    console.warn('尝试打开无效URL:', url)
     return
   }
   
   try {
     window.open(formattedUrl, target, 'noopener,noreferrer')
   } catch (error) {
-    console.error('打开URL失败:', formattedUrl, error)
   }
 }

@@ -20,7 +20,6 @@ import {
   SYNC_CONSTANTS, 
   ERROR_MESSAGES, 
   SUCCESS_MESSAGES, 
-  DEBUG_ENABLED 
 } from '../webdav/constants';
 import { validateWebDAVConfig } from '../webdav/client';
 
@@ -73,9 +72,6 @@ class SyncScheduler {
       }
     }, safeInterval * 60 * 1000) as unknown as number;
 
-    if (DEBUG_ENABLED) {
-      console.log(`[Sync Scheduler] Started with interval: ${safeInterval} minutes`);
-    }
   }
 
   stop(): void {
@@ -85,9 +81,6 @@ class SyncScheduler {
     }
     this.isEnabled = false;
 
-    if (DEBUG_ENABLED) {
-      console.log('[Sync Scheduler] Stopped');
-    }
   }
 
   isRunning(): boolean {
@@ -147,21 +140,12 @@ export class SyncManager {
    */
   private async initialize(): Promise<void> {
     try {
-      if (DEBUG_ENABLED) {
-        console.log('[Sync Manager] Starting initialization...');
-      }
 
       // 加载WebDAV配置
       const config = await this.storage.loadWebDAVConfig();
       if (config && validateWebDAVConfig(config)) {
         await this.updateConfig(config);
-        if (DEBUG_ENABLED) {
-          console.log('[Sync Manager] WebDAV config loaded and validated');
-        }
       } else {
-        if (DEBUG_ENABLED) {
-          console.log('[Sync Manager] No valid WebDAV config found');
-        }
       }
 
       // 清理过期的同步锁
@@ -170,25 +154,13 @@ export class SyncManager {
       // 初始化自动同步调度器
       try {
         this.autoSyncScheduler = await initializeAutoSyncScheduler();
-        if (DEBUG_ENABLED) {
-          console.log('[Sync Manager] Auto sync scheduler initialized');
-        }
       } catch (error) {
-        if (DEBUG_ENABLED) {
-          console.warn('[Sync Manager] Failed to initialize auto sync scheduler:', error);
-        }
       }
 
       // 设置消息监听器
       this.setupMessageListeners();
 
-      if (DEBUG_ENABLED) {
-        console.log('[Sync Manager] Initialized successfully');
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Sync Manager] Initialization failed:', error);
-      }
     }
   }
 
@@ -202,21 +174,12 @@ export class SyncManager {
         return false;
       }
 
-      if (DEBUG_ENABLED) {
-        console.log('[Sync Manager] Handling message:', message.action);
-      }
 
       this.handleMessage(message)
         .then(result => {
-          if (DEBUG_ENABLED) {
-            console.log('[Sync Manager] Message result:', result);
-          }
           sendResponse(result);
         })
         .catch(error => {
-          if (DEBUG_ENABLED) {
-            console.error('[Sync Manager] Message error:', error);
-          }
           sendResponse({ 
             success: false, 
             error: error.message || 'Unknown error' 
@@ -226,9 +189,6 @@ export class SyncManager {
       return true; // 保持异步响应
     });
 
-    if (DEBUG_ENABLED) {
-      console.log('[Sync Manager] Message listeners set up');
-    }
   }
 
   /**
@@ -306,15 +266,9 @@ export class SyncManager {
         this.scheduler.stop();
       }
 
-      if (DEBUG_ENABLED) {
-        console.log('[Sync Manager] Config updated');
-      }
 
       return { success: true };
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Sync Manager] Config update failed:', error);
-      }
       return { 
         success: false, 
         error: error instanceof Error ? error.message : ERROR_MESSAGES.INVALID_CONFIG 
@@ -422,29 +376,21 @@ export class SyncManager {
           break;
 
         case 'download':
-          console.log('[SYNC_MANAGER_DEBUG] Executing download task');
           const downloadResult = await this.syncService.download();
           if (downloadResult.data) {
-            console.log('[SYNC_MANAGER_DEBUG] Download has data, restoring from sync package');
             await this.storage.restoreFromSyncPackage(downloadResult.data);
-            console.log('[SYNC_MANAGER_DEBUG] Restore from sync package completed');
           } else {
-            console.log('[SYNC_MANAGER_DEBUG] Download has no data');
           }
           result = downloadResult;
           break;
 
         default:
-          console.log('[SYNC_MANAGER_DEBUG] Executing sync task');
           result = await this.syncService.sync(localData, task.options);
 
           // 如果同步结果包含数据，更新本地存储
           if (result.status === 'success' && (result as any).data) {
-            console.log('[SYNC_MANAGER_DEBUG] Sync has data, restoring from sync package');
             await this.storage.restoreFromSyncPackage((result as any).data);
-            console.log('[SYNC_MANAGER_DEBUG] Restore from sync package completed');
           } else {
-            console.log('[SYNC_MANAGER_DEBUG] Sync has no data or failed');
           }
           break;
       }
@@ -591,15 +537,9 @@ export class SyncManager {
         await this.storage.saveWebDAVConfig(config);
       }
 
-      if (DEBUG_ENABLED) {
-        console.log(`[Sync Manager] Auto sync ${enabled ? 'enabled' : 'disabled'}`);
-      }
 
       return { success: true };
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Sync Manager] Failed to toggle auto sync:', error);
-      }
       return { success: false };
     }
   }
@@ -610,28 +550,16 @@ export class SyncManager {
   async performAutoSync(): Promise<void> {
     try {
       if (this.isProcessing || this.currentTask) {
-        if (DEBUG_ENABLED) {
-          console.log('[Sync Manager] Auto sync skipped - already processing');
-        }
         return;
       }
 
-      if (DEBUG_ENABLED) {
-        console.log('[Sync Manager] Performing auto sync');
-      }
 
       const result = await this.sync({ 
         autoResolveConflicts: true,
         createBackup: true,
       });
 
-      if (DEBUG_ENABLED) {
-        console.log('[Sync Manager] Auto sync completed:', result.success);
-      }
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Sync Manager] Auto sync failed:', error);
-      }
     }
   }
 
@@ -645,15 +573,9 @@ export class SyncManager {
       this.syncService = null;
       this.currentTask = null;
 
-      if (DEBUG_ENABLED) {
-        console.log('[Sync Manager] Sync data cleared');
-      }
 
       return { success: true };
     } catch (error) {
-      if (DEBUG_ENABLED) {
-        console.error('[Sync Manager] Failed to clear sync data:', error);
-      }
       return { success: false };
     }
   }
@@ -697,9 +619,6 @@ export class SyncManager {
     this.taskQueue = [];
     this.isProcessing = false;
     
-    if (DEBUG_ENABLED) {
-      console.log('[Sync Manager] Stopped');
-    }
   }
 
   /**

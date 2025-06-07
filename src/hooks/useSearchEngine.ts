@@ -19,7 +19,6 @@ export function useSearchEngine() {
         searchEngine: engineId,
       });
     } catch (error) {
-      console.error('切换搜索引擎失败:', error);
     }
   }, [updateSettings]);
 

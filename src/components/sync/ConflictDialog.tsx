@@ -250,7 +250,6 @@ export function ConflictDialog({
         onClose();
       }
     } catch (error) {
-      console.error('Failed to resolve conflict:', error);
     } finally {
       setIsResolving(false);
     }

@@ -26,9 +26,7 @@ export function GradientPreview({
     try {
       await navigator.clipboard.writeText(`background: ${gradientCSS};`);
       // TODO: 添加成功提示
-      console.log('CSS已复制到剪贴板');
     } catch (error) {
-      console.error('复制失败:', error);
     }
   };
 

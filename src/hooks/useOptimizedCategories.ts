@@ -46,7 +46,6 @@ export const useCategorySwitch = ({ categories, categoriesLoading }: UseCategory
           setIsInitialized(true);
         });
       } catch (error) {
-        console.error('加载选中分类失败:', error);
         // 出错时也选择第一个分类
         if (categories.length > 0) {
           const firstCategoryId = categories[0].id;
@@ -84,7 +83,6 @@ export const useCategorySwitch = ({ categories, categoriesLoading }: UseCategory
         await saveSelectedCategoryId(categoryId);
       }
     } catch (error) {
-      console.error('保存选中分类失败:', error);
       // 即使保存失败也要更新UI状态
       startTransition(() => {
         setSelectedCategoryId(categoryId);

@@ -18,11 +18,9 @@ function fixPaths() {
       content = content.replace(/href="\/assets\//g, 'href="./assets/');
       
       fs.writeFileSync(filePath, content);
-      console.log(`✅ Fixed paths in ${file}`);
     }
   });
   
-  console.log('✅ Post-build processing completed');
 }
 
 fixPaths();

@@ -52,7 +52,6 @@ export function generateGradientCSS(gradient: BackgroundSettings['gradient']): s
         return `linear-gradient(135deg, ${colorStops})`;
     }
   } catch (error) {
-    console.warn('生成渐变CSS失败:', error);
     return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
   }
 }

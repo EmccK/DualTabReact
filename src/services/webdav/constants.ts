@@ -175,11 +175,6 @@ export const BROWSERS = {
 } as const;
 
 /**
- * 调试模式标识
- */
-export const DEBUG_ENABLED = true; // 强制启用调试日志
-
-/**
  * 日志级别
  */
 export const LOG_LEVELS = {

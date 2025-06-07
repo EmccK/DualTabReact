@@ -266,13 +266,11 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
         };
         await onSave(newBookmarkData);
       } else {
-        console.warn('缺少保存回调函数');
       }
       
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('保存书签失败:', error);
     }
   };
 
@@ -342,7 +340,6 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
             }));
           })
           .catch(error => {
-            console.error('图片处理失败:', error);
             // 如果处理失败，直接使用原图
             setFormData(prev => ({ 
               ...prev, 

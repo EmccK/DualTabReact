@@ -123,7 +123,6 @@ class SimpleIconCache {
           this.set(url, size, faviconUrl);
         }
       } catch (error) {
-        console.warn(`预加载图标失败: ${url}`, error);
       }
     });
 

@@ -9,7 +9,6 @@ import type {
   SyncDataPackage, 
   SyncMetadata 
 } from './types';
-import { DEBUG_ENABLED } from './constants';
 import { generateDataHash, verifyDataIntegrity, detectTimestampTrap } from './metadata';
 
 /**
@@ -30,14 +29,6 @@ export async function detectConflict(
   localData: SyncDataPackage | null,
   remoteData: SyncDataPackage | null
 ): Promise<ConflictDetectionResult> {
-  if (DEBUG_ENABLED) {
-    console.log('[Conflict Resolver] Detecting conflicts:', {
-      hasLocal: !!localData,
-      hasRemote: !!remoteData,
-      localTimestamp: localData?.metadata.localTimestamp,
-      remoteTimestamp: remoteData?.metadata.remoteTimestamp,
-    });
-  }
 
   // 情况1: 没有远程数据，使用本地数据
   if (!remoteData) {
@@ -195,12 +186,6 @@ export async function resolveConflict(
   resolution: ConflictResolution,
   localDevice: any
 ): Promise<SyncDataPackage> {
-  if (DEBUG_ENABLED) {
-    console.log('[Conflict Resolver] Resolving conflict:', {
-      type: conflictInfo.type,
-      resolution,
-    });
-  }
 
   switch (resolution) {
     case 'use_local':
@@ -225,10 +210,6 @@ export async function resolveConflict(
  * 合并数据
  */
 async function mergeData(localData: any, remoteData: any): Promise<any> {
-  if (DEBUG_ENABLED) {
-    console.log('[Conflict Resolver] Merging data');
-  }
-
   // 合并书签分类
   const mergedCategories = mergeCategories(localData.categories || [], remoteData.categories || []);
   
@@ -458,9 +439,6 @@ export async function validateResolution(
     
     return calculatedHash === resolvedData.metadata.dataHash;
   } catch (error) {
-    if (DEBUG_ENABLED) {
-      console.error('[Conflict Resolver] Resolution validation failed:', error);
-    }
     return false;
   }
 }

@@ -140,7 +140,6 @@ export class RandomImageService {
 
       return wallpapers;
     } catch (error) {
-      console.error('批量获取随机壁纸失败:', error);
       return wallpapers;
     }
   }

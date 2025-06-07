@@ -129,7 +129,6 @@ export function useCacheManager() {
       // 可选：重新加载统计以更新最近访问记录
       // await loadStats();
     } catch (err) {
-      console.error('Failed to record cache access:', err);
     }
   }, []);
 

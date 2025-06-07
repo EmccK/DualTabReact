@@ -158,7 +158,6 @@ export async function migrateBookmarksToUniqueIds(): Promise<OperationResult<Boo
       if (!saveResult.success) {
         return saveResult;
       }
-      console.log('书签迁移完成，已为所有书签添加唯一ID');
     }
 
     return { success: true, data: bookmarks };

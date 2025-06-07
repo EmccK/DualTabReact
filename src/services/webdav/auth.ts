@@ -3,7 +3,6 @@
  * 处理Basic认证和Bearer token认证
  */
 
-import { DEBUG_ENABLED } from './constants';
 
 /**
  * 认证类型
@@ -49,10 +48,6 @@ export function createBasicAuthHeader(username: string, password: string): strin
   const credentials = `${username}:${password}`;
   const encoded = base64Encode(credentials);
   
-  if (DEBUG_ENABLED) {
-    console.log('[WebDAV Auth] Created Basic auth header for user:', username);
-  }
-  
   return `Basic ${encoded}`;
 }
 
@@ -64,10 +59,6 @@ export function createBearerAuthHeader(token: string): string {
     throw new Error('Token不能为空');
   }
 
-  if (DEBUG_ENABLED) {
-    console.log('[WebDAV Auth] Created Bearer auth header');
-  }
-  
   return `Bearer ${token}`;
 }
 
@@ -206,11 +197,7 @@ export async function clearAuthCache(): Promise<void> {
       'auth_token',
     ]);
     
-    if (DEBUG_ENABLED) {
-      console.log('[WebDAV Auth] Auth cache cleared');
-    }
   } catch (error) {
-    console.error('[WebDAV Auth] Failed to clear auth cache:', error);
     throw error;
   }
 }
@@ -242,19 +229,8 @@ export async function testAuthConfig(
     // 2xx状态码表示认证成功
     const isSuccess = response.status >= 200 && response.status < 300;
     
-    if (DEBUG_ENABLED) {
-      console.log('[WebDAV Auth] Auth test result:', {
-        url: serverUrl,
-        status: response.status,
-        success: isSuccess,
-      });
-    }
-    
     return isSuccess;
   } catch (error) {
-    if (DEBUG_ENABLED) {
-      console.error('[WebDAV Auth] Auth test failed:', error);
-    }
     return false;
   }
 }

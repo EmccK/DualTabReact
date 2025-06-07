@@ -71,7 +71,6 @@ const OfficialIcon: React.FC<OfficialIconProps> = ({
     if (nextIndex < fallbackUrls.length) {
       setFallbackIndex(nextIndex);
       setCurrentUrl(fallbackUrls[nextIndex]);
-      console.log(`尝试备用图标 ${nextIndex + 1}/${fallbackUrls.length}: ${fallbackUrls[nextIndex]}`);
       return;
     }
 

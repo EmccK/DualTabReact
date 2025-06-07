@@ -76,7 +76,6 @@ export function RandomImageGallery({
     try {
       await fetchRandomWallpaper(selectedCategory, selectedTheme);
     } catch (error) {
-      console.error('获取随机图片失败:', error);
     }
   };
 
@@ -85,7 +84,6 @@ export function RandomImageGallery({
     try {
       await fetchRandomWallpapers(6, selectedCategory, selectedTheme);
     } catch (error) {
-      console.error('批量获取随机图片失败:', error);
     }
   };
 
@@ -133,7 +131,6 @@ export function RandomImageGallery({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('下载图片失败:', error);
       alert('下载失败，请重试');
     }
   };

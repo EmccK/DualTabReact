@@ -54,7 +54,6 @@ export async function getCurrentTab(): Promise<TabDetectionResult> {
       data: tabInfo
     };
   } catch (error) {
-    console.error('获取当前标签页失败:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

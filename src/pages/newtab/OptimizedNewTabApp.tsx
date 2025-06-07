@@ -147,7 +147,6 @@ function OptimizedNewTabApp() {
     try {
       await setNetworkMode(mode)
     } catch (error) {
-      console.error('网络模式切换失败:', error)
     }
   }, [setNetworkMode])
 
@@ -181,7 +180,6 @@ function OptimizedNewTabApp() {
       const imageUrl = backgroundImageManager.getImageUrl(image, 'large')
       await setOnlineImageBackground(image, imageUrl)
     } catch (error) {
-      console.error('刷新背景图片失败:', error)
     }
   }, [settings.background.type, settings.background.randomImageCategory, setOnlineImageBackground])
 
@@ -222,7 +220,6 @@ function OptimizedNewTabApp() {
     try {
       await addBookmark(bookmarkData)
     } catch (error) {
-      console.error('添加书签失败:', error)
       throw error
     }
   }, [addBookmark])
@@ -232,7 +229,6 @@ function OptimizedNewTabApp() {
     try {
       await updateBookmark(bookmarkId, updates)
     } catch (error) {
-      console.error('更新书签失败:', error)
       throw error
     }
   }, [updateBookmark])
@@ -315,7 +311,6 @@ function OptimizedNewTabApp() {
     try {
       await reorderBookmarks(reorderedBookmarks)
     } catch (error) {
-      console.error('书签重排序失败:', error)
     }
   }, [reorderBookmarks])
 
@@ -350,10 +345,8 @@ function OptimizedNewTabApp() {
           await handleCategorySelect(newSelectedId)
         }
       } else {
-        console.error('分类删除失败:', result.error)
       }
     } catch (error) {
-      console.error('分类删除失败:', error)
     }
   }, [deleteCategory, selectedCategoryId, hideContextMenu, categories, handleCategorySelect])
 
@@ -369,10 +362,8 @@ function OptimizedNewTabApp() {
       const result = await addCategory(categoryData)
       if (result.success) {
       } else {
-        console.error('分类添加失败:', result.error)
       }
     } catch (error) {
-      console.error('分类添加失败:', error)
     }
   }, [addCategory])
 
@@ -382,10 +373,8 @@ function OptimizedNewTabApp() {
       const result = await updateCategory(id, updates)
       if (result.success) {
       } else {
-        console.error('分类更新失败:', result.error)
       }
     } catch (error) {
-      console.error('分类更新失败:', error)
     }
   }, [updateCategory])
 
@@ -395,10 +384,8 @@ function OptimizedNewTabApp() {
       const result = await reorderCategories(reorderedCategories)
       if (result.success) {
       } else {
-        console.error('分类重排序失败:', result.error)
       }
     } catch (error) {
-      console.error('分类重排序失败:', error)
     }
   }, [reorderCategories])
 
@@ -410,11 +397,9 @@ function OptimizedNewTabApp() {
         if (result.success) {
           hideContextMenu()
         } else {
-          console.error('书签删除失败:', result.error)
           alert('删除书签失败，请重试')
         }
       } catch (error) {
-        console.error('书签删除失败:', error)
         alert('删除书签失败，请重试')
       }
     }
