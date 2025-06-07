@@ -59,3 +59,22 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
 
   return debouncedCallback;
 }
+
+/**
+ * 创建防抖函数
+ * 
+ * @param func 要防抖的函数
+ * @param delay 延迟时间（毫秒）
+ * @returns 防抖后的函数
+ */
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): T {
+  let timeoutId: NodeJS.Timeout;
+  
+  return ((...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  }) as T;
+}

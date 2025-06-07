@@ -10,7 +10,7 @@ export { useClock } from './useClock';
 export { useNetworkMode } from './useNetworkMode';
 export { useSearchEngine } from './useSearchEngine';
 export { useSettings } from './useSettings';
-export { useDebounce, useDebouncedCallback } from './useDebounce';
+export { useDebounce, useDebouncedCallback, debounce } from './useDebounce';
 export { 
   useDataChangeDetection,
   useBookmarkDataChangeDetection,

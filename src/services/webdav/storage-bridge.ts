@@ -79,6 +79,27 @@ export class StorageBridge {
     bookmarks: any[];
     settings: any;
   }): Promise<void> {
+    await this.saveLocalDataSilently(data);
+    
+    // 触发通知
+    this.notifyStorageChange({
+      categories: true,
+      bookmarks: true,
+      settings: true,
+    });
+
+    // 触发自动同步数据变更事件
+    this.triggerAutoSyncDataChange();
+  }
+
+  /**
+   * 静默保存数据到本地存储（不触发通知）
+   */
+  private async saveLocalDataSilently(data: {
+    categories: any[];
+    bookmarks: any[];
+    settings: any;
+  }): Promise<void> {
     try {
       // 基础数据
       const storageData: Record<string, any> = {
@@ -155,13 +176,6 @@ export class StorageBridge {
       } catch (error) {
         // 忽略清除缓存失败的错误
       }
-
-
-      // 触发存储变化事件，通知UI更新
-      this.notifyStorageChange(storageData);
-
-      // 触发自动同步数据变更事件
-      this.triggerAutoSyncDataChange();
     } catch (error) {
       throw error;
     }
@@ -172,7 +186,24 @@ export class StorageBridge {
    */
   async restoreFromSyncPackage(syncPackage: SyncDataPackage): Promise<void> {
     try {
-      await this.saveLocalData({
+      // 先加载当前数据进行对比
+      const currentData = await this.loadLocalData();
+      
+      // 检查数据是否真的发生了变化（忽略时间戳）
+      const changes = this.detectDataChanges(currentData, {
+        categories: syncPackage.categories,
+        bookmarks: syncPackage.bookmarks,
+        settings: syncPackage.settings,
+      });
+
+      // 如果没有实质性变化，只更新同步元数据
+      if (!changes.hasChanges) {
+        await this.saveSyncMetadata(syncPackage.metadata);
+        return;
+      }
+
+      // 有变化时才保存数据
+      await this.saveLocalDataSilently({
         categories: syncPackage.categories,
         bookmarks: syncPackage.bookmarks,
         settings: syncPackage.settings,
@@ -180,6 +211,14 @@ export class StorageBridge {
 
       // 保存同步元数据
       await this.saveSyncMetadata(syncPackage.metadata);
+
+      // 只通知实际发生变化的部分
+      this.notifyStorageChange({
+        categories: changes.categoriesChanged,
+        bookmarks: changes.bookmarksChanged,
+        settings: changes.settingsChanged,
+        webdav_sync: true
+      });
 
     } catch (error) {
       throw error;
@@ -619,6 +658,176 @@ export class StorageBridge {
     } catch (error) {
       return false;
     }
+  }
+
+  /**
+   * 检测数据变化（忽略时间戳字段）
+   */
+  private detectDataChanges(
+    currentData: { categories: any[]; bookmarks: any[]; settings: any },
+    newData: { categories: any[]; bookmarks: any[]; settings: any }
+  ): {
+    hasChanges: boolean;
+    categoriesChanged: boolean;
+    bookmarksChanged: boolean;
+    settingsChanged: boolean;
+  } {
+    try {
+      // 比较分类数据
+      const categoriesChanged = !this.deepEqual(
+        this.normalizeForComparison(currentData.categories),
+        this.normalizeForComparison(newData.categories)
+      );
+
+      // 比较书签数据
+      const bookmarksChanged = !this.deepEqual(
+        this.normalizeForComparison(currentData.bookmarks),
+        this.normalizeForComparison(newData.bookmarks)
+      );
+
+      // 比较设置数据（排除时间戳相关字段）
+      const settingsChanged = !this.deepEqual(
+        this.normalizeSettingsForComparison(currentData.settings),
+        this.normalizeSettingsForComparison(newData.settings)
+      );
+
+      return {
+        hasChanges: categoriesChanged || bookmarksChanged || settingsChanged,
+        categoriesChanged,
+        bookmarksChanged,
+        settingsChanged,
+      };
+    } catch (error) {
+      // 比较出错时认为有变化，确保数据安全
+      return {
+        hasChanges: true,
+        categoriesChanged: true,
+        bookmarksChanged: true,
+        settingsChanged: true,
+      };
+    }
+  }
+
+  /**
+   * 规范化数据用于比较（移除时间戳字段）
+   */
+  private normalizeForComparison(data: any): any {
+    if (!data) return data;
+
+    if (Array.isArray(data)) {
+      return data.map(item => this.normalizeForComparison(item));
+    }
+
+    if (typeof data === 'object') {
+      const normalized: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        // 跳过时间戳相关字段
+        if (this.isTimestampField(key)) {
+          continue;
+        }
+        normalized[key] = this.normalizeForComparison(value);
+      }
+      return normalized;
+    }
+
+    return data;
+  }
+
+  /**
+   * 规范化设置数据用于比较
+   */
+  private normalizeSettingsForComparison(settings: any): any {
+    if (!settings) return settings;
+
+    const normalized = { ...settings };
+    
+    // 移除所有时间戳相关字段
+    delete normalized.last_updated;
+    delete normalized.timestamp;
+    delete normalized.sync_time_record;
+    
+    // 如果有sync_time_record，只保留非时间戳字段
+    if (settings.sync_time_record) {
+      const { lastUploadTime, lastDownloadTime, ...otherFields } = settings.sync_time_record;
+      if (Object.keys(otherFields).length > 0) {
+        normalized.sync_time_record = otherFields;
+      }
+    }
+
+    return this.normalizeForComparison(normalized);
+  }
+
+  /**
+   * 检查是否为时间戳字段
+   */
+  private isTimestampField(fieldName: string): boolean {
+    const timestampFields = [
+      'timestamp',
+      'last_updated',
+      'lastUpdated',
+      'created_at',
+      'createdAt',
+      'modified_at',
+      'modifiedAt',
+      'updated_at',
+      'updatedAt',
+      'lastUploadTime',
+      'lastDownloadTime',
+      'lastSyncTime',
+      'last_sync_time'
+    ];
+    return timestampFields.includes(fieldName);
+  }
+
+  /**
+   * 深度比较两个对象是否相等
+   */
+  private deepEqual(obj1: any, obj2: any): boolean {
+    if (obj1 === obj2) {
+      return true;
+    }
+
+    if (obj1 == null || obj2 == null) {
+      return obj1 === obj2;
+    }
+
+    if (typeof obj1 !== typeof obj2) {
+      return false;
+    }
+
+    if (Array.isArray(obj1) !== Array.isArray(obj2)) {
+      return false;
+    }
+
+    if (Array.isArray(obj1)) {
+      if (obj1.length !== obj2.length) {
+        return false;
+      }
+      for (let i = 0; i < obj1.length; i++) {
+        if (!this.deepEqual(obj1[i], obj2[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    if (typeof obj1 === 'object') {
+      const keys1 = Object.keys(obj1);
+      const keys2 = Object.keys(obj2);
+      
+      if (keys1.length !== keys2.length) {
+        return false;
+      }
+
+      for (const key of keys1) {
+        if (!keys2.includes(key) || !this.deepEqual(obj1[key], obj2[key])) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return obj1 === obj2;
   }
 }
 

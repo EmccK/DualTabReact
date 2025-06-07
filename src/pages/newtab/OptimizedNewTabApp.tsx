@@ -14,7 +14,7 @@ import { SearchBox } from '@/components/search'
 import { ClockDisplay } from '@/components/clock'
 import { AttributionOverlay } from '@/components/background'
 
-import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground, useBookmarkDataChangeDetection, useSettingsDataChangeDetection } from '@/hooks'
+import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground, useBookmarkDataChangeDetection, useSettingsDataChangeDetection, debounce } from '@/hooks'
 import { useCategorySwitch, usePageLoadState } from '@/hooks/useOptimizedCategories'
 import { useRuntimeMessageListener } from '@/hooks/webdav/use-storage-listener'
 import { backgroundImageManager } from '@/services/background'
@@ -121,25 +121,37 @@ function OptimizedNewTabApp() {
     return () => clearTimeout(timer);
   }, []); // 只在组件初始加载时执行一次
 
-  // 监听存储变化，手动刷新所有数据
+  // 监听存储变化，手动刷新所有数据（添加防抖处理和数据变化检测）
   useRuntimeMessageListener(
     (message) => message.action === 'storage_changed',
-    (message) => {
-      const { changes } = message.data || {};
-      if (changes && Array.isArray(changes)) {
-        // 直接调用reload方法，确保数据刷新
-        if (changes.includes('bookmarks')) {
-          reloadBookmarks();
+    useCallback(
+      debounce((message) => {
+        const { changes } = message.data || {};
+        if (changes && (Array.isArray(changes) || typeof changes === 'object')) {
+          // 处理数组格式的changes
+          if (Array.isArray(changes)) {
+            if (changes.includes('bookmarks')) {
+              reloadBookmarks();
+            }
+            if (changes.includes('categories')) {
+              reloadCategories();
+            }
+          } 
+          // 处理对象格式的changes（WebDAV同步标记）
+          else if (typeof changes === 'object') {
+            // 只有真实发生变化的数据才刷新
+            if (changes.bookmarks && changes.bookmarks !== false) {
+              reloadBookmarks();
+            }
+            if (changes.categories && changes.categories !== false) {
+              reloadCategories();
+            }
+            // 如果标记为webdav_sync但没有具体变化，则不刷新
+          }
         }
-        if (changes.includes('categories')) {
-          reloadCategories();
-        }
-        
-        if (changes.includes('app_settings') || changes.includes('networkMode') || changes.includes('selectedCategoryId')) {
-          // 设置变化会通过 useSettings hook 的存储监听器自动处理
-        }
-      }
-    }
+      }, 300),
+      [reloadBookmarks, reloadCategories]
+    )
   );
 
   // 网络模式切换处理
