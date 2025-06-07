@@ -20,24 +20,67 @@ export class StorageBridge {
     settings: any;
   }> {
     try {
+      // 加载所有设置相关的键
       const result = await chrome.storage.local.get([
         'categories',
         'bookmarks', 
-        'settings'
+        'settings',
+        'app_settings',       // 应用主设置
+        'networkMode',        // 网络模式
+        'selectedCategoryId', // 选中的分类
+        'auto_sync_config',   // 自动同步配置
+        'sync_time_record',   // 同步时间记录
+        'auto_switch_settings', // 背景自动切换设置
+        'auto_switch_state',  // 背景自动切换状态
+        'cache_settings',     // 缓存设置
+        'cache_stats'         // 缓存统计
       ]);
+
+      // 合并所有设置到一个统一的settings对象中
+      const mergedSettings = {
+        // 兼容旧版本的settings
+        ...(result.settings || {}),
+        // 新版本的app_settings
+        app_settings: result.app_settings || null,
+        // 网络模式
+        networkMode: result.networkMode || 'external',
+        // 选中的分类ID
+        selectedCategoryId: result.selectedCategoryId || null,
+        // 自动同步配置
+        auto_sync_config: result.auto_sync_config || null,
+        // 同步时间记录
+        sync_time_record: result.sync_time_record || null,
+        // 背景自动切换设置
+        auto_switch_settings: result.auto_switch_settings || null,
+        // 背景自动切换状态
+        auto_switch_state: result.auto_switch_state || null,
+        // 缓存设置
+        cache_settings: result.cache_settings || null,
+        // 缓存统计
+        cache_stats: result.cache_stats || null,
+      };
 
       if (DEBUG_ENABLED) {
         console.log('[Storage Bridge] Loaded local data:', {
           categoriesCount: result.categories?.length || 0,
           bookmarksCount: result.bookmarks?.length || 0,
           hasSettings: !!result.settings,
+          hasAppSettings: !!result.app_settings,
+          networkMode: result.networkMode,
+          selectedCategoryId: result.selectedCategoryId,
+          hasAutoSyncConfig: !!result.auto_sync_config,
+          hasSyncTimeRecord: !!result.sync_time_record,
+          hasAutoSwitchSettings: !!result.auto_switch_settings,
+          hasAutoSwitchState: !!result.auto_switch_state,
+          hasCacheSettings: !!result.cache_settings,
+          hasCacheStats: !!result.cache_stats,
         });
       }
 
       return {
         categories: result.categories || [],
         bookmarks: result.bookmarks || [],
-        settings: result.settings || {},
+        settings: mergedSettings,
       };
     } catch (error) {
       if (DEBUG_ENABLED) {
@@ -56,13 +99,71 @@ export class StorageBridge {
     settings: any;
   }): Promise<void> {
     try {
-      const storageData = {
+      // 基础数据
+      const storageData: Record<string, any> = {
         categories: data.categories,
         bookmarks: data.bookmarks,
-        settings: data.settings,
         // 添加同步时间戳
         last_updated: Date.now(),
       };
+
+      // 处理设置数据：分离不同类型的设置到对应的存储键
+      if (data.settings) {
+        // 保存app_settings
+        if (data.settings.app_settings) {
+          storageData.app_settings = data.settings.app_settings;
+        }
+        
+        // 保存networkMode
+        if (data.settings.networkMode !== undefined) {
+          storageData.networkMode = data.settings.networkMode;
+        }
+        
+        // 保存selectedCategoryId
+        if (data.settings.selectedCategoryId !== undefined) {
+          storageData.selectedCategoryId = data.settings.selectedCategoryId;
+        }
+        
+        // 保存auto_sync_config
+        if (data.settings.auto_sync_config !== undefined) {
+          storageData.auto_sync_config = data.settings.auto_sync_config;
+        }
+        
+        // 保存sync_time_record
+        if (data.settings.sync_time_record !== undefined) {
+          storageData.sync_time_record = data.settings.sync_time_record;
+        }
+        
+        // 保存auto_switch_settings
+        if (data.settings.auto_switch_settings !== undefined) {
+          storageData.auto_switch_settings = data.settings.auto_switch_settings;
+        }
+        
+        // 保存auto_switch_state
+        if (data.settings.auto_switch_state !== undefined) {
+          storageData.auto_switch_state = data.settings.auto_switch_state;
+        }
+        
+        // 保存cache_settings
+        if (data.settings.cache_settings !== undefined) {
+          storageData.cache_settings = data.settings.cache_settings;
+        }
+        
+        // 保存cache_stats
+        if (data.settings.cache_stats !== undefined) {
+          storageData.cache_stats = data.settings.cache_stats;
+        }
+        
+        // 保存其余设置到通用的settings键
+        const { 
+          app_settings, networkMode, selectedCategoryId, auto_sync_config, sync_time_record,
+          auto_switch_settings, auto_switch_state, cache_settings, cache_stats,
+          ...otherSettings 
+        } = data.settings;
+        if (Object.keys(otherSettings).length > 0) {
+          storageData.settings = otherSettings;
+        }
+      }
 
       await chrome.storage.local.set(storageData);
 
@@ -71,6 +172,16 @@ export class StorageBridge {
           categoriesCount: data.categories.length,
           bookmarksCount: data.bookmarks.length,
           hasSettings: !!data.settings,
+          hasAppSettings: !!data.settings?.app_settings,
+          networkMode: data.settings?.networkMode,
+          selectedCategoryId: data.settings?.selectedCategoryId,
+          hasAutoSyncConfig: !!data.settings?.auto_sync_config,
+          hasSyncTimeRecord: !!data.settings?.sync_time_record,
+          hasAutoSwitchSettings: !!data.settings?.auto_switch_settings,
+          hasAutoSwitchState: !!data.settings?.auto_switch_state,
+          hasCacheSettings: !!data.settings?.cache_settings,
+          hasCacheStats: !!data.settings?.cache_stats,
+          storageKeys: Object.keys(storageData),
         });
       }
 
