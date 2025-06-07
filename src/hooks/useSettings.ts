@@ -123,13 +123,34 @@ export function useSettings(): SettingsContextType {
       }
     };
 
+    // 监听来自background script的存储变化消息
+    const handleRuntimeMessage = (message: any, _sender: any, _sendResponse: any) => {
+      if (message.action === 'storage_changed' && message.data?.changes) {
+        const changes = message.data.changes;
+        if (changes.includes(SETTINGS_KEY)) {
+          loadSettings();
+        }
+      }
+      return false; // 不需要异步响应
+    };
+
     if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
       chrome.storage.onChanged.addListener(handleStorageChange);
-      return () => {
-        chrome.storage.onChanged.removeListener(handleStorageChange);
-      };
     }
-  }, []);
+
+    if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener(handleRuntimeMessage);
+    }
+
+    return () => {
+      if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      }
+      if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+        chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
+      }
+    };
+  }, [loadSettings]);
 
   return {
     settings,

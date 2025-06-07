@@ -93,11 +93,34 @@ export function useStorageListener(options: UseStorageListenerOptions = {}) {
   }, [area, keys, onChange, debug]);
 
   /**
+   * 处理来自background script的存储变化消息
+   */
+  const handleRuntimeMessage = useCallback((message: any, _sender: any, _sendResponse: any) => {
+    if (message.action === 'storage_changed' && message.data?.changes) {
+      const changes = message.data.changes;
+      const affectedKeys = keys.length === 0 ? changes : keys.filter(key => changes.includes(key));
+
+      if (affectedKeys.length > 0) {
+        setChangedKeys(affectedKeys);
+        setLastChangeTime(Date.now());
+
+        if (onChange && debug) {
+          console.log('[Storage Listener] Runtime message triggered storage change:', affectedKeys);
+        }
+      }
+    }
+    return false; // 不需要异步响应
+  }, [keys, onChange, debug]);
+
+  /**
    * 设置监听器
    */
   useEffect(() => {
     listenerRef.current = handleStorageChange;
     chrome.storage.onChanged.addListener(handleStorageChange);
+
+    // 同时监听来自background script的消息
+    chrome.runtime.onMessage.addListener(handleRuntimeMessage);
 
     if (debug) {
       console.log('[Storage Listener] Started listening to storage changes', {
@@ -110,11 +133,12 @@ export function useStorageListener(options: UseStorageListenerOptions = {}) {
       if (listenerRef.current) {
         chrome.storage.onChanged.removeListener(listenerRef.current);
       }
+      chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
       if (debug) {
         console.log('[Storage Listener] Stopped listening to storage changes');
       }
     };
-  }, [handleStorageChange, keys, area, debug]);
+  }, [handleStorageChange, handleRuntimeMessage, keys, area, debug]);
 
   return {
     changedKeys,

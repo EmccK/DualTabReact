@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>存储同步测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebDAV存储同步测试</h1>
+        <p>这个页面用于测试WebDAV同步完成后书签和分类列表的自动刷新功能。</p>
+        
+        <div class="section">
+            <h3>1. 模拟存储变化</h3>
+            <button onclick="simulateStorageChange()">模拟Chrome存储变化</button>
+            <button onclick="simulateRuntimeMessage()">模拟Background消息</button>
+            <button onclick="simulateWebDAVSync()">模拟WebDAV同步</button>
+            <div id="storage-status" class="status info">等待操作...</div>
+        </div>
+
+        <div class="section">
+            <h3>2. 当前存储数据</h3>
+            <button onclick="loadCurrentData()">刷新数据</button>
+            <div id="current-data" class="log">点击"刷新数据"查看当前存储内容</div>
+        </div>
+
+        <div class="section">
+            <h3>3. 事件监听日志</h3>
+            <button onclick="clearLog()">清空日志</button>
+            <div id="event-log" class="log">等待事件...</div>
+        </div>
+    </div>
+
+    <script>
+        // 日志函数
+        function log(message) {
+            const logDiv = document.getElementById('event-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('event-log').innerHTML = '';
+        }
+
+        function setStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('storage-status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        // 监听Chrome存储变化
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.onChanged.addListener((changes, areaName) => {
+                log(`Chrome存储变化: ${areaName}, 键: ${Object.keys(changes).join(', ')}`);
+            });
+        }
+
+        // 监听Runtime消息
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                if (message.action === 'storage_changed') {
+                    log(`收到storage_changed消息: ${JSON.stringify(message.data)}`);
+                } else if (message.action === 'sync_status_changed') {
+                    log(`收到sync_status_changed消息: ${JSON.stringify(message.data)}`);
+                }
+                return false;
+            });
+        }
+
+        // 模拟Chrome存储变化
+        async function simulateStorageChange() {
+            try {
+                const testData = {
+                    bookmarks: [
+                        { id: 'test1', title: '测试书签1', url: 'https://example.com' }
+                    ],
+                    categories: [
+                        { id: 'cat1', name: '测试分类', bookmarks: ['test1'] }
+                    ]
+                };
+                
+                await chrome.storage.local.set(testData);
+                setStatus('Chrome存储变化已触发', 'success');
+                log('已触发Chrome存储变化事件');
+            } catch (error) {
+                setStatus(`错误: ${error.message}`, 'error');
+                log(`错误: ${error.message}`);
+            }
+        }
+
+        // 模拟Runtime消息
+        function simulateRuntimeMessage() {
+            try {
+                const message = {
+                    action: 'storage_changed',
+                    data: {
+                        changes: ['bookmarks', 'categories'],
+                        timestamp: Date.now()
+                    }
+                };
+                
+                // 发送消息给自己
+                chrome.runtime.sendMessage(message);
+                setStatus('Runtime消息已发送', 'success');
+                log('已发送storage_changed消息');
+            } catch (error) {
+                setStatus(`错误: ${error.message}`, 'error');
+                log(`错误: ${error.message}`);
+            }
+        }
+
+        // 模拟WebDAV同步
+        async function simulateWebDAVSync() {
+            try {
+                // 模拟同步数据
+                const syncData = {
+                    bookmarks: [
+                        { id: 'sync1', title: '同步书签1', url: 'https://synced1.com' },
+                        { id: 'sync2', title: '同步书签2', url: 'https://synced2.com' }
+                    ],
+                    categories: [
+                        { id: 'synccat1', name: '同步分类1', bookmarks: ['sync1'] },
+                        { id: 'synccat2', name: '同步分类2', bookmarks: ['sync2'] }
+                    ],
+                    app_settings: {
+                        preferences: { searchEngine: 'google' }
+                    }
+                };
+
+                // 保存数据（模拟StorageBridge.saveLocalData）
+                await chrome.storage.local.set(syncData);
+                
+                // 发送storage_changed消息（模拟StorageBridge.notifyStorageChange）
+                const message = {
+                    action: 'storage_changed',
+                    data: {
+                        changes: Object.keys(syncData),
+                        timestamp: Date.now()
+                    }
+                };
+                chrome.runtime.sendMessage(message);
+                
+                setStatus('WebDAV同步模拟完成', 'success');
+                log('已模拟完整的WebDAV同步流程');
+            } catch (error) {
+                setStatus(`错误: ${error.message}`, 'error');
+                log(`错误: ${error.message}`);
+            }
+        }
+
+        // 加载当前数据
+        async function loadCurrentData() {
+            try {
+                const keys = ['bookmarks', 'categories', 'app_settings'];
+                const data = await chrome.storage.local.get(keys);
+                
+                const dataDiv = document.getElementById('current-data');
+                dataDiv.textContent = JSON.stringify(data, null, 2);
+                
+                log('已刷新当前存储数据');
+            } catch (error) {
+                log(`加载数据错误: ${error.message}`);
+            }
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('load', () => {
+            log('测试页面已加载，开始监听事件...');
+            loadCurrentData();
+        });
+    </script>
+</body>
+</html>

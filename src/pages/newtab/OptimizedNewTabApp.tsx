@@ -16,6 +16,7 @@ import { AttributionOverlay } from '@/components/background'
 
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground, useBookmarkDataChangeDetection, useSettingsDataChangeDetection } from '@/hooks'
 import { useCategorySwitch, usePageLoadState } from '@/hooks/useOptimizedCategories'
+import { useRuntimeMessageListener } from '@/hooks/webdav/use-storage-listener'
 import { backgroundImageManager } from '@/services/background'
 import type { BackgroundImageFilters } from '@/types/background'
 import { Plus, RefreshCw, Settings, Edit, Trash2 } from 'lucide-react'
@@ -106,13 +107,11 @@ function OptimizedNewTabApp() {
   useEffect(() => {
     const triggerAutoSync = async () => {
       try {
-        console.log('[NewTab] Page loaded, triggering auto sync...');
         const response = await chrome.runtime.sendMessage({
           action: 'auto_sync_tab_opened'
         });
-        console.log('[NewTab] Auto sync triggered:', response);
       } catch (error) {
-        console.log('[NewTab] Failed to trigger auto sync:', error);
+        // 忽略错误
       }
     };
 
@@ -121,6 +120,27 @@ function OptimizedNewTabApp() {
     
     return () => clearTimeout(timer);
   }, []); // 只在组件初始加载时执行一次
+
+  // 监听存储变化，手动刷新所有数据
+  useRuntimeMessageListener(
+    (message) => message.action === 'storage_changed',
+    (message) => {
+      const { changes } = message.data || {};
+      if (changes && Array.isArray(changes)) {
+        // 直接调用reload方法，确保数据刷新
+        if (changes.includes('bookmarks')) {
+          reloadBookmarks();
+        }
+        if (changes.includes('categories')) {
+          reloadCategories();
+        }
+        
+        if (changes.includes('app_settings') || changes.includes('networkMode') || changes.includes('selectedCategoryId')) {
+          // 设置变化会通过 useSettings hook 的存储监听器自动处理
+        }
+      }
+    }
+  );
 
   // 网络模式切换处理
   const handleNetworkModeChange = useCallback(async (mode: NetworkMode) => {

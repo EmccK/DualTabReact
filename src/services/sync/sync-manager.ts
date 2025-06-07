@@ -422,19 +422,29 @@ export class SyncManager {
           break;
 
         case 'download':
+          console.log('[SYNC_MANAGER_DEBUG] Executing download task');
           const downloadResult = await this.syncService.download();
           if (downloadResult.data) {
+            console.log('[SYNC_MANAGER_DEBUG] Download has data, restoring from sync package');
             await this.storage.restoreFromSyncPackage(downloadResult.data);
+            console.log('[SYNC_MANAGER_DEBUG] Restore from sync package completed');
+          } else {
+            console.log('[SYNC_MANAGER_DEBUG] Download has no data');
           }
           result = downloadResult;
           break;
 
         default:
+          console.log('[SYNC_MANAGER_DEBUG] Executing sync task');
           result = await this.syncService.sync(localData, task.options);
-          
+
           // 如果同步结果包含数据，更新本地存储
           if (result.status === 'success' && (result as any).data) {
+            console.log('[SYNC_MANAGER_DEBUG] Sync has data, restoring from sync package');
             await this.storage.restoreFromSyncPackage((result as any).data);
+            console.log('[SYNC_MANAGER_DEBUG] Restore from sync package completed');
+          } else {
+            console.log('[SYNC_MANAGER_DEBUG] Sync has no data or failed');
           }
           break;
       }

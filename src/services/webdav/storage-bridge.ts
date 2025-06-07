@@ -166,6 +166,17 @@ export class StorageBridge {
       }
 
       await chrome.storage.local.set(storageData);
+      console.log('[STORAGE_BRIDGE_DEBUG] Data saved to chrome.storage.local:', Object.keys(storageData));
+
+      // 清除存储缓存，确保后续读取获取最新数据
+      console.log('[STORAGE_BRIDGE_DEBUG] Clearing storage cache');
+      try {
+        const { clearCache } = await import('@/utils/storage');
+        clearCache();
+        console.log('[STORAGE_BRIDGE_DEBUG] Storage cache cleared');
+      } catch (error) {
+        console.error('[STORAGE_BRIDGE_DEBUG] Failed to clear cache:', error);
+      }
 
       if (DEBUG_ENABLED) {
         console.log('[Storage Bridge] Saved local data:', {
@@ -186,8 +197,9 @@ export class StorageBridge {
       }
 
       // 触发存储变化事件，通知UI更新
+      console.log('[STORAGE_BRIDGE_DEBUG] About to notify storage change for keys:', Object.keys(storageData));
       this.notifyStorageChange(storageData);
-      
+
       // 触发自动同步数据变更事件
       this.triggerAutoSyncDataChange();
     } catch (error) {
@@ -203,6 +215,11 @@ export class StorageBridge {
    */
   async restoreFromSyncPackage(syncPackage: SyncDataPackage): Promise<void> {
     try {
+      console.log('[STORAGE_BRIDGE_DEBUG] Starting restore from sync package');
+      console.log('[STORAGE_BRIDGE_DEBUG] Categories count:', syncPackage.categories?.length || 0);
+      console.log('[STORAGE_BRIDGE_DEBUG] Bookmarks count:', syncPackage.bookmarks?.length || 0);
+      console.log('[STORAGE_BRIDGE_DEBUG] Settings:', syncPackage.settings ? 'present' : 'missing');
+
       if (DEBUG_ENABLED) {
         console.log('[Storage Bridge] Restoring from sync package...');
         console.log('[Storage Bridge] Categories count:', syncPackage.categories?.length || 0);
@@ -210,19 +227,23 @@ export class StorageBridge {
         console.log('[Storage Bridge] Settings:', syncPackage.settings ? 'present' : 'missing');
       }
 
+      console.log('[STORAGE_BRIDGE_DEBUG] About to call saveLocalData');
       await this.saveLocalData({
         categories: syncPackage.categories,
         bookmarks: syncPackage.bookmarks,
         settings: syncPackage.settings,
       });
+      console.log('[STORAGE_BRIDGE_DEBUG] saveLocalData completed');
 
       // 保存同步元数据
       await this.saveSyncMetadata(syncPackage.metadata);
 
+      console.log('[STORAGE_BRIDGE_DEBUG] Successfully restored from sync package');
       if (DEBUG_ENABLED) {
         console.log('[Storage Bridge] Successfully restored from sync package');
       }
     } catch (error) {
+      console.error('[STORAGE_BRIDGE_DEBUG] Failed to restore from sync package:', error);
       if (DEBUG_ENABLED) {
         console.error('[Storage Bridge] Failed to restore from sync package:', error);
       }
@@ -572,36 +593,39 @@ export class StorageBridge {
    */
   private notifyStorageChange(data: any): void {
     try {
-      // 通过Chrome消息系统通知其他页面
-      chrome.runtime.sendMessage({
+      const message = {
         action: 'storage_changed',
         data: {
           changes: Object.keys(data),
           timestamp: Date.now(),
         },
-      }).catch(() => {
-        // 忽略没有接收者的错误
+      };
+
+      console.log('[STORAGE_BRIDGE_DEBUG] Sending storage_changed message:', message);
+
+      // 通过Chrome消息系统通知其他页面
+      chrome.runtime.sendMessage(message).catch((error) => {
+        console.log('[STORAGE_BRIDGE_DEBUG] Failed to send runtime message:', error);
       });
 
       // 在background script中，可能需要向所有tabs发送消息
       if (chrome.tabs) {
         chrome.tabs.query({}, (tabs) => {
+          console.log('[STORAGE_BRIDGE_DEBUG] Found tabs:', tabs.length);
           tabs.forEach((tab) => {
             if (tab.id && tab.url && tab.url.startsWith('chrome-extension://')) {
-              chrome.tabs.sendMessage(tab.id, {
-                action: 'storage_changed',
-                data: {
-                  changes: Object.keys(data),
-                  timestamp: Date.now(),
-                },
-              }).catch(() => {
-                // 忽略发送失败的情况
+              console.log('[STORAGE_BRIDGE_DEBUG] Sending message to tab:', tab.id, tab.url);
+              chrome.tabs.sendMessage(tab.id, message).catch((error) => {
+                console.log('[STORAGE_BRIDGE_DEBUG] Failed to send tab message:', error);
               });
             }
           });
         });
+      } else {
+        console.log('[STORAGE_BRIDGE_DEBUG] chrome.tabs not available');
       }
     } catch (error) {
+      console.error('[STORAGE_BRIDGE_DEBUG] Error in notifyStorageChange:', error);
       // 忽略通知错误，不影响主要功能
       if (DEBUG_ENABLED) {
         console.warn('[Storage Bridge] Failed to notify storage change:', error);

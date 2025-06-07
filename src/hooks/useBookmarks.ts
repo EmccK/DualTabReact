@@ -18,20 +18,32 @@ export function useBookmarks() {
   const [saving, setSaving] = useState(false);
 
   const loadBookmarkList = useCallback(async () => {
+    console.log('[BOOKMARKS_DEBUG] Starting to load bookmarks');
     setLoading(true);
     setError(null);
-    
+
     try {
+      // 清除缓存，确保获取最新数据
+      console.log('[BOOKMARKS_DEBUG] Clearing cache before loading');
+      const { clearCache } = await import('@/utils/storage');
+      clearCache();
+
       const migrateResult = await migrateBookmarksToUniqueIds();
+      console.log('[BOOKMARKS_DEBUG] Migrate result:', migrateResult.success, migrateResult.data?.length);
+
       if (migrateResult.success && migrateResult.data) {
+        console.log('[BOOKMARKS_DEBUG] Setting bookmarks:', migrateResult.data.length);
         setBookmarks(migrateResult.data);
       } else {
+        console.log('[BOOKMARKS_DEBUG] Failed to load bookmarks:', migrateResult.error);
         setError(migrateResult.error || '加载书签失败');
       }
     } catch (err) {
+      console.error('[BOOKMARKS_DEBUG] Error loading bookmarks:', err);
       setError(err instanceof Error ? err.message : '未知错误');
     } finally {
       setLoading(false);
+      console.log('[BOOKMARKS_DEBUG] Load bookmarks completed');
     }
   }, []);
 
@@ -194,6 +206,50 @@ export function useBookmarks() {
 
   useEffect(() => {
     loadBookmarkList();
+  }, [loadBookmarkList]);
+
+  // 监听存储变化，自动重新加载书签
+  useEffect(() => {
+    console.log('[BOOKMARKS_DEBUG] Setting up storage listeners');
+
+    const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+      console.log('[BOOKMARKS_DEBUG] Chrome storage change detected:', { areaName, changes: Object.keys(changes) });
+      if (areaName === 'local' && changes.bookmarks) {
+        console.log('[BOOKMARKS_DEBUG] Bookmarks changed via Chrome storage, reloading...');
+        loadBookmarkList();
+      }
+    };
+
+    // 监听来自background script的存储变化消息
+    const handleRuntimeMessage = (message: any, _sender: any, _sendResponse: any) => {
+      console.log('[BOOKMARKS_DEBUG] Runtime message received:', message);
+      if (message.action === 'storage_changed' && message.data?.changes) {
+        const changes = message.data.changes;
+        console.log('[BOOKMARKS_DEBUG] Storage changed message, changes:', changes);
+        if (changes.includes('bookmarks')) {
+          console.log('[BOOKMARKS_DEBUG] Bookmarks included in changes, reloading...');
+          loadBookmarkList();
+        } else {
+          console.log('[BOOKMARKS_DEBUG] Bookmarks not in changes, ignoring');
+        }
+      }
+      return false; // 不需要异步响应
+    };
+
+    // 添加存储变化监听器
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    console.log('[BOOKMARKS_DEBUG] Chrome storage listener added');
+
+    // 添加runtime消息监听器
+    chrome.runtime.onMessage.addListener(handleRuntimeMessage);
+    console.log('[BOOKMARKS_DEBUG] Runtime message listener added');
+
+    // 清理函数
+    return () => {
+      console.log('[BOOKMARKS_DEBUG] Cleaning up listeners');
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+      chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
+    };
   }, [loadBookmarkList]);
 
   return {

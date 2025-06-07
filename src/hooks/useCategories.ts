@@ -29,39 +29,95 @@ export function useCategories(): UseCategoriesReturn {
 
   const loadCategoriesData = useCallback(async () => {
     try {
+      console.log('[CATEGORIES_DEBUG] Starting to load categories data');
       setLoading(true)
       setError(null)
-      
+
+      // 清除缓存，确保获取最新数据
+      console.log('[CATEGORIES_DEBUG] Clearing cache before loading');
+      const { clearCache } = await import('@/utils/storage');
+      clearCache();
+
       const result = await loadCategories()
+      console.log('[CATEGORIES_DEBUG] Load categories result:', result.success, result.data?.length);
+
       if (result.success) {
         let categoriesData = result.data || []
-        
+
         // 如果没有分类，创建默认分类
         if (categoriesData.length === 0) {
+          console.log('[CATEGORIES_DEBUG] No categories found, creating default category');
           const defaultCategory = createBookmarkCategory('默认分类', '📁', '#3B82F6')
           const saveResult = await saveCategories([defaultCategory])
           if (saveResult.success) {
             categoriesData = [defaultCategory]
           }
         }
-        
+
+        console.log('[CATEGORIES_DEBUG] Setting categories:', categoriesData.length);
         setCategories(categoriesData)
       } else {
+        console.log('[CATEGORIES_DEBUG] Failed to load categories:', result.error);
         setError(result.error || '加载分类失败')
         setCategories([])
       }
     } catch (err) {
-      console.error('加载分类数据失败:', err)
+      console.error('[CATEGORIES_DEBUG] Error loading categories:', err);
       setError('加载分类数据失败')
       setCategories([])
     } finally {
       setLoading(false)
+      console.log('[CATEGORIES_DEBUG] Load categories completed');
     }
   }, [])
 
   useEffect(() => {
     loadCategoriesData()
   }, [loadCategoriesData])
+
+  // 监听存储变化，自动重新加载分类
+  useEffect(() => {
+    console.log('[CATEGORIES_DEBUG] Setting up storage listeners');
+
+    const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+      console.log('[CATEGORIES_DEBUG] Chrome storage change detected:', { areaName, changes: Object.keys(changes) });
+      if (areaName === 'local' && changes.categories) {
+        console.log('[CATEGORIES_DEBUG] Categories changed via Chrome storage, reloading...');
+        loadCategoriesData();
+      }
+    };
+
+    // 监听来自background script的存储变化消息
+    const handleRuntimeMessage = (message: any, _sender: any, _sendResponse: any) => {
+      console.log('[CATEGORIES_DEBUG] Runtime message received:', message);
+      if (message.action === 'storage_changed' && message.data?.changes) {
+        const changes = message.data.changes;
+        console.log('[CATEGORIES_DEBUG] Storage changed message, changes:', changes);
+        if (changes.includes('categories')) {
+          console.log('[CATEGORIES_DEBUG] Categories included in changes, reloading...');
+          loadCategoriesData();
+        } else {
+          console.log('[CATEGORIES_DEBUG] Categories not in changes, ignoring');
+        }
+      }
+      return false; // 不需要异步响应
+    };
+
+    // 添加存储变化监听器
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    console.log('[CATEGORIES_DEBUG] Chrome storage listener added');
+
+    // 添加runtime消息监听器
+    chrome.runtime.onMessage.addListener(handleRuntimeMessage);
+    console.log('[CATEGORIES_DEBUG] Runtime message listener added');
+
+    // 清理函数
+    return () => {
+      console.log('[CATEGORIES_DEBUG] Cleaning up listeners');
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+      chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
+    };
+  }, [loadCategoriesData]);
 
   // 添加分类
   const handleAddCategory = useCallback(async (
