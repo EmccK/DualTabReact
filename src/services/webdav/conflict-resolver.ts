@@ -10,6 +10,7 @@ import type {
   SyncMetadata 
 } from './types';
 import { generateDataHash, verifyDataIntegrity, detectTimestampTrap } from './metadata';
+import { DEFAULT_CATEGORY_ID } from '../../models/BookmarkCategory';
 
 /**
  * 冲突检测结果
@@ -249,6 +250,34 @@ function mergeCategories(localCategories: any[], remoteCategories: any[]): any[]
     if (!remoteCategory.id || !remoteCategory.name) return;
     
     const categoryName = remoteCategory.name.toLowerCase().trim();
+    
+    // 特殊处理默认分类：统一使用固定ID
+    if (categoryName === '默认分类' || remoteCategory.id === DEFAULT_CATEGORY_ID) {
+      const existingDefaultCategory = categoryMap.get(DEFAULT_CATEGORY_ID);
+      
+      if (existingDefaultCategory) {
+        // 合并默认分类，保持固定ID
+        const merged = existingDefaultCategory.updatedAt > remoteCategory.updatedAt 
+          ? existingDefaultCategory 
+          : { ...remoteCategory, id: DEFAULT_CATEGORY_ID };
+        
+        // 合并书签列表（去重）
+        const mergedBookmarks = Array.from(new Set([
+          ...(existingDefaultCategory.bookmarks || []),
+          ...(remoteCategory.bookmarks || [])
+        ]));
+        
+        merged.bookmarks = mergedBookmarks;
+        categoryMap.set(DEFAULT_CATEGORY_ID, merged);
+      } else {
+        // 添加远程默认分类，使用固定ID
+        categoryMap.set(DEFAULT_CATEGORY_ID, { ...remoteCategory, id: DEFAULT_CATEGORY_ID });
+        nameToIdMap.set(categoryName, DEFAULT_CATEGORY_ID);
+      }
+      return;
+    }
+    
+    // 普通分类的合并逻辑
     const existingCategoryId = nameToIdMap.get(categoryName);
     
     if (existingCategoryId) {

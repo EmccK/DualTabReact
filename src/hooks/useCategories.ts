@@ -8,7 +8,7 @@ import {
   deleteCategory,
   reorderCategories 
 } from '@/utils/storage'
-import { createBookmarkCategory } from '@/models/BookmarkCategory'
+import { createBookmarkCategory, createDefaultCategory, migrateDefaultCategory } from '@/models/BookmarkCategory'
 import { loadBookmarks, saveBookmarks } from '@/utils/storage'
 
 interface UseCategoriesReturn {
@@ -41,9 +41,17 @@ export function useCategories(): UseCategoriesReturn {
       if (result.success) {
         let categoriesData = result.data || []
 
+        // 迁移旧的默认分类到固定ID
+        const migrationResult = migrateDefaultCategory(categoriesData)
+        if (migrationResult.migrated) {
+          categoriesData = migrationResult.categories
+          // 保存迁移后的数据
+          await saveCategories(categoriesData)
+        }
+
         // 如果没有分类，创建默认分类
         if (categoriesData.length === 0) {
-          const defaultCategory = createBookmarkCategory('默认分类', '📁', '#3B82F6')
+          const defaultCategory = createDefaultCategory()
           const saveResult = await saveCategories([defaultCategory])
           if (saveResult.success) {
             categoriesData = [defaultCategory]

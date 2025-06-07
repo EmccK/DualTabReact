@@ -27,10 +27,32 @@ export function createBookmarkCategory(
 }
 
 /**
+ * 默认分类固定ID
+ */
+export const DEFAULT_CATEGORY_ID = 'default_category';
+
+/**
  * 生成分类唯一ID
  */
 export function generateCategoryId(): string {
   return `cat_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+}
+
+/**
+ * 创建默认分类
+ */
+export function createDefaultCategory(): BookmarkCategory {
+  const now = Date.now();
+  
+  return {
+    id: DEFAULT_CATEGORY_ID,
+    name: '默认分类',
+    icon: '📁',
+    color: '#3B82F6',
+    bookmarks: [],
+    createdAt: now,
+    updatedAt: now
+  };
 }
 
 /**
@@ -268,7 +290,44 @@ export const DEFAULT_CATEGORIES = {
 } as const;
 
 /**
- * 创建默认分类
+ * 检查是否为默认分类
+ */
+export function isDefaultCategory(category: BookmarkCategory | { id: string; name: string }): boolean {
+  return category.id === DEFAULT_CATEGORY_ID || 
+         (category.name && category.name.trim() === '默认分类');
+}
+
+/**
+ * 迁移旧的默认分类到新的固定ID
+ */
+export function migrateDefaultCategory(categories: BookmarkCategory[]): {
+  categories: BookmarkCategory[];
+  migrated: boolean;
+} {
+  let migrated = false;
+  const result = categories.slice();
+  
+  // 查找现有的默认分类
+  const defaultCategoryIndex = result.findIndex(cat => 
+    cat.name && cat.name.trim() === '默认分类' && cat.id !== DEFAULT_CATEGORY_ID
+  );
+  
+  if (defaultCategoryIndex !== -1) {
+    // 找到旧的默认分类，更新其ID
+    const oldDefaultCategory = result[defaultCategoryIndex];
+    result[defaultCategoryIndex] = {
+      ...oldDefaultCategory,
+      id: DEFAULT_CATEGORY_ID,
+      updatedAt: Date.now()
+    };
+    migrated = true;
+  }
+  
+  return { categories: result, migrated };
+}
+
+/**
+ * 创建默认分类集合
  */
 export function createDefaultCategories(): BookmarkCategory[] {
   return Object.values(DEFAULT_CATEGORIES).map(template => 
