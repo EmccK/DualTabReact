@@ -3,15 +3,13 @@
 
 import { initializeSyncManager } from '../services/sync/sync-manager';
 
-// 调试模式检查
-const DEBUG = true // 强制启用调试日志
-
 
 // 初始化WebDAV同步管理器
 let syncManager = null;
 try {
   syncManager = initializeSyncManager();
-} catch (error) {
+} catch {
+  // Ignore sync manager initialization errors
 }
 
 // 监听来自content script或popup的消息
@@ -131,7 +129,8 @@ chrome.runtime.onInstalled.addListener((details) => {
         enabled: false,
         autoSyncInterval: 30,
       }
-    }).catch((error) => {
+    }).catch(() => {
+      // Ignore storage errors
     })
   } else if (details.reason === 'update') {
     // 清理过期的同步锁和状态
@@ -144,7 +143,8 @@ chrome.runtime.onInstalled.addListener((details) => {
       try {
         syncManager.stop()
         syncManager = initializeSyncManager()
-      } catch (error) {
+      } catch {
+        // Ignore sync manager restart errors
       }
     }
   }
@@ -160,8 +160,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       // 触发自动同步调度器的新标签页事件
       chrome.runtime.sendMessage({
         action: 'auto_sync_tab_opened'
-      }).then(response => {
-      }).catch((error) => {
+      }).catch(() => {
+        // Ignore auto sync message errors
       })
     }
   }

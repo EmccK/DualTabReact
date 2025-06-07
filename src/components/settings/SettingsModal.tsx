@@ -50,7 +50,8 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
       await Promise.all(savePromises);
       
       onOpenChange(false);
-    } catch (error) {
+    } catch {
+      // Ignore settings save errors
     }
   };
 

@@ -57,7 +57,6 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   const [urlError, setUrlError] = useState('');
   const [showImageScaler, setShowImageScaler] = useState(false);
   const [originalImageData, setOriginalImageData] = useState('');
-  const [originalImageUrl, setOriginalImageUrl] = useState('');
 
   const [imageScale, setImageScale] = useState<ImageScaleConfig>({
     scale: 1,
@@ -123,12 +122,6 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       const originalImage = bookmark.originalIconImage || bookmark.iconImage || bookmark.iconData || bookmark.icon || '';
       setOriginalImageData(originalImage);
       
-      // 判断是否是URL图片
-      if (originalImage && (originalImage.startsWith('http://') || originalImage.startsWith('https://'))) {
-        setOriginalImageUrl(originalImage);
-      } else {
-        setOriginalImageUrl('');
-      }
       
       if (bookmark.imageScale) {
         setImageScale(bookmark.imageScale);
@@ -145,7 +138,6 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
     } else {
       // 新增模式：清空数据
       setOriginalImageData('');
-      setOriginalImageUrl('');
       setImageScale({
         scale: 1,
         offsetX: 0,
@@ -265,12 +257,12 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
           imageScale: bookmarkData.imageScale,
         };
         await onSave(newBookmarkData);
-      } else {
       }
       
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
+      // Ignore bookmark save errors
     }
   };
 
@@ -339,7 +331,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
               imageScale: defaultConfig 
             }));
           })
-          .catch(error => {
+          .catch(() => {
             // 如果处理失败，直接使用原图
             setFormData(prev => ({ 
               ...prev, 
@@ -377,7 +369,6 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
       setOriginalImageData(url);
     } else {
       // 这是base64图片（本地上传的）
-      setOriginalImageUrl('');
       setOriginalImageData(url);
     }
 

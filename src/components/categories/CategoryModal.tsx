@@ -56,7 +56,8 @@ export function CategoryModal({ isOpen, onClose, mode, category, onSave, onUpdat
         await onUpdate(category.id, formData)
       }
       onClose()
-    } catch (error) {
+    } catch {
+      // Ignore category save errors
     } finally {
       setLoading(false)
     }

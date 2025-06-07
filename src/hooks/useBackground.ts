@@ -30,7 +30,7 @@ export function useBackground() {
     const { type, gradient, image, display } = backgroundSettings;
     const { fillMode, opacity, blur, brightness } = display;
 
-    let styles: BackgroundStyles = {
+    const styles: BackgroundStyles = {
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',

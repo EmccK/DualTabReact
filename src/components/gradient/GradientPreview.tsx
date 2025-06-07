@@ -26,7 +26,8 @@ export function GradientPreview({
     try {
       await navigator.clipboard.writeText(`background: ${gradientCSS};`);
       // TODO: 添加成功提示
-    } catch (error) {
+    } catch {
+      // Ignore clipboard copy errors
     }
   };
 

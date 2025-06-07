@@ -48,7 +48,7 @@ export function BackgroundSettings() {
       await setOnlineImageBackground(image, imageUrl);
       // 自动切换到随机图片类型
       setSelectedType('random');
-    } catch (error) {
+    } catch {
       alert('设置随机图片背景失败，请重试');
     }
   };

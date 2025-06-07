@@ -20,8 +20,7 @@ import {
   createSyncDataPackage, 
   createDeviceInfo, 
   validateSyncDataPackage,
-  repairMetadata,
-  getMetadataSummary 
+  repairMetadata
 } from './metadata';
 import { 
   detectConflict, 

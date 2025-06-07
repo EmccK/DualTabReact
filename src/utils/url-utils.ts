@@ -56,6 +56,7 @@ export function formatUrl(url: string): string {
   
   try {
     window.open(formattedUrl, target, 'noopener,noreferrer')
-  } catch (error) {
+  } catch {
+    // Ignore window.open errors
   }
 }

@@ -78,7 +78,8 @@ export function CategorySidebar({
 
     try {
       await onReorderCategories(newCategories)
-    } catch (error) {
+    } catch {
+      // Ignore category reorder errors
     }
   }, [categories, onReorderCategories])
 

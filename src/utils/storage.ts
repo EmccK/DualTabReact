@@ -241,7 +241,7 @@ export async function addCategory(categoryData: Omit<BookmarkCategory, 'id' | 'c
     } else {
       return { success: false, error: saveResult.error }
     }
-  } catch (error) {
+  } catch {
     return { success: false, error: '添加分类失败' }
   }
 }

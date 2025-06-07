@@ -100,7 +100,7 @@ export const IconSelector: React.FC<IconSelectorProps> = ({
       );
 
       onIconUpload(compressedData);
-    } catch (error) {
+    } catch {
       alert('图片上传失败，请重试');
     } finally {
       setIsUploading(false);

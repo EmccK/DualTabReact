@@ -122,7 +122,8 @@ class SimpleIconCache {
         if (faviconUrl) {
           this.set(url, size, faviconUrl);
         }
-      } catch (error) {
+      } catch {
+        // Ignore favicon fetch errors
       }
     });
 

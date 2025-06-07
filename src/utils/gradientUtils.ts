@@ -51,7 +51,7 @@ export function generateGradientCSS(gradient: BackgroundSettings['gradient']): s
       default:
         return `linear-gradient(135deg, ${colorStops})`;
     }
-  } catch (error) {
+  } catch {
     return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
   }
 }

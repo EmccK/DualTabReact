@@ -75,7 +75,8 @@ export function RandomImageGallery({
   const handleFetchSingle = async () => {
     try {
       await fetchRandomWallpaper(selectedCategory, selectedTheme);
-    } catch (error) {
+    } catch {
+      // Ignore fetch errors
     }
   };
 
@@ -83,7 +84,8 @@ export function RandomImageGallery({
   const handleFetchMultiple = async () => {
     try {
       await fetchRandomWallpapers(6, selectedCategory, selectedTheme);
-    } catch (error) {
+    } catch {
+      // Ignore fetch errors
     }
   };
 
@@ -130,7 +132,7 @@ export function RandomImageGallery({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch {
       alert('下载失败，请重试');
     }
   };
