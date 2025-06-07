@@ -181,7 +181,7 @@ export class AutoSyncScheduler {
       if (namespace !== 'local') return;
       
       // 检查是否是书签或分类数据变化
-      const relevantKeys = ['categories', 'bookmarks', 'settings'];
+      const relevantKeys = ['categories', 'bookmarks', 'settings', 'selectedCategoryId'];
       const hasRelevantChanges = relevantKeys.some(key => changes[key]);
       
       if (hasRelevantChanges) {
