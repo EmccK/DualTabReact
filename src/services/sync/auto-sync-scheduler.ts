@@ -45,7 +45,7 @@ interface AutoSyncConfig {
 const DEFAULT_AUTO_SYNC_CONFIG: AutoSyncConfig = {
   enableAutoUpload: true,
   enableAutoDownload: true,
-  uploadDelay: 2000, // 2秒延迟
+  uploadDelay: 500, // 500毫秒延迟
   downloadOnTabOpen: true,
 };
 

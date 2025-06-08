@@ -57,7 +57,7 @@ export function AutoSyncConfig({ className = '', onConfigChange }: AutoSyncConfi
   const [config, setConfig] = useState<AutoSyncConfig>({
     enableAutoUpload: true,
     enableAutoDownload: true,
-    uploadDelay: 2000,
+    uploadDelay: 500,
     downloadOnTabOpen: true,
   });
   
@@ -260,7 +260,7 @@ export function AutoSyncConfig({ className = '', onConfigChange }: AutoSyncConfi
                     max="10000"
                     step="500"
                     value={config.uploadDelay}
-                    onChange={(e) => updateConfig('uploadDelay', parseInt(e.target.value) || 2000)}
+                    onChange={(e) => updateConfig('uploadDelay', parseInt(e.target.value) || 500)}
                     className="w-20 h-6 text-xs"
                   />
                   <span className="text-muted-foreground text-xs">ms</span>
