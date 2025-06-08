@@ -149,6 +149,52 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
     }
   }, [bookmark, mode, isOpen, selectedCategoryName]);
 
+  // 键盘事件处理
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 回车键提交（在标题或URL输入框中）
+      if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        // 检查是否在标题或URL相关输入框中
+        if (target.id === 'title' || target.id === 'url' || target.id === 'externalUrl' || target.id === 'internalUrl') {
+          e.preventDefault();
+
+          // 内部提交函数
+          const submitForm = async () => {
+            // 验证表单
+            if (!formData.title?.trim()) {
+              return;
+            }
+
+            // 在网络模式下验证至少有一个URL
+            if (networkMode) {
+              if (!formData.externalUrl?.trim() && !formData.internalUrl?.trim()) {
+                setUrlError('请至少填写一个网址');
+                return;
+              }
+            } else {
+              if (!formData.url?.trim()) {
+                return;
+              }
+            }
+
+            // 如果验证通过，调用原始的handleSubmit函数
+            await handleSubmit();
+          };
+
+          submitForm();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, formData.title, formData.url, formData.externalUrl, formData.internalUrl, networkMode]);
+
   // 验证URL格式
   const validateUrl = (url: string): boolean => {
     try {

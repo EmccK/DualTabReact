@@ -99,17 +99,37 @@ export function QuickBookmarkForm({
   // 键盘快捷键支持
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 内部验证函数
+      const isFormValid = () => {
+        const validation = validateQuickBookmarkForm(formData);
+        setValidationErrors(validation.errors);
+        return validation.isValid;
+      };
+
+      // 内部提交函数
+      const submitForm = async () => {
+        if (!isFormValid()) {
+          return;
+        }
+        await onSubmit(formData);
+      };
+
       // Ctrl+Enter 或 Cmd+Enter 快速提交
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
-        if (!isSubmitting && validateForm()) {
-          // 创建一个模拟的表单提交事件
-          const mockEvent = {
-            preventDefault: () => {},
-            target: null,
-            currentTarget: null
-          } as React.FormEvent;
-          handleSubmit(mockEvent);
+        if (!isSubmitting) {
+          submitForm();
+        }
+      }
+      // 单独的回车键提交（在标题或URL输入框中）
+      else if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        // 检查是否在标题或URL输入框中
+        if (target.id === 'bookmark-name' || target.id === 'bookmark-url') {
+          e.preventDefault();
+          if (!isSubmitting) {
+            submitForm();
+          }
         }
       }
     };
@@ -118,7 +138,7 @@ export function QuickBookmarkForm({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isSubmitting, validateForm, handleSubmit]);
+  }, [isSubmitting, formData, onSubmit]);
 
   // 清除错误当值改变时
   useEffect(() => {
