@@ -8,7 +8,6 @@ import { Card } from '../../../ui/card';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
-import { Switch } from '../../../ui/switch';
 import { Separator } from '../../../ui/separator';
 import { Badge } from '../../../ui/badge';
 import { Alert } from '../../../ui/alert';
@@ -101,8 +100,16 @@ export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: 
    * 保存配置 - 统一保存函数
    */
   const handleSaveAllConfig = async () => {
+    // 自动启用同步
+    const configWithSync = { ...formData, enabled: true };
+    setFormData(configWithSync);
+    
     // 保存WebDAV基本配置
-    await actions.updateConfig(formData);
+    const success = await actions.updateConfig(configWithSync);
+    if (success) {
+      // 启用自动同步
+      await actions.enableAutoSync(true, configWithSync.autoSyncInterval);
+    }
     
     // 同时保存智能同步配置
     if (autoSyncConfig) {
@@ -123,7 +130,15 @@ export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: 
    * 保存基本配置（原来的保存按钮）
    */
   const handleSaveConfig = async () => {
-    await actions.updateConfig(formData);
+    // 自动启用同步
+    const configWithSync = { ...formData, enabled: true };
+    setFormData(configWithSync);
+    
+    const success = await actions.updateConfig(configWithSync);
+    if (success) {
+      // 启用自动同步
+      await actions.enableAutoSync(true, configWithSync.autoSyncInterval);
+    }
   };
 
   /**
@@ -134,20 +149,6 @@ export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: 
   };
 
 
-  /**
-   * 启用WebDAV同步
-   */
-  const handleEnableSync = async (enabled: boolean) => {
-    const updatedConfig = { ...formData, enabled };
-    setFormData(updatedConfig);
-    await actions.updateConfig(updatedConfig);
-    
-    if (enabled) {
-      await actions.enableAutoSync(true, formData.autoSyncInterval);
-    } else {
-      await actions.enableAutoSync(false);
-    }
-  };
 
   /**
    * 执行手动同步
@@ -155,7 +156,6 @@ export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: 
   const handleManualSync = async () => {
     await actions.sync({
       createBackup: true, // 默认创建备份
-      conflictResolution: 'manual', // 默认手动处理冲突
     });
   };
 
@@ -188,57 +188,57 @@ export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: 
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* 标题和状态 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-semibold">WebDAV同步</h3>
+      {/* 标题 */}
+      <div>
+        <h3 className="text-base font-semibold">WebDAV同步</h3>
+        <div className="flex items-center justify-between">
           <p className="text-xs text-gray-600 dark:text-gray-400">
             通过WebDAV服务同步您的书签和设置
           </p>
-        </div>
-        <div className="flex items-center space-x-2">
+          {/* 同步状态指示器 */}
           {state.isConfigured && (
-            <Badge variant={state.syncStatus === 'success' ? 'default' : 'secondary'} className="text-xs">
-              {state.syncStatus === 'idle' && '空闲'}
-              {state.syncStatus === 'syncing' && '同步中'}
-              {state.syncStatus === 'success' && '同步成功'}
-              {state.syncStatus === 'error' && '同步失败'}
-              {state.syncStatus === 'conflict' && '存在冲突'}
-            </Badge>
+            <div className="flex items-center space-x-2">
+              {state.syncStatus === 'idle' && (
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <span className="text-xs text-gray-500">空闲</span>
+                </div>
+              )}
+              {state.syncStatus === 'syncing' && (
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-blue-600">同步中...</span>
+                </div>
+              )}
+              {state.syncStatus === 'success' && (
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs text-green-600">同步成功</span>
+                </div>
+              )}
+              {state.syncStatus === 'error' && (
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="text-xs text-red-600">同步失败</span>
+                </div>
+              )}
+            </div>
           )}
-          <Switch
-            checked={formData.enabled}
-            onCheckedChange={handleEnableSync}
-            disabled={!state.isConfigured || state.isLoading}
-          />
         </div>
+        
+        {/* 操作反馈提示 */}
+        {state.error && (
+          <Alert variant="destructive" className="mt-3">
+            <span>{state.error}</span>
+          </Alert>
+        )}
+
+        {state.message && !state.error && (
+          <Alert className="mt-3">
+            <span>{state.message}</span>
+          </Alert>
+        )}
       </div>
-
-      {/* 错误提示 */}
-      {state.error && (
-        <Alert variant="destructive">
-          <span>{state.error}</span>
-        </Alert>
-      )}
-
-      {/* 成功消息 */}
-      {state.message && !state.error && (
-        <Alert>
-          <span>{state.message}</span>
-        </Alert>
-      )}
-
-      {/* 冲突提示 */}
-      {state.hasConflict && (
-        <Alert variant="destructive">
-          <div className="flex items-center justify-between">
-            <span>检测到数据冲突，需要手动解决</span>
-            <Button size="sm" variant="outline">
-              解决冲突
-            </Button>
-          </div>
-        </Alert>
-      )}
 
       {/* 基本配置 */}
       <Card className="p-4">
