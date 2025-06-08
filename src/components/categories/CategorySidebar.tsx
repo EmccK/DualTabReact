@@ -5,11 +5,11 @@ import type { BookmarkSettings } from '@/types/settings'
 
 interface CategorySidebarProps {
   categories: BookmarkCategory[]
-  selectedCategoryId: string | null
-  onCategorySelect: (categoryId: string | null) => void
+  selectedCategoryName: string | null
+  onCategorySelect: (categoryName: string | null) => void
   onAddCategory: () => void
   onEditCategory: (category: BookmarkCategory) => void
-  onDeleteCategory: (categoryId: string) => void
+  onDeleteCategory: (categoryName: string) => void
   onReorderCategories: (reorderedCategories: BookmarkCategory[]) => void
   onCategoryContextMenu?: (category: BookmarkCategory, event: React.MouseEvent) => void
   loading?: boolean
@@ -18,42 +18,42 @@ interface CategorySidebarProps {
 
 export function CategorySidebar({
   categories,
-  selectedCategoryId,
+  selectedCategoryName,
   onCategorySelect,
   onAddCategory,
   onReorderCategories,
   onCategoryContextMenu,
   loading = false
 }: CategorySidebarProps) {
-  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null)
-  const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)
+  const [draggedCategoryName, setDraggedCategoryName] = useState<string | null>(null)
+  const [dragOverCategoryName, setDragOverCategoryName] = useState<string | null>(null)
   const draggedIndexRef = useRef<number>(-1)
   const dropTargetIndexRef = useRef<number>(-1)
 
-  const handleDragStart = useCallback((e: React.DragEvent, categoryId: string) => {
+  const handleDragStart = useCallback((e: React.DragEvent, categoryName: string) => {
     // 分类排序始终启用
-    setDraggedCategoryId(categoryId)
-    draggedIndexRef.current = categories.findIndex(cat => cat.id === categoryId)
+    setDraggedCategoryName(categoryName)
+    draggedIndexRef.current = categories.findIndex(cat => cat.name === categoryName)
     e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', categoryId)
+    e.dataTransfer.setData('text/plain', categoryName)
   }, [categories])
 
   const handleDragEnd = useCallback(() => {
-    setDraggedCategoryId(null)
-    setDragOverCategoryId(null)
+    setDraggedCategoryName(null)
+    setDragOverCategoryName(null)
     draggedIndexRef.current = -1
     dropTargetIndexRef.current = -1
   }, [])
 
-  const handleDragOver = useCallback((e: React.DragEvent, categoryId: string) => {
+  const handleDragOver = useCallback((e: React.DragEvent, categoryName: string) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     
-    if (draggedCategoryId && draggedCategoryId !== categoryId) {
-      setDragOverCategoryId(categoryId)
-      dropTargetIndexRef.current = categories.findIndex(cat => cat.id === categoryId)
+    if (draggedCategoryName && draggedCategoryName !== categoryName) {
+      setDragOverCategoryName(categoryName)
+      dropTargetIndexRef.current = categories.findIndex(cat => cat.name === categoryName)
     }
-  }, [draggedCategoryId, categories])
+  }, [draggedCategoryName, categories])
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
@@ -83,8 +83,8 @@ export function CategorySidebar({
     }
   }, [categories, onReorderCategories])
 
-  const handleCategoryClick = useCallback((categoryId: string) => {
-    onCategorySelect(categoryId)
+  const handleCategoryClick = useCallback((categoryName: string) => {
+    onCategorySelect(categoryName)
   }, [onCategorySelect])
 
 
@@ -118,30 +118,30 @@ export function CategorySidebar({
         {categories.map((category) => {
           return (
             <div
-              key={category.id}
+              key={category.name}
               data-context-target="category"
               draggable={true} // 分类排序始终启用
-              onDragStart={(e) => handleDragStart(e, category.id)}
+              onDragStart={(e) => handleDragStart(e, category.name)}
               onDragEnd={handleDragEnd}
-              onDragOver={(e) => handleDragOver(e, category.id)}
+              onDragOver={(e) => handleDragOver(e, category.name)}
               onDrop={handleDrop}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                handleCategoryClick(category.id)
+                handleCategoryClick(category.name)
               }}
               onContextMenu={(e) => handleCategoryContextMenu(e, category)}
               className={`relative z-10 group flex items-center space-x-2 px-3 py-2.5 cursor-pointer transition-all duration-200 ${
-                selectedCategoryId === category.id
+                selectedCategoryName === category.name
                   ? 'text-white shadow-lg'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
               } ${
-                draggedCategoryId === category.id ? 'opacity-50 scale-95' : ''
+                draggedCategoryName === category.name ? 'opacity-50 scale-95' : ''
               } ${
-                dragOverCategoryId === category.id ? 'bg-white/20 scale-105' : ''
+                dragOverCategoryName === category.name ? 'bg-white/20 scale-105' : ''
               } hover:cursor-grab active:cursor-grabbing`}
               style={{
-                backgroundColor: selectedCategoryId === category.id ? category.color : undefined,
+                backgroundColor: selectedCategoryName === category.name ? category.color : undefined,
                 pointerEvents: 'auto'  // 确保可以接收鼠标事件
               }}
             >

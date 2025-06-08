@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useState, useEffect, useTransition } from 'react';
-import { loadSelectedCategoryId, saveSelectedCategoryId } from '@/utils/storage';
+import { loadSelectedCategoryName, saveSelectedCategoryName } from '@/utils/storage';
 import type { BookmarkCategory } from '@/types';
 
 interface UseCategorySwitchProps {
@@ -13,7 +13,7 @@ interface UseCategorySwitchProps {
 }
 
 export const useCategorySwitch = ({ categories, categoriesLoading }: UseCategorySwitchProps) => {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -23,34 +23,34 @@ export const useCategorySwitch = ({ categories, categoriesLoading }: UseCategory
       if (categoriesLoading || categories.length === 0) return;
 
       try {
-        const result = await loadSelectedCategoryId();
-        let targetCategoryId: string | null = null;
+        const result = await loadSelectedCategoryName();
+        let targetCategoryName: string | null = null;
 
         if (result.success && result.data) {
           // 验证选中的分类是否仍然存在
-          const categoryExists = categories.find(cat => cat.id === result.data);
+          const categoryExists = categories.find(cat => cat.name === result.data);
           if (categoryExists) {
-            targetCategoryId = result.data;
+            targetCategoryName = result.data;
           }
         }
         
         // 如果没有有效的选中分类，选择第一个分类
-        if (!targetCategoryId && categories.length > 0) {
-          targetCategoryId = categories[0].id;
-          await saveSelectedCategoryId(targetCategoryId);
+        if (!targetCategoryName && categories.length > 0) {
+          targetCategoryName = categories[0].name;
+          await saveSelectedCategoryName(targetCategoryName);
         }
 
         // 使用transition来避免阻塞UI
         startTransition(() => {
-          setSelectedCategoryId(targetCategoryId);
+          setSelectedCategoryName(targetCategoryName);
           setIsInitialized(true);
         });
       } catch (error) {
         // 出错时也选择第一个分类
         if (categories.length > 0) {
-          const firstCategoryId = categories[0].id;
+          const firstCategoryName = categories[0].name;
           startTransition(() => {
-            setSelectedCategoryId(firstCategoryId);
+            setSelectedCategoryName(firstCategoryName);
             setIsInitialized(true);
           });
         }
@@ -61,37 +61,37 @@ export const useCategorySwitch = ({ categories, categoriesLoading }: UseCategory
   }, [categories, categoriesLoading]);
 
   // 分类选择处理
-  const handleCategorySelect = useCallback(async (categoryId: string | null) => {
+  const handleCategorySelect = useCallback(async (categoryName: string | null) => {
     try {
       // 如果传入null或者选择的分类不存在，选择第一个分类
-      if (!categoryId || !categories.find(cat => cat.id === categoryId)) {
+      if (!categoryName || !categories.find(cat => cat.name === categoryName)) {
         const firstCategory = categories.length > 0 ? categories[0] : null;
-        const selectedId = firstCategory?.id || null;
+        const selectedName = firstCategory?.name || null;
         
         startTransition(() => {
-          setSelectedCategoryId(selectedId);
+          setSelectedCategoryName(selectedName);
         });
         
-        if (selectedId) {
-          await saveSelectedCategoryId(selectedId);
+        if (selectedName) {
+          await saveSelectedCategoryName(selectedName);
         }
       } else {
         startTransition(() => {
-          setSelectedCategoryId(categoryId);
+          setSelectedCategoryName(categoryName);
         });
         
-        await saveSelectedCategoryId(categoryId);
+        await saveSelectedCategoryName(categoryName);
       }
     } catch (error) {
       // 即使保存失败也要更新UI状态
       startTransition(() => {
-        setSelectedCategoryId(categoryId);
+        setSelectedCategoryName(categoryName);
       });
     }
   }, [categories]);
 
   return {
-    selectedCategoryId,
+    selectedCategoryName,
     handleCategorySelect,
     isPending,
     isInitialized

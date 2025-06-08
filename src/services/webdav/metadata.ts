@@ -259,6 +259,112 @@ export async function createSyncDataPackage(
 }
 
 /**
+ * 验证分类数据
+ */
+export function validateCategoriesData(categories: any[]): boolean {
+  if (!Array.isArray(categories)) {
+    return false;
+  }
+
+  for (const category of categories) {
+    if (!category || typeof category !== 'object') {
+      return false;
+    }
+
+    // 检查必需字段
+    const requiredFields = ['name', 'icon', 'color', 'bookmarks', 'createdAt', 'updatedAt'];
+    for (const field of requiredFields) {
+      if (!(field in category)) {
+        return false;
+      }
+    }
+
+    // 类型检查
+    if (typeof category.name !== 'string' || category.name.trim() === '') {
+      return false;
+    }
+
+    if (typeof category.icon !== 'string') {
+      return false;
+    }
+
+    if (typeof category.color !== 'string') {
+      return false;
+    }
+
+    if (!Array.isArray(category.bookmarks)) {
+      return false;
+    }
+
+    // 检查bookmarks数组中的每个元素是否为字符串（URL）
+    if (!category.bookmarks.every((url: any) => typeof url === 'string')) {
+      return false;
+    }
+
+    if (typeof category.createdAt !== 'number' || category.createdAt <= 0) {
+      return false;
+    }
+
+    if (typeof category.updatedAt !== 'number' || category.updatedAt <= 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * 验证书签数据
+ */
+export function validateBookmarksData(bookmarks: any[]): boolean {
+  if (!Array.isArray(bookmarks)) {
+    return false;
+  }
+
+  for (const bookmark of bookmarks) {
+    if (!bookmark || typeof bookmark !== 'object') {
+      return false;
+    }
+
+    // 检查必需字段
+    const requiredFields = ['name', 'title', 'url', 'createdAt', 'updatedAt'];
+    for (const field of requiredFields) {
+      if (!(field in bookmark)) {
+        return false;
+      }
+    }
+
+    // 类型检查
+    if (typeof bookmark.name !== 'string' || bookmark.name.trim() === '') {
+      return false;
+    }
+
+    if (typeof bookmark.title !== 'string' || bookmark.title.trim() === '') {
+      return false;
+    }
+
+    if (typeof bookmark.url !== 'string' || bookmark.url.trim() === '') {
+      return false;
+    }
+
+    // categoryName是可选的，但如果存在必须是字符串
+    if (bookmark.categoryName !== undefined && typeof bookmark.categoryName !== 'string') {
+      return false;
+    }
+
+    if (typeof bookmark.createdAt !== 'number' || bookmark.createdAt <= 0) {
+      return false;
+    }
+
+    if (typeof bookmark.updatedAt !== 'number' || bookmark.updatedAt <= 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * 验证同步数据包
  */
 export function validateSyncDataPackage(dataPackage: any): dataPackage is SyncDataPackage {
@@ -285,8 +391,8 @@ export function validateSyncDataPackage(dataPackage: any): dataPackage is SyncDa
   return (
     validateMetadata(dataPackage.metadata) &&
     validateDeviceInfo(dataPackage.device) &&
-    Array.isArray(dataPackage.categories) &&
-    Array.isArray(dataPackage.bookmarks) &&
+    validateCategoriesData(dataPackage.categories) &&
+    validateBookmarksData(dataPackage.bookmarks) &&
     typeof dataPackage.settings === 'object' &&
     typeof dataPackage.version === 'string' &&
     typeof dataPackage.createdAt === 'number'

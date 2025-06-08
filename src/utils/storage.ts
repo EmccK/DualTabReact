@@ -19,7 +19,7 @@ export const STORAGE_KEYS = {
   CATEGORIES: 'categories', 
   NETWORK_MODE: 'networkMode',
   SETTINGS: 'settings',
-  SELECTED_CATEGORY: 'selectedCategoryId',
+  SELECTED_CATEGORY: 'selectedCategoryName',
 } as const;
 
 // 内存缓存，减少Chrome API调用
@@ -189,7 +189,18 @@ export async function loadCategories(): Promise<OperationResult<BookmarkCategory
         return result;
       }
 
-      const categories = result.data?.[STORAGE_KEYS.CATEGORIES] || [];
+      let categories = result.data?.[STORAGE_KEYS.CATEGORIES] || [];
+      
+      // 确保没有重复名称的分类，保留最新的一个
+      const uniqueCategories = new Map<string, BookmarkCategory>();
+      categories.forEach(category => {
+        const existing = uniqueCategories.get(category.name);
+        if (!existing || category.updatedAt > existing.updatedAt) {
+          uniqueCategories.set(category.name, category);
+        }
+      });
+      
+      categories = Array.from(uniqueCategories.values());
       return { success: true, data: categories };
     }
   );
@@ -207,6 +218,25 @@ export async function saveCategories(categories: BookmarkCategory[]): Promise<Op
     };
   }
 
+  // 确保分类名称唯一性
+  const uniqueNames = new Set<string>();
+  const duplicates: string[] = [];
+  
+  categories.forEach(category => {
+    if (uniqueNames.has(category.name)) {
+      duplicates.push(category.name);
+    } else {
+      uniqueNames.add(category.name);
+    }
+  });
+  
+  if (duplicates.length > 0) {
+    return {
+      success: false,
+      error: `发现重复的分类名称: ${duplicates.join(', ')}`
+    };
+  }
+
   const now = Date.now();
   return chromeStorageSet({ 
     [STORAGE_KEYS.CATEGORIES]: categories,
@@ -215,9 +245,28 @@ export async function saveCategories(categories: BookmarkCategory[]): Promise<Op
 }
 
 /**
+ * 通过分类名称查找分类
+ */
+export async function findCategoryByName(categoryName: string): Promise<OperationResult<BookmarkCategory | null>> {
+  try {
+    const categoriesResult = await loadCategories();
+    if (!categoriesResult.success) {
+      return { success: false, error: categoriesResult.error };
+    }
+    
+    const categories = categoriesResult.data || [];
+    const category = categories.find(cat => cat.name === categoryName) || null;
+    
+    return { success: true, data: category };
+  } catch (error) {
+    return { success: false, error: '查找分类失败' };
+  }
+}
+
+/**
  * 添加分类
  */
-export async function addCategory(categoryData: Omit<BookmarkCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<OperationResult<BookmarkCategory>> {
+export async function addCategory(categoryData: Omit<BookmarkCategory, 'createdAt' | 'updatedAt'>): Promise<OperationResult<BookmarkCategory>> {
   try {
     const categoriesResult = await loadCategories()
     if (!categoriesResult.success) {
@@ -225,10 +274,16 @@ export async function addCategory(categoryData: Omit<BookmarkCategory, 'id' | 'c
     }
     
     const categories = categoriesResult.data || []
+    
+    // 检查分类名称是否已存在
+    const existingCategory = categories.find(cat => cat.name === categoryData.name)
+    if (existingCategory) {
+      return { success: false, error: '分类名称已存在' }
+    }
+    
     const now = Date.now()
     const newCategory: BookmarkCategory = {
       ...categoryData,
-      id: `category_${now}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: now,
       updatedAt: now
     }
@@ -249,7 +304,7 @@ export async function addCategory(categoryData: Omit<BookmarkCategory, 'id' | 'c
 /**
  * 更新分类
  */
-export async function updateCategory(id: string, updates: Partial<BookmarkCategory>): Promise<OperationResult<BookmarkCategory>> {
+export async function updateCategory(categoryName: string, updates: Partial<BookmarkCategory>): Promise<OperationResult<BookmarkCategory>> {
   try {
     const categoriesResult = await loadCategories()
     if (!categoriesResult.success) {
@@ -257,16 +312,23 @@ export async function updateCategory(id: string, updates: Partial<BookmarkCatego
     }
     
     const categories = categoriesResult.data || []
-    const categoryIndex = categories.findIndex(cat => cat.id === id)
+    const categoryIndex = categories.findIndex(cat => cat.name === categoryName)
     
     if (categoryIndex === -1) {
       return { success: false, error: '分类不存在' }
     }
     
+    // 如果要更新分类名称，需要检查新名称是否已存在
+    if (updates.name && updates.name !== categoryName) {
+      const existingCategory = categories.find(cat => cat.name === updates.name)
+      if (existingCategory) {
+        return { success: false, error: '分类名称已存在' }
+      }
+    }
+    
     const updatedCategory = {
       ...categories[categoryIndex],
       ...updates,
-      id, // 确保ID不被修改
       updatedAt: Date.now()
     }
     
@@ -288,7 +350,7 @@ export async function updateCategory(id: string, updates: Partial<BookmarkCatego
 /**
  * 删除分类
  */
-export async function deleteCategory(id: string): Promise<OperationResult<void>> {
+export async function deleteCategory(categoryName: string): Promise<OperationResult<void>> {
   try {
     const categoriesResult = await loadCategories()
     if (!categoriesResult.success) {
@@ -296,7 +358,7 @@ export async function deleteCategory(id: string): Promise<OperationResult<void>>
     }
     
     const categories = categoriesResult.data || []
-    const filteredCategories = categories.filter(cat => cat.id !== id)
+    const filteredCategories = categories.filter(cat => cat.name !== categoryName)
     
     if (filteredCategories.length === categories.length) {
       return { success: false, error: '分类不存在' }
@@ -515,9 +577,9 @@ export function clearCache(): void {
 }
 
 /**
- * 加载选中的分类ID
+ * 加载选中的分类名称
  */
-export async function loadSelectedCategoryId(): Promise<OperationResult<string | null>> {
+export async function loadSelectedCategoryName(): Promise<OperationResult<string | null>> {
   return getCachedData(
     STORAGE_KEYS.SELECTED_CATEGORY,
     async () => {
@@ -527,18 +589,29 @@ export async function loadSelectedCategoryId(): Promise<OperationResult<string |
         return { success: true, data: null }; // 默认无选中分类
       }
 
-      const categoryId = result.data?.[STORAGE_KEYS.SELECTED_CATEGORY] || null;
-      return { success: true, data: categoryId };
+      const categoryName = result.data?.[STORAGE_KEYS.SELECTED_CATEGORY] || null;
+      return { success: true, data: categoryName };
     }
   );
 }
 
 /**
- * 保存选中的分类ID
+ * 保存选中的分类名称
  */
-export async function saveSelectedCategoryId(categoryId: string | null): Promise<OperationResult<void>> {
-  return chromeStorageSet({ [STORAGE_KEYS.SELECTED_CATEGORY]: categoryId });
+export async function saveSelectedCategoryName(categoryName: string | null): Promise<OperationResult<void>> {
+  return chromeStorageSet({ [STORAGE_KEYS.SELECTED_CATEGORY]: categoryName });
 }
+
+// 兼容性函数 - 逐步迁移时使用
+/**
+ * @deprecated 使用 loadSelectedCategoryName 替代
+ */
+export const loadSelectedCategoryId = loadSelectedCategoryName;
+
+/**
+ * @deprecated 使用 saveSelectedCategoryName 替代
+ */
+export const saveSelectedCategoryId = saveSelectedCategoryName;
 
 /**
  * 获取缓存统计信息（调试用）

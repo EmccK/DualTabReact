@@ -715,7 +715,20 @@ export class StorageBridge {
     if (!data) return data;
 
     if (Array.isArray(data)) {
-      return data.map(item => this.normalizeForComparison(item));
+      // 对于数组，按照唯一标识排序以确保一致性
+      const normalizedArray = data.map(item => this.normalizeForComparison(item));
+      
+      // 如果是分类数组，按name排序
+      if (normalizedArray.length > 0 && normalizedArray[0]?.name !== undefined) {
+        return normalizedArray.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      }
+      
+      // 如果是书签数组，按URL排序
+      if (normalizedArray.length > 0 && normalizedArray[0]?.url !== undefined) {
+        return normalizedArray.sort((a, b) => (a.url || '').localeCompare(b.url || ''));
+      }
+      
+      return normalizedArray;
     }
 
     if (typeof data === 'object') {
@@ -774,7 +787,8 @@ export class StorageBridge {
       'lastUploadTime',
       'lastDownloadTime',
       'lastSyncTime',
-      'last_sync_time'
+      'last_sync_time',
+      'position' // 添加position字段，因为这也是可变的属性
     ];
     return timestampFields.includes(fieldName);
   }

@@ -6,11 +6,11 @@ import type { BookmarkSettings } from '@/types/settings'
 
 interface SimpleCategorySidebarProps {
   categories: BookmarkCategory[]
-  selectedCategoryId: string | null
-  onCategorySelect: (categoryId: string | null) => void
+  selectedCategoryName: string | null
+  onCategorySelect: (categoryName: string | null) => void
   onAddCategory: () => void
   onEditCategory: (category: BookmarkCategory) => void
-  onDeleteCategory: (categoryId: string) => void
+  onDeleteCategory: (categoryName: string) => void
   onReorderCategories: (reorderedCategories: BookmarkCategory[]) => void
   onCategoryContextMenu?: (category: BookmarkCategory, event: React.MouseEvent) => void
   loading?: boolean
@@ -22,7 +22,7 @@ const SIDEBAR_WIDTH = 160 // 固定边栏宽度
 
 export function SimpleCategorySidebar({
   categories,
-  selectedCategoryId,
+  selectedCategoryName,
   onCategorySelect,
   onAddCategory,
   onEditCategory,
@@ -196,7 +196,7 @@ export function SimpleCategorySidebar({
         {/* CategorySidebar - 完全独立，不受任何事件干扰 */}
         <CategorySidebar
           categories={categories}
-          selectedCategoryId={selectedCategoryId}
+          selectedCategoryName={selectedCategoryName}
           onCategorySelect={onCategorySelect}
           onAddCategory={onAddCategory}
           onEditCategory={onEditCategory}

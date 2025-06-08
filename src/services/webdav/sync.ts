@@ -20,6 +20,8 @@ import {
   createSyncDataPackage, 
   createDeviceInfo, 
   validateSyncDataPackage,
+  validateCategoriesData,
+  validateBookmarksData,
   repairMetadata
 } from './metadata';
 import { 
@@ -264,17 +266,34 @@ export class WebDAVSyncService {
       
       if (!validateSyncDataPackage(dataPackage)) {
         // 尝试修复数据包
-        const repairedMetadata = await repairMetadata(
-          {
-            categories: dataPackage.categories || [],
-            bookmarks: dataPackage.bookmarks || [],
-            settings: dataPackage.settings || {},
-          },
-          this.device,
-          dataPackage.metadata
-        );
+        let needsRepair = false;
         
-        dataPackage.metadata = repairedMetadata;
+        // 检查各部分数据是否有效
+        if (!validateCategoriesData(dataPackage.categories || [])) {
+          console.warn('Categories data validation failed, using empty array');
+          dataPackage.categories = [];
+          needsRepair = true;
+        }
+        
+        if (!validateBookmarksData(dataPackage.bookmarks || [])) {
+          console.warn('Bookmarks data validation failed, using empty array');
+          dataPackage.bookmarks = [];
+          needsRepair = true;
+        }
+        
+        if (needsRepair) {
+          const repairedMetadata = await repairMetadata(
+            {
+              categories: dataPackage.categories,
+              bookmarks: dataPackage.bookmarks,
+              settings: dataPackage.settings || {},
+            },
+            this.device,
+            dataPackage.metadata
+          );
+          
+          dataPackage.metadata = repairedMetadata;
+        }
         
         if (!validateSyncDataPackage(dataPackage)) {
           throw new Error(ERROR_MESSAGES.METADATA_INVALID);

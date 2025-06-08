@@ -26,10 +26,10 @@ interface BookmarkModalProps {
   mode: 'add' | 'edit';
   bookmark?: Bookmark;
   networkMode: NetworkMode;
-  selectedCategoryId?: string | null;
+  selectedCategoryName?: string | null;
   onSuccess: () => void;
-  onSave?: (bookmarkData: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt' | 'position'>) => Promise<void>;
-  onUpdate?: (bookmarkId: string, updates: Partial<Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
+  onSave?: (bookmarkData: Omit<Bookmark, 'createdAt' | 'updatedAt' | 'position'>) => Promise<void>;
+  onUpdate?: (bookmarkUrl: string, updates: Partial<Omit<Bookmark, 'createdAt' | 'updatedAt'>>) => Promise<void>;
 }
 
 const BookmarkModal: React.FC<BookmarkModalProps> = ({
@@ -38,7 +38,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   mode,
   bookmark,
   networkMode,
-  selectedCategoryId,
+  selectedCategoryName,
   onSuccess,
   onSave,
   onUpdate,
@@ -51,7 +51,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
     iconText: '',
     iconImage: '',
     iconColor: COLOR_PALETTE[0],
-    categoryId: selectedCategoryId || undefined,
+    categoryName: selectedCategoryName || undefined,
   });
 
   const [urlError, setUrlError] = useState('');
@@ -88,7 +88,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
         iconText: bookmark.iconText || '',
         iconImage: bookmark.iconImage || bookmark.iconData || bookmark.icon || '',
         iconColor: bookmark.iconColor || COLOR_PALETTE[0],
-        categoryId: bookmark.categoryId || selectedCategoryId || undefined,
+        categoryName: bookmark.categoryName || selectedCategoryName || undefined,
         internalUrl: bookmark.internalUrl || '',
         externalUrl: bookmark.externalUrl || '',
         imageScale: bookmark.imageScale, // 添加 imageScale 字段
@@ -102,7 +102,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
         iconText: '',
         iconImage: '',
         iconColor: COLOR_PALETTE[0],
-        categoryId: selectedCategoryId || undefined,
+        categoryName: selectedCategoryName || undefined,
         imageScale: {
           scale: 1,
           offsetX: 0,
@@ -147,7 +147,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
         backgroundOpacity: 100
       });
     }
-  }, [bookmark, mode, isOpen, selectedCategoryId]);
+  }, [bookmark, mode, isOpen, selectedCategoryName]);
 
   // 验证URL格式
   const validateUrl = (url: string): boolean => {
@@ -195,12 +195,11 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
 
     const now = Date.now();
     const bookmarkData: Bookmark = {
-      id: bookmark?.id || `bookmark_${now}`,
       name: formData.title.trim(),
       title: formData.title.trim(),
       url: networkMode ? (formData.externalUrl || formData.internalUrl || '') : formData.url || '',
       description: formData.description?.trim(),
-      categoryId: formData.categoryId,
+      categoryName: formData.categoryName,
       internalUrl: networkMode ? formData.internalUrl : undefined,
       externalUrl: networkMode ? formData.externalUrl : undefined,
       iconType: formData.iconType || 'text',
@@ -224,7 +223,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
           title: bookmarkData.title,
           url: bookmarkData.url,
           description: bookmarkData.description,
-          categoryId: bookmarkData.categoryId,
+          categoryName: bookmarkData.categoryName,
           internalUrl: bookmarkData.internalUrl,
           externalUrl: bookmarkData.externalUrl,
           iconType: (bookmarkData.iconType === 'favicon' ? 'favicon' : bookmarkData.iconType === 'image' ? 'upload' : 'text') as IconType,
@@ -236,7 +235,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
           iconColor: bookmarkData.iconColor,
           imageScale: bookmarkData.imageScale,
         };
-        await onUpdate(bookmark.id, updates);
+        await onUpdate(bookmark.url, updates);
       } else if (mode === 'add' && onSave) {
         // 添加模式：创建新书签
         const newBookmarkData = {
@@ -244,7 +243,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
           title: bookmarkData.title,
           url: bookmarkData.url,
           description: bookmarkData.description,
-          categoryId: bookmarkData.categoryId,
+          categoryName: bookmarkData.categoryName,
           internalUrl: bookmarkData.internalUrl,
           externalUrl: bookmarkData.externalUrl,
           iconType: (bookmarkData.iconType === 'favicon' ? 'favicon' : bookmarkData.iconType === 'image' ? 'upload' : 'text') as IconType,

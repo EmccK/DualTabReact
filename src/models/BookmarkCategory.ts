@@ -16,7 +16,6 @@ export function createBookmarkCategory(
   const now = Date.now();
   
   return {
-    id: generateCategoryId(),
     name: name.trim(),
     icon: icon.trim(),
     color: color.trim(),
@@ -27,16 +26,9 @@ export function createBookmarkCategory(
 }
 
 /**
- * 默认分类固定ID
+ * 默认分类名称
  */
-export const DEFAULT_CATEGORY_ID = 'default_category';
-
-/**
- * 生成分类唯一ID
- */
-export function generateCategoryId(): string {
-  return `cat_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-}
+export const DEFAULT_CATEGORY_NAME = '默认分类';
 
 /**
  * 创建默认分类
@@ -45,8 +37,7 @@ export function createDefaultCategory(): BookmarkCategory {
   const now = Date.now();
   
   return {
-    id: DEFAULT_CATEGORY_ID,
-    name: '默认分类',
+    name: DEFAULT_CATEGORY_NAME,
     icon: '📁',
     color: '#3B82F6',
     bookmarks: [],
@@ -64,7 +55,7 @@ export function validateCategory(category: any): category is BookmarkCategory {
   }
 
   // 检查必需字段
-  const requiredFields = ['id', 'name', 'icon', 'color', 'bookmarks', 'createdAt', 'updatedAt'];
+  const requiredFields = ['name', 'icon', 'color', 'bookmarks', 'createdAt', 'updatedAt'];
   for (const field of requiredFields) {
     if (!(field in category)) {
       return false;
@@ -72,9 +63,6 @@ export function validateCategory(category: any): category is BookmarkCategory {
   }
 
   // 类型检查
-  if (typeof category.id !== 'string' || category.id.trim() === '') {
-    return false;
-  }
 
   if (typeof category.name !== 'string' || category.name.trim() === '') {
     return false;
@@ -93,7 +81,7 @@ export function validateCategory(category: any): category is BookmarkCategory {
   }
 
   // 检查bookmarks数组中的每个元素是否为字符串
-  if (!category.bookmarks.every((id: any) => typeof id === 'string')) {
+  if (!category.bookmarks.every((url: any) => typeof url === 'string')) {
     return false;
   }
 
@@ -127,16 +115,16 @@ export function updateCategory(
  */
 export function addBookmarkToCategory(
   category: BookmarkCategory,
-  bookmarkId: string
+  bookmarkUrl: string
 ): BookmarkCategory {
   // 检查书签是否已存在
-  if (category.bookmarks.includes(bookmarkId)) {
+  if (category.bookmarks.includes(bookmarkUrl)) {
     return category;
   }
 
   return {
     ...category,
-    bookmarks: [...category.bookmarks, bookmarkId],
+    bookmarks: [...category.bookmarks, bookmarkUrl],
     updatedAt: Date.now()
   };
 }
@@ -146,11 +134,11 @@ export function addBookmarkToCategory(
  */
 export function removeBookmarkFromCategory(
   category: BookmarkCategory,
-  bookmarkId: string
+  bookmarkUrl: string
 ): BookmarkCategory {
   return {
     ...category,
-    bookmarks: category.bookmarks.filter(id => id !== bookmarkId),
+    bookmarks: category.bookmarks.filter(url => url !== bookmarkUrl),
     updatedAt: Date.now()
   };
 }
@@ -160,9 +148,9 @@ export function removeBookmarkFromCategory(
  */
 export function categoryContainsBookmark(
   category: BookmarkCategory,
-  bookmarkId: string
+  bookmarkUrl: string
 ): boolean {
-  return category.bookmarks.includes(bookmarkId);
+  return category.bookmarks.includes(bookmarkUrl);
 }
 
 /**
@@ -188,18 +176,18 @@ export function clearCategoryBookmarks(category: BookmarkCategory): BookmarkCate
  */
 export function addBookmarksToCategory(
   category: BookmarkCategory,
-  bookmarkIds: string[]
+  bookmarkUrls: string[]
 ): BookmarkCategory {
-  // 过滤掉已存在的书签ID
-  const newBookmarkIds = bookmarkIds.filter(id => !category.bookmarks.includes(id));
+  // 过滤掉已存在的书签URL
+  const newBookmarkUrls = bookmarkUrls.filter(url => !category.bookmarks.includes(url));
   
-  if (newBookmarkIds.length === 0) {
+  if (newBookmarkUrls.length === 0) {
     return category;
   }
 
   return {
     ...category,
-    bookmarks: [...category.bookmarks, ...newBookmarkIds],
+    bookmarks: [...category.bookmarks, ...newBookmarkUrls],
     updatedAt: Date.now()
   };
 }
@@ -209,13 +197,13 @@ export function addBookmarksToCategory(
  */
 export function removeBookmarksFromCategory(
   category: BookmarkCategory,
-  bookmarkIds: string[]
+  bookmarkUrls: string[]
 ): BookmarkCategory {
-  const bookmarkIdsSet = new Set(bookmarkIds);
+  const bookmarkUrlsSet = new Set(bookmarkUrls);
   
   return {
     ...category,
-    bookmarks: category.bookmarks.filter(id => !bookmarkIdsSet.has(id)),
+    bookmarks: category.bookmarks.filter(url => !bookmarkUrlsSet.has(url)),
     updatedAt: Date.now()
   };
 }
@@ -231,7 +219,6 @@ export function cloneCategory(
   
   return {
     ...category,
-    id: generateCategoryId(),
     name: newName || `${category.name} (副本)`,
     bookmarks: [...category.bookmarks], // 浅拷贝书签数组
     createdAt: now,
@@ -292,38 +279,15 @@ export const DEFAULT_CATEGORIES = {
 /**
  * 检查是否为默认分类
  */
-export function isDefaultCategory(category: BookmarkCategory | { id: string; name: string }): boolean {
-  return category.id === DEFAULT_CATEGORY_ID || 
-         (category.name && category.name.trim() === '默认分类');
+export function isDefaultCategory(category: BookmarkCategory | { name: string }): boolean {
+  return category.name && category.name.trim() === DEFAULT_CATEGORY_NAME;
 }
 
 /**
- * 迁移旧的默认分类到新的固定ID
+ * 根据分类名获取唯一标识
  */
-export function migrateDefaultCategory(categories: BookmarkCategory[]): {
-  categories: BookmarkCategory[];
-  migrated: boolean;
-} {
-  let migrated = false;
-  const result = categories.slice();
-  
-  // 查找现有的默认分类
-  const defaultCategoryIndex = result.findIndex(cat => 
-    cat.name && cat.name.trim() === '默认分类' && cat.id !== DEFAULT_CATEGORY_ID
-  );
-  
-  if (defaultCategoryIndex !== -1) {
-    // 找到旧的默认分类，更新其ID
-    const oldDefaultCategory = result[defaultCategoryIndex];
-    result[defaultCategoryIndex] = {
-      ...oldDefaultCategory,
-      id: DEFAULT_CATEGORY_ID,
-      updatedAt: Date.now()
-    };
-    migrated = true;
-  }
-  
-  return { categories: result, migrated };
+export function getCategoryKey(categoryName: string): string {
+  return categoryName.trim();
 }
 
 /**

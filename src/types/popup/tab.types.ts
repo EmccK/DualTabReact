@@ -24,7 +24,7 @@ export interface QuickBookmarkFormData {
   name: string;
   url: string;
   description?: string;
-  categoryId: string;
+  categoryName: string;
   useCurrentTabInfo: boolean;
 }
 
@@ -34,6 +34,6 @@ export interface FormValidationResult {
   errors: {
     name?: string;
     url?: string;
-    categoryId?: string;
+    categoryName?: string;
   };
 }

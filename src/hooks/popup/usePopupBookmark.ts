@@ -9,12 +9,12 @@ import type { Bookmark } from '@/types';
 import type { QuickBookmarkFormData } from '@/types/popup/tab.types';
 import { validateQuickBookmarkForm, isInternalUrl } from '@/utils/popup/urlHelpers';
 import { sanitizeUrl } from '@/utils/popup/tabHelpers';
-import { loadSelectedCategoryId } from '@/utils/storage';
+import { loadSelectedCategoryName } from '@/utils/storage';
 
 export function usePopupBookmark() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string | null>(null);
   
   // 复用主应用的Hook
   const { addBookmark, loading: bookmarksLoading } = useBookmarks();
@@ -22,13 +22,13 @@ export function usePopupBookmark() {
 
   // 初始化时获取选中分类
   useEffect(() => {
-    if (categories.length > 0 && selectedCategoryId === null) {
-      loadSelectedCategoryId().then((result) => {
-        if (result.success && result.data && categories.find(cat => cat.id === result.data)) {
-          setSelectedCategoryId(result.data);
+    if (categories.length > 0 && selectedCategoryName === null) {
+      loadSelectedCategoryName().then((result) => {
+        if (result.success && result.data && categories.find(cat => cat.name === result.data)) {
+          setSelectedCategoryName(result.data);
         } else if (categories.length > 0) {
           // 如果没有获取到或分类不存在，使用第一个分类
-          setSelectedCategoryId(categories[0].id);
+          setSelectedCategoryName(categories[0].name);
         }
       });
     }
@@ -59,12 +59,12 @@ export function usePopupBookmark() {
       const isInternal = isInternalUrl(cleanUrl);
       
       // 构建书签数据
-      const bookmarkData: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt' | 'position'> = {
+      const bookmarkData: Omit<Bookmark, 'createdAt' | 'updatedAt' | 'position'> = {
         name: formData.name.trim(),
         title: formData.name.trim(),
         url: cleanUrl,
         description: formData.description?.trim() || undefined,
-        categoryId: formData.categoryId,
+        categoryName: formData.categoryName,
         // 根据URL类型设置内外网地址
         externalUrl: isInternal ? undefined : cleanUrl,
         internalUrl: isInternal ? cleanUrl : undefined,
@@ -119,7 +119,7 @@ export function usePopupBookmark() {
     // 数据
     categories,
     defaultCategory: getDefaultCategory(),
-    selectedCategoryId,
+    selectedCategoryName,
     
     // 方法
     quickAddBookmark,

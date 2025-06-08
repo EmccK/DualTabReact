@@ -42,7 +42,7 @@ export function useBookmarks() {
 
   // 添加书签 - 新的API接口
   const addBookmark = useCallback(async (
-    bookmarkData: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt' | 'position'>
+    bookmarkData: Omit<Bookmark, 'createdAt' | 'updatedAt' | 'position'>
   ) => {
     setSaving(true);
     setError(null);
@@ -52,7 +52,7 @@ export function useBookmarks() {
         bookmarkData.name || bookmarkData.title,
         bookmarkData.url,
         {
-          categoryId: bookmarkData.categoryId,
+          categoryName: bookmarkData.categoryName,
           internalUrl: bookmarkData.internalUrl,
           externalUrl: bookmarkData.externalUrl,
           description: bookmarkData.description,
@@ -69,10 +69,10 @@ export function useBookmarks() {
       if (result.success) {
         setBookmarks(updatedBookmarks);
         
-        // 如果有categoryId，将书签添加到对应分类
-        if (bookmarkData.categoryId) {
+        // 如果有categoryName，将书签添加到对应分类
+        if (bookmarkData.categoryName) {
           try {
-            await addBookmarkToCategory(bookmarkData.categoryId, newBookmark.id);
+            await addBookmarkToCategory(bookmarkData.categoryName, newBookmark.url);
           } catch (categoryError) {
           }
         }
@@ -91,17 +91,17 @@ export function useBookmarks() {
     }
   }, [bookmarks]);
 
-  // 更新书签
+  // 更新书签 - 使用URL和分类名作为唯一标识
   const updateBookmark = useCallback(async (
-    bookmarkId: string,
-    updates: Partial<Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt'>>
+    bookmarkUrl: string,
+    updates: Partial<Omit<Bookmark, 'createdAt' | 'updatedAt'>>
   ) => {
     setSaving(true);
     setError(null);
     
     try {
       const updatedBookmarks = bookmarks.map(bookmark => 
-        bookmark.id === bookmarkId 
+        bookmark.url === bookmarkUrl 
           ? { ...bookmark, ...updates, updatedAt: Date.now() }
           : bookmark
       );
@@ -109,7 +109,7 @@ export function useBookmarks() {
       const result = await saveBookmarks(updatedBookmarks);
       if (result.success) {
         setBookmarks(updatedBookmarks);
-        const updatedBookmark = updatedBookmarks.find(b => b.id === bookmarkId);
+        const updatedBookmark = updatedBookmarks.find(b => b.url === bookmarkUrl);
         return { success: true, data: updatedBookmark };
       } else {
         setError(result.error || '更新书签失败');
@@ -124,13 +124,13 @@ export function useBookmarks() {
     }
   }, [bookmarks]);
 
-  // 删除书签
-  const deleteBookmark = useCallback(async (bookmarkId: string) => {
+  // 删除书签 - 使用URL作为唯一标识
+  const deleteBookmark = useCallback(async (bookmarkUrl: string) => {
     setSaving(true);
     setError(null);
     
     try {
-      const updatedBookmarks = bookmarks.filter(bookmark => bookmark.id !== bookmarkId);
+      const updatedBookmarks = bookmarks.filter(bookmark => bookmark.url !== bookmarkUrl);
       
       const result = await saveBookmarks(updatedBookmarks);
       if (result.success) {
@@ -143,7 +143,7 @@ export function useBookmarks() {
             const categories = categoriesResult.data || [];
             const updatedCategories = categories.map(category => ({
               ...category,
-              bookmarks: category.bookmarks.filter(id => id !== bookmarkId),
+              bookmarks: category.bookmarks.filter(url => url !== bookmarkUrl),
               updatedAt: Date.now()
             }));
             await saveCategories(updatedCategories);

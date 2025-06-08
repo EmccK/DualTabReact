@@ -12,7 +12,7 @@ import type { BookmarkSettings } from '@/types/settings';
 interface OptimizedBookmarkGridV3Props {
   bookmarks: Bookmark[];
   bookmarkSettings: BookmarkSettings;
-  selectedCategoryId?: string | null;
+  selectedCategoryName?: string | null;
   onBookmarkClick?: (bookmark: Bookmark) => void;
   onBookmarkContextMenu?: (bookmark: Bookmark, event: React.MouseEvent) => void;
   onBookmarkReorder?: (reorderedBookmarks: Bookmark[]) => void;
@@ -22,7 +22,7 @@ interface OptimizedBookmarkGridV3Props {
 const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
   bookmarks,
   bookmarkSettings,
-  selectedCategoryId,
+  selectedCategoryName,
   onBookmarkClick,
   onBookmarkContextMenu,
   onBookmarkReorder,
@@ -34,9 +34,9 @@ const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
   // 优化：使用useMemo缓存过滤后的书签，避免每次都重新过滤
   const filteredBookmarks = useMemo(() => {
     return bookmarks.filter(bookmark => 
-      !selectedCategoryId || bookmark.categoryId === selectedCategoryId
+      !selectedCategoryName || bookmark.categoryName === selectedCategoryName
     );
-  }, [bookmarks, selectedCategoryId]);
+  }, [bookmarks, selectedCategoryName]);
 
   // 优化：使用useMemo缓存适配后的书签数据
   const adaptedBookmarks = useMemo(() => {
@@ -61,7 +61,7 @@ const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
 
   // 优化的事件处理函数，使用useCallback避免不必要的重新渲染
   const handleBookmarkClick = React.useCallback((item: ReturnType<typeof adaptBookmarkToItem>) => {
-    const originalBookmark = bookmarks.find(b => b.id === item.id);
+    const originalBookmark = bookmarks.find(b => b.url === item.url);
     if (originalBookmark && onBookmarkClick) {
       onBookmarkClick(originalBookmark);
     }
@@ -71,7 +71,7 @@ const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
     item: ReturnType<typeof adaptBookmarkToItem>, 
     event: React.MouseEvent
   ) => {
-    const originalBookmark = bookmarks.find(b => b.id === item.id);
+    const originalBookmark = bookmarks.find(b => b.url === item.url);
     if (originalBookmark && onBookmarkContextMenu) {
       onBookmarkContextMenu(originalBookmark, event);
     }
@@ -84,7 +84,7 @@ const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
     
     startTransition(() => {
       const reorderedBookmarks = reorderedItems.map(item => {
-        const originalBookmark = bookmarks.find(b => b.id === item.id);
+        const originalBookmark = bookmarks.find(b => b.url === item.url);
         return originalBookmark!;
       }).filter(Boolean);
       

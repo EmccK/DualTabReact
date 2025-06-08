@@ -7,11 +7,10 @@ export type IconType = 'official' | 'text' | 'upload';
 
 // 书签类型定义
 export interface Bookmark {
-  id: string;
   name: string; // 添加name字段作为title的别名
   title: string;
-  url: string;
-  categoryId?: string; // 所属分类ID
+  url: string; // 使用url作为唯一标识
+  categoryName?: string; // 所属分类名称
   internalUrl?: string; // 内网URL
   externalUrl?: string; // 外网URL
   description?: string; // 书签描述
@@ -31,11 +30,10 @@ export interface Bookmark {
 
 // 书签分类类型定义
 export interface BookmarkCategory {
-  id: string;
-  name: string;
+  name: string; // 使用name作为唯一标识
   icon: string;
   color: string;
-  bookmarks: string[]; // 书签ID列表
+  bookmarks: string[]; // 书签URL列表
   createdAt: number;
   updatedAt: number;
 }

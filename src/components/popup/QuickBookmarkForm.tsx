@@ -17,7 +17,7 @@ interface QuickBookmarkFormProps {
   initialName?: string;
   initialUrl?: string;
   categories: BookmarkCategory[];
-  defaultCategoryId?: string;
+  defaultCategoryName?: string;
   
   // 状态
   isSubmitting: boolean;
@@ -33,7 +33,7 @@ export function QuickBookmarkForm({
   initialName = '',
   initialUrl = '',
   categories,
-  defaultCategoryId,
+  defaultCategoryName,
   isSubmitting,
   submitError,
   onSubmit,
@@ -48,7 +48,7 @@ export function QuickBookmarkForm({
     name: initialName,
     url: initialUrl,
     description: '',
-    categoryId: defaultCategoryId || (categories[0]?.id || ''),
+    categoryName: defaultCategoryName || (categories[0]?.name || ''),
     useCurrentTabInfo: true
   });
 
@@ -56,7 +56,7 @@ export function QuickBookmarkForm({
   const [validationErrors, setValidationErrors] = useState<{
     name?: string;
     url?: string;
-    categoryId?: string;
+    categoryName?: string;
   }>({});
 
   // 表单验证函数
@@ -83,9 +83,9 @@ export function QuickBookmarkForm({
       ...prev,
       name: initialName,
       url: initialUrl,
-      categoryId: defaultCategoryId || prev.categoryId || (categories[0]?.id || '')
+      categoryName: defaultCategoryName || prev.categoryName || (categories[0]?.name || '')
     }));
-  }, [initialName, initialUrl, defaultCategoryId, categories]);
+  }, [initialName, initialUrl, defaultCategoryName, categories]);
 
   // 自动聚焦到名称输入框
   useEffect(() => {
@@ -126,7 +126,7 @@ export function QuickBookmarkForm({
       onClearError();
     }
     setValidationErrors({});
-  }, [formData.name, formData.url, formData.categoryId, submitError, onClearError]);
+  }, [formData.name, formData.url, formData.categoryName, submitError, onClearError]);
 
   // 处理输入变化
   const handleInputChange = useCallback((field: keyof QuickBookmarkFormData, value: string) => {
@@ -222,23 +222,23 @@ export function QuickBookmarkForm({
         </Label>
         <select
           id="bookmark-category"
-          value={formData.categoryId}
-          onChange={(e) => handleInputChange('categoryId', e.target.value)}
+          value={formData.categoryName}
+          onChange={(e) => handleInputChange('categoryName', e.target.value)}
           className={`w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${
-            validationErrors.categoryId 
+            validationErrors.categoryName 
               ? 'border-red-300 focus:ring-red-500' 
               : 'border-gray-300'
           }`}
           disabled={isSubmitting}
         >
           {categories.map((category) => (
-            <option key={category.id} value={category.id}>
+            <option key={category.name} value={category.name}>
               {category.icon} {category.name}
             </option>
           ))}
         </select>
-        {validationErrors.categoryId && (
-          <p className="text-xs text-red-600">{validationErrors.categoryId}</p>
+        {validationErrors.categoryName && (
+          <p className="text-xs text-red-600">{validationErrors.categoryName}</p>
         )}
       </div>
 

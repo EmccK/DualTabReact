@@ -8,16 +8,16 @@ import {
   deleteCategory,
   reorderCategories 
 } from '@/utils/storage'
-import { createBookmarkCategory, createDefaultCategory, migrateDefaultCategory } from '@/models/BookmarkCategory'
+import { createBookmarkCategory, createDefaultCategory, getCategoryKey } from '@/models/BookmarkCategory'
 import { loadBookmarks, saveBookmarks } from '@/utils/storage'
 
 interface UseCategoriesReturn {
   categories: BookmarkCategory[]
   loading: boolean
   error: string | null
-  addCategory: (category: Omit<BookmarkCategory, 'id' | 'createdAt' | 'updatedAt'>) => Promise<OperationResult<BookmarkCategory>>
-  updateCategory: (id: string, updates: Partial<BookmarkCategory>) => Promise<OperationResult<BookmarkCategory>>
-  deleteCategory: (id: string) => Promise<OperationResult<void>>
+  addCategory: (category: Omit<BookmarkCategory, 'createdAt' | 'updatedAt'>) => Promise<OperationResult<BookmarkCategory>>
+  updateCategory: (name: string, updates: Partial<BookmarkCategory>) => Promise<OperationResult<BookmarkCategory>>
+  deleteCategory: (name: string) => Promise<OperationResult<void>>
   reorderCategories: (reorderedCategories: BookmarkCategory[]) => Promise<OperationResult<void>>
   reload: () => Promise<void>
 }
@@ -41,11 +41,13 @@ export function useCategories(): UseCategoriesReturn {
       if (result.success) {
         let categoriesData = result.data || []
 
-        // 迁移旧的默认分类到固定ID
-        const migrationResult = migrateDefaultCategory(categoriesData)
-        if (migrationResult.migrated) {
-          categoriesData = migrationResult.categories
-          // 保存迁移后的数据
+        // 确保没有重复的分类名称
+        const uniqueCategories = categoriesData.filter((category, index, self) => 
+          index === self.findIndex(c => c.name.trim() === category.name.trim())
+        )
+        
+        if (uniqueCategories.length !== categoriesData.length) {
+          categoriesData = uniqueCategories
           await saveCategories(categoriesData)
         }
 
@@ -111,9 +113,15 @@ export function useCategories(): UseCategoriesReturn {
 
   // 添加分类
   const handleAddCategory = useCallback(async (
-    categoryData: Omit<BookmarkCategory, 'id' | 'createdAt' | 'updatedAt'>
+    categoryData: Omit<BookmarkCategory, 'createdAt' | 'updatedAt'>
   ): Promise<OperationResult<BookmarkCategory>> => {
     try {
+      // 检查分类名称是否已存在
+      const existingCategory = categories.find(cat => cat.name.trim() === categoryData.name.trim())
+      if (existingCategory) {
+        return { success: false, error: '分类名称已存在' }
+      }
+      
       const result = await addCategory(categoryData)
       if (result.success) {
         await loadCategoriesData()
@@ -122,15 +130,23 @@ export function useCategories(): UseCategoriesReturn {
     } catch (err) {
       return { success: false, error: '添加分类失败' }
     }
-  }, [loadCategoriesData])
+  }, [loadCategoriesData, categories])
 
   // 更新分类
   const handleUpdateCategory = useCallback(async (
-    id: string, 
+    name: string, 
     updates: Partial<BookmarkCategory>
   ): Promise<OperationResult<BookmarkCategory>> => {
     try {
-      const result = await updateCategory(id, updates)
+      // 如果更新名称，检查新名称是否已存在
+      if (updates.name && updates.name.trim() !== name.trim()) {
+        const existingCategory = categories.find(cat => cat.name.trim() === updates.name!.trim())
+        if (existingCategory) {
+          return { success: false, error: '分类名称已存在' }
+        }
+      }
+      
+      const result = await updateCategory(name, updates)
       if (result.success) {
         await loadCategoriesData()
       }
@@ -138,10 +154,10 @@ export function useCategories(): UseCategoriesReturn {
     } catch (err) {
       return { success: false, error: '更新分类失败' }
     }
-  }, [loadCategoriesData])
+  }, [loadCategoriesData, categories])
 
   // 删除分类
-  const handleDeleteCategory = useCallback(async (id: string): Promise<OperationResult<void>> => {
+  const handleDeleteCategory = useCallback(async (name: string): Promise<OperationResult<void>> => {
     try {
       // 检查是否是最后一个分类
       if (categories.length <= 1) {
@@ -149,7 +165,7 @@ export function useCategories(): UseCategoriesReturn {
       }
       
       // 先获取要删除的分类信息
-      const categoryToDelete = categories.find(cat => cat.id === id)
+      const categoryToDelete = categories.find(cat => cat.name.trim() === name.trim())
       if (!categoryToDelete) {
         return { success: false, error: '分类不存在' }
       }
@@ -160,14 +176,14 @@ export function useCategories(): UseCategoriesReturn {
         if (bookmarksResult.success) {
           const allBookmarks = bookmarksResult.data || []
           const updatedBookmarks = allBookmarks.filter(bookmark => 
-            !categoryToDelete.bookmarks.includes(bookmark.id)
+            !categoryToDelete.bookmarks.includes(bookmark.url)
           )
           await saveBookmarks(updatedBookmarks)
         }
       }
       
       // 删除分类
-      const result = await deleteCategory(id)
+      const result = await deleteCategory(name)
       if (result.success) {
         await loadCategoriesData()
       }

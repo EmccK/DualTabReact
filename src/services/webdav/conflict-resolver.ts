@@ -10,7 +10,7 @@ import type {
   SyncMetadata 
 } from './types';
 import { generateDataHash, verifyDataIntegrity, detectTimestampTrap } from './metadata';
-import { DEFAULT_CATEGORY_ID } from '../../models/BookmarkCategory';
+// 移除对DEFAULT_CATEGORY_ID的依赖，使用分类名称作为唯一标识
 
 /**
  * 冲突检测结果
@@ -231,77 +231,44 @@ async function mergeData(localData: any, remoteData: any): Promise<any> {
 }
 
 /**
- * 合并书签分类
+ * 合并书签分类（适配新数据结构：使用name作为唯一标识）
  */
 function mergeCategories(localCategories: any[], remoteCategories: any[]): any[] {
-  const categoryMap = new Map();
-  const nameToIdMap = new Map(); // 用于按名称查找已存在的分类
+  const categoryMap = new Map<string, any>();
   
-  // 先添加本地分类
+  // 先添加本地分类（以name作为键）
   localCategories.forEach(category => {
-    if (category.id && category.name) {
-      categoryMap.set(category.id, category);
-      nameToIdMap.set(category.name.toLowerCase().trim(), category.id);
+    if (category.name) {
+      const categoryKey = category.name.toLowerCase().trim();
+      categoryMap.set(categoryKey, category);
     }
   });
   
   // 合并远程分类
   remoteCategories.forEach(remoteCategory => {
-    if (!remoteCategory.id || !remoteCategory.name) return;
+    if (!remoteCategory.name) return;
     
-    const categoryName = remoteCategory.name.toLowerCase().trim();
+    const categoryKey = remoteCategory.name.toLowerCase().trim();
+    const existingCategory = categoryMap.get(categoryKey);
     
-    // 特殊处理默认分类：统一使用固定ID
-    if (categoryName === '默认分类' || remoteCategory.id === DEFAULT_CATEGORY_ID) {
-      const existingDefaultCategory = categoryMap.get(DEFAULT_CATEGORY_ID);
-      
-      if (existingDefaultCategory) {
-        // 合并默认分类，保持固定ID
-        const merged = existingDefaultCategory.updatedAt > remoteCategory.updatedAt 
-          ? existingDefaultCategory 
-          : { ...remoteCategory, id: DEFAULT_CATEGORY_ID };
-        
-        // 合并书签列表（去重）
-        const mergedBookmarks = Array.from(new Set([
-          ...(existingDefaultCategory.bookmarks || []),
-          ...(remoteCategory.bookmarks || [])
-        ]));
-        
-        merged.bookmarks = mergedBookmarks;
-        categoryMap.set(DEFAULT_CATEGORY_ID, merged);
-      } else {
-        // 添加远程默认分类，使用固定ID
-        categoryMap.set(DEFAULT_CATEGORY_ID, { ...remoteCategory, id: DEFAULT_CATEGORY_ID });
-        nameToIdMap.set(categoryName, DEFAULT_CATEGORY_ID);
-      }
-      return;
-    }
-    
-    // 普通分类的合并逻辑
-    const existingCategoryId = nameToIdMap.get(categoryName);
-    
-    if (existingCategoryId) {
+    if (existingCategory) {
       // 找到同名分类，合并它们
-      const localCategory = categoryMap.get(existingCategoryId);
-      if (localCategory) {
-        // 取更新时间较晚的，但保持本地ID
-        const merged = localCategory.updatedAt > remoteCategory.updatedAt 
-          ? localCategory 
-          : { ...remoteCategory, id: localCategory.id };
-        
-        // 合并书签列表（去重）
-        const mergedBookmarks = Array.from(new Set([
-          ...(localCategory.bookmarks || []),
-          ...(remoteCategory.bookmarks || [])
-        ]));
-        
-        merged.bookmarks = mergedBookmarks;
-        categoryMap.set(existingCategoryId, merged);
-      }
-    } else if (!categoryMap.has(remoteCategory.id)) {
-      // 确实是新的分类，添加它
-      categoryMap.set(remoteCategory.id, remoteCategory);
-      nameToIdMap.set(categoryName, remoteCategory.id);
+      // 取更新时间较晚的数据
+      const merged = existingCategory.updatedAt > remoteCategory.updatedAt 
+        ? existingCategory 
+        : remoteCategory;
+      
+      // 合并书签列表（去重）
+      const mergedBookmarks = Array.from(new Set([
+        ...(existingCategory.bookmarks || []),
+        ...(remoteCategory.bookmarks || [])
+      ]));
+      
+      merged.bookmarks = mergedBookmarks;
+      categoryMap.set(categoryKey, merged);
+    } else {
+      // 新的分类，直接添加
+      categoryMap.set(categoryKey, remoteCategory);
     }
   });
   
@@ -309,41 +276,36 @@ function mergeCategories(localCategories: any[], remoteCategories: any[]): any[]
 }
 
 /**
- * 合并书签
+ * 合并书签（适配新数据结构：使用URL作为唯一标识）
  */
 function mergeBookmarks(localBookmarks: any[], remoteBookmarks: any[]): any[] {
-  const bookmarkMap = new Map();
-  const urlToIdMap = new Map(); // 用于按URL查找已存在的书签
+  const bookmarkMap = new Map<string, any>();
   
-  // 先添加本地书签
+  // 先添加本地书签（以URL作为键）
   localBookmarks.forEach(bookmark => {
-    if (bookmark.id && bookmark.url) {
-      bookmarkMap.set(bookmark.id, bookmark);
-      urlToIdMap.set(bookmark.url.toLowerCase().trim(), bookmark.id);
+    if (bookmark.url) {
+      const bookmarkKey = bookmark.url.toLowerCase().trim();
+      bookmarkMap.set(bookmarkKey, bookmark);
     }
   });
   
   // 合并远程书签
   remoteBookmarks.forEach(remoteBookmark => {
-    if (!remoteBookmark.id || !remoteBookmark.url) return;
+    if (!remoteBookmark.url) return;
     
-    const bookmarkUrl = remoteBookmark.url.toLowerCase().trim();
-    const existingBookmarkId = urlToIdMap.get(bookmarkUrl);
+    const bookmarkKey = remoteBookmark.url.toLowerCase().trim();
+    const existingBookmark = bookmarkMap.get(bookmarkKey);
     
-    if (existingBookmarkId) {
+    if (existingBookmark) {
       // 找到相同URL的书签，合并它们
-      const localBookmark = bookmarkMap.get(existingBookmarkId);
-      if (localBookmark) {
-        // 取更新时间较晚的，但保持本地ID
-        const merged = localBookmark.updatedAt > remoteBookmark.updatedAt 
-          ? localBookmark 
-          : { ...remoteBookmark, id: localBookmark.id };
-        bookmarkMap.set(existingBookmarkId, merged);
-      }
-    } else if (!bookmarkMap.has(remoteBookmark.id)) {
-      // 确实是新的书签，添加它
-      bookmarkMap.set(remoteBookmark.id, remoteBookmark);
-      urlToIdMap.set(bookmarkUrl, remoteBookmark.id);
+      // 取更新时间较晚的数据
+      const merged = existingBookmark.updatedAt > remoteBookmark.updatedAt 
+        ? existingBookmark 
+        : remoteBookmark;
+      bookmarkMap.set(bookmarkKey, merged);
+    } else {
+      // 新的书签，直接添加
+      bookmarkMap.set(bookmarkKey, remoteBookmark);
     }
   });
   

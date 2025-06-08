@@ -19,9 +19,8 @@ export const adaptBookmarkToItem = (bookmark: Bookmark): BookmarkItem => {
   }
 
   return {
-    id: bookmark.id,
+    url: bookmark.url, // 使用URL作为唯一标识
     title: bookmark.title,
-    url: bookmark.url,
     description: bookmark.description,
     iconType,
     iconText: bookmark.iconText || bookmark.title.slice(0, 2),
@@ -37,11 +36,10 @@ export const adaptItemToBookmark = (item: BookmarkItem, originalBookmark?: Bookm
   const now = Date.now();
   
   return {
-    id: item.id,
     name: item.title,
     title: item.title,
     url: item.url,
-    categoryId: originalBookmark?.categoryId,
+    categoryName: originalBookmark?.categoryName,
     internalUrl: originalBookmark?.internalUrl,
     externalUrl: originalBookmark?.externalUrl,
     description: item.description || originalBookmark?.description,

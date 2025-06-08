@@ -26,9 +26,8 @@ export interface ImageScaleConfig {
 
 // 书签项目接口
 export interface BookmarkItem {
-  id: string;
   title: string;
-  url: string;
+  url: string;                   // URL作为唯一标识
   description?: string;          // 书签描述信息
   iconType: IconType;            // 使用统一的IconType
   iconText?: string;             // 文字图标内容（不限字符数）

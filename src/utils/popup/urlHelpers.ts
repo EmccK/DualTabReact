@@ -31,8 +31,8 @@ export function validateQuickBookmarkForm(formData: QuickBookmarkFormData): Form
   }
 
   // 验证分类
-  if (!formData.categoryId) {
-    errors.categoryId = '请选择书签分类';
+  if (!formData.categoryName) {
+    errors.categoryName = '请选择书签分类';
   }
 
   return {

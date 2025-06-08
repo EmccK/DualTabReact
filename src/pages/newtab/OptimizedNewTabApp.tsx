@@ -66,7 +66,7 @@ function OptimizedNewTabApp() {
   
   // 优化的分类切换Hook
   const { 
-    selectedCategoryId, 
+    selectedCategoryName, 
     handleCategorySelect, 
     isPending: categoryPending, 
     isInitialized: categoryInitialized 
@@ -237,9 +237,9 @@ function OptimizedNewTabApp() {
   }, [addBookmark])
 
   // 处理书签更新
-  const handleBookmarkUpdate = useCallback(async (bookmarkId: string, updates: Partial<Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt'>>) => {
+  const handleBookmarkUpdate = useCallback(async (bookmarkUrl: string, updates: Partial<Omit<Bookmark, 'createdAt' | 'updatedAt'>>) => {
     try {
-      await updateBookmark(bookmarkId, updates)
+      await updateBookmark(bookmarkUrl, updates)
     } catch (error) {
       throw error
     }
@@ -341,26 +341,26 @@ function OptimizedNewTabApp() {
   }, [])
 
   // 删除分类处理
-  const handleDeleteCategory = useCallback(async (categoryId: string) => {
+  const handleDeleteCategory = useCallback(async (categoryName: string) => {
     if (categories.length <= 1) {
       alert('至少需要保留一个分类')
       return
     }
     
     try {
-      const result = await deleteCategory(categoryId)
+      const result = await deleteCategory(categoryName)
       if (result.success) {
         hideContextMenu()
-        if (selectedCategoryId === categoryId) {
-          const remainingCategory = categories.find(cat => cat.id !== categoryId)
-          const newSelectedId = remainingCategory?.id || null
-          await handleCategorySelect(newSelectedId)
+        if (selectedCategoryName === categoryName) {
+          const remainingCategory = categories.find(cat => cat.name !== categoryName)
+          const newSelectedName = remainingCategory?.name || null
+          await handleCategorySelect(newSelectedName)
         }
       } else {
       }
     } catch (error) {
     }
-  }, [deleteCategory, selectedCategoryId, hideContextMenu, categories, handleCategorySelect])
+  }, [deleteCategory, selectedCategoryName, hideContextMenu, categories, handleCategorySelect])
 
   // 关闭分类弹窗
   const handleCloseCategoryModal = useCallback(() => {
@@ -369,7 +369,7 @@ function OptimizedNewTabApp() {
   }, [])
 
   // 保存分类
-  const handleSaveCategory = useCallback(async (categoryData: Omit<BookmarkCategory, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveCategory = useCallback(async (categoryData: Omit<BookmarkCategory, 'createdAt' | 'updatedAt'>) => {
     try {
       const result = await addCategory(categoryData)
       if (result.success) {
@@ -380,9 +380,9 @@ function OptimizedNewTabApp() {
   }, [addCategory])
 
   // 更新分类
-  const handleUpdateCategory = useCallback(async (id: string, updates: Partial<BookmarkCategory>) => {
+  const handleUpdateCategory = useCallback(async (name: string, updates: Partial<BookmarkCategory>) => {
     try {
-      const result = await updateCategory(id, updates)
+      const result = await updateCategory(name, updates)
       if (result.success) {
       } else {
       }
@@ -405,7 +405,7 @@ function OptimizedNewTabApp() {
   const handleDeleteBookmark = useCallback(async (bookmark: Bookmark) => {
     if (confirm(`确定要删除书签"${bookmark.title}"吗？`)) {
       try {
-        const result = await deleteBookmark(bookmark.id)
+        const result = await deleteBookmark(bookmark.url)
         if (result.success) {
           hideContextMenu()
         } else {
@@ -434,7 +434,7 @@ function OptimizedNewTabApp() {
   useEffect(() => {
     const handleMessage = (message: any, _sender: any, sendResponse: any) => {
       if (message.action === 'get_selected_category') {
-        sendResponse({ selectedCategoryId })
+        sendResponse({ selectedCategoryName })
         return true
       }
       return false
@@ -444,7 +444,7 @@ function OptimizedNewTabApp() {
     return () => {
       chrome.runtime.onMessage.removeListener(handleMessage)
     }
-  }, [selectedCategoryId])
+  }, [selectedCategoryName])
 
   // 数据变更检测 - 自动触发同步上传
   useBookmarkDataChangeDetection(bookmarks, categories, {
@@ -472,7 +472,7 @@ function OptimizedNewTabApp() {
 
   // 计算显示的书签（使用优化的过滤逻辑）
   const displayBookmarks = bookmarks.filter(bookmark => 
-    !selectedCategoryId || bookmark.categoryId === selectedCategoryId
+    !selectedCategoryName || bookmark.categoryName === selectedCategoryName
   )
 
   return (
@@ -538,7 +538,7 @@ function OptimizedNewTabApp() {
               {isPageReady && categoryInitialized && !bookmarksLoading ? (
                 <OptimizedBookmarkGridV3
                   bookmarks={bookmarks}
-                  selectedCategoryId={selectedCategoryId}
+                  selectedCategoryName={selectedCategoryName}
                   networkMode={networkMode}
                   bookmarkSettings={settings.bookmarks}
                   onBookmarkClick={handleBookmarkClick}
@@ -579,7 +579,7 @@ function OptimizedNewTabApp() {
         {/* 右侧分类边栏 */}
         <SimpleCategorySidebar
           categories={categories}
-          selectedCategoryId={selectedCategoryId}
+          selectedCategoryName={selectedCategoryName}
           onCategorySelect={handleCategorySelect}
           onAddCategory={handleAddCategory}
           onEditCategory={handleEditCategory}
@@ -643,7 +643,7 @@ function OptimizedNewTabApp() {
         mode={bookmarkModalMode}
         bookmark={editingBookmark}
         networkMode={networkMode}
-        selectedCategoryId={selectedCategoryId}
+        selectedCategoryName={selectedCategoryName}
         onSuccess={reloadBookmarks}
         onSave={handleBookmarkSave}
         onUpdate={handleBookmarkUpdate}
@@ -696,7 +696,7 @@ function OptimizedNewTabApp() {
               if (contextMenu.type === 'bookmark') {
                 handleDeleteBookmark(contextMenu.target as Bookmark)
               } else if (contextMenu.type === 'category') {
-                handleDeleteCategory((contextMenu.target as BookmarkCategory).id)
+                handleDeleteCategory((contextMenu.target as BookmarkCategory).name)
               }
             }}
             disabled={contextMenu.type === 'category' && categories.length <= 1}

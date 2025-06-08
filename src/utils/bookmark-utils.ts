@@ -12,10 +12,12 @@ import {
 } from './storage';
 
 /**
- * 生成书签唯一ID
+ * 根据URL和分类名生成书签唯一标识
  */
-export function generateBookmarkId(): string {
-  return `bm_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+export function getBookmarkKey(url: string, categoryName?: string): string {
+  const cleanUrl = url.trim().toLowerCase();
+  const cleanCategoryName = categoryName?.trim() || '';
+  return `${cleanCategoryName}:${cleanUrl}`;
 }
 
 /**
@@ -25,7 +27,7 @@ export function createBookmark(
   title: string,
   url: string,
   options: {
-    categoryId?: string;
+    categoryName?: string;
     internalUrl?: string;
     externalUrl?: string;
     description?: string;
@@ -41,11 +43,10 @@ export function createBookmark(
   const now = Date.now();
   
   return {
-    id: generateBookmarkId(),
-    name: title.trim(), // 添加name字段
+    name: title.trim(),
     title: title.trim(),
     url: url.trim(),
-    categoryId: options.categoryId, // 添加categoryId支持
+    categoryName: options.categoryName,
     internalUrl: options.internalUrl?.trim() || '',
     externalUrl: options.externalUrl?.trim() || '',
     description: options.description?.trim() || '',
@@ -70,7 +71,7 @@ export function validateBookmark(bookmark: any): bookmark is Bookmark {
   }
 
   // 检查必需字段
-  const requiredFields = ['id', 'title', 'url', 'createdAt', 'updatedAt'];
+  const requiredFields = ['name', 'title', 'url', 'createdAt', 'updatedAt'];
   for (const field of requiredFields) {
     if (!(field in bookmark)) {
       return false;
@@ -78,7 +79,7 @@ export function validateBookmark(bookmark: any): bookmark is Bookmark {
   }
 
   // 类型检查
-  if (typeof bookmark.id !== 'string' || bookmark.id.trim() === '') {
+  if (typeof bookmark.name !== 'string' || bookmark.name.trim() === '') {
     return false;
   }
 
@@ -106,7 +107,7 @@ export function validateBookmark(bookmark: any): bookmark is Bookmark {
  */
 export function updateBookmark(
   bookmark: Bookmark,
-  updates: Partial<Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt'>>
+  updates: Partial<Omit<Bookmark, 'createdAt' | 'updatedAt'>>
 ): Bookmark {
   return {
     ...bookmark,
@@ -132,32 +133,57 @@ export function getBookmarkUrl(bookmark: Bookmark, networkMode: NetworkMode): st
 }
 
 /**
- * 为现有书签数据迁移添加唯一ID
+ * 迁移书签数据到新格式（移除ID字段，确保数据完整性）
  */
 export async function migrateBookmarksToUniqueIds(): Promise<OperationResult<Bookmark[]>> {
   try {
     const result = await loadBookmarks();
     if (!result.success) {
-      return result;
+      return {
+        success: false,
+        error: result.error || '加载书签失败'
+      };
     }
 
     const bookmarks = result.data || [];
     let hasChanges = false;
 
-    // 检查并为每个书签添加唯一ID
-    for (let i = 0; i < bookmarks.length; i++) {
-      if (!bookmarks[i].id) {
-        bookmarks[i].id = generateBookmarkId();
+    // 清理和迁移书签数据
+    const migratedBookmarks = bookmarks.map(bookmark => {
+      const migrated = { ...bookmark };
+      
+      // 移除旧的ID字段（如果存在）
+      if ('id' in migrated) {
+        delete (migrated as any).id;
         hasChanges = true;
       }
-    }
+      
+      // 确保必需字段存在
+      if (!migrated.name && migrated.title) {
+        migrated.name = migrated.title;
+        hasChanges = true;
+      }
+      
+      // 迁移categoryId到categoryName（如果存在旧数据）
+      if ('categoryId' in migrated && !migrated.categoryName) {
+        // 这里可以添加从categoryId查找categoryName的逻辑
+        delete (migrated as any).categoryId;
+        hasChanges = true;
+      }
+      
+      return migrated;
+    });
 
     // 如果有变更，保存书签
     if (hasChanges) {
-      const saveResult = await saveBookmarks(bookmarks);
+      const saveResult = await saveBookmarks(migratedBookmarks);
       if (!saveResult.success) {
-        return saveResult;
+        return {
+          success: false,
+          error: saveResult.error || '保存书签失败'
+        };
       }
+      return { success: true, data: migratedBookmarks };
     }
 
     return { success: true, data: bookmarks };
@@ -170,17 +196,20 @@ export async function migrateBookmarksToUniqueIds(): Promise<OperationResult<Boo
 }
 
 /**
- * 通过ID获取书签
+ * 通过URL获取书签
  */
-export async function getBookmarkById(bookmarkId: string): Promise<OperationResult<Bookmark | null>> {
+export async function getBookmarkByUrl(bookmarkUrl: string): Promise<OperationResult<Bookmark | null>> {
   try {
     const result = await loadBookmarks();
     if (!result.success) {
-      return result;
+      return {
+        success: false,
+        error: result.error || '加载书签失败'
+      };
     }
 
     const bookmarks = result.data || [];
-    const bookmark = bookmarks.find(b => b.id === bookmarkId);
+    const bookmark = bookmarks.find(b => b.url === bookmarkUrl);
     
     return { success: true, data: bookmark || null };
   } catch (error) {
@@ -191,56 +220,11 @@ export async function getBookmarkById(bookmarkId: string): Promise<OperationResu
   }
 }
 
-/**
- * 通过索引获取书签ID
- */
-export async function getBookmarkIdByIndex(index: number): Promise<OperationResult<string | null>> {
-  try {
-    const result = await loadBookmarks();
-    if (!result.success) {
-      return result;
-    }
-
-    const bookmarks = result.data || [];
-    if (index >= 0 && index < bookmarks.length) {
-      return { success: true, data: bookmarks[index].id };
-    }
-    
-    return { success: true, data: null };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : '获取书签ID失败'
-    };
-  }
-}
-
-/**
- * 通过ID获取书签索引
- */
-export async function getBookmarkIndexById(bookmarkId: string): Promise<OperationResult<number>> {
-  try {
-    const result = await loadBookmarks();
-    if (!result.success) {
-      return { success: false, error: result.error };
-    }
-
-    const bookmarks = result.data || [];
-    const index = bookmarks.findIndex(b => b.id === bookmarkId);
-    
-    return { success: true, data: index };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : '获取书签索引失败'
-    };
-  }
-}
 
 /**
  * 获取带分类信息的书签
  */
-export async function getBookmarksWithCategories(): Promise<OperationResult<(Bookmark & { categories: Array<{ id: string; name: string; color: string }> })[]>> {
+export async function getBookmarksWithCategories(): Promise<OperationResult<(Bookmark & { categories: Array<{ name: string; color: string }> })[]>> {
   try {
     const [bookmarksResult, categoriesResult] = await Promise.all([
       loadBookmarks(),
@@ -248,11 +232,17 @@ export async function getBookmarksWithCategories(): Promise<OperationResult<(Boo
     ]);
 
     if (!bookmarksResult.success) {
-      return bookmarksResult;
+      return {
+        success: false,
+        error: bookmarksResult.error || '加载书签失败'
+      };
     }
 
     if (!categoriesResult.success) {
-      return categoriesResult;
+      return {
+        success: false,
+        error: categoriesResult.error || '加载分类失败'
+      };
     }
 
     const bookmarks = bookmarksResult.data || [];
@@ -260,16 +250,10 @@ export async function getBookmarksWithCategories(): Promise<OperationResult<(Boo
 
     // 为每个书签添加所属分类信息
     const enhancedBookmarks = bookmarks.map(bookmark => {
-      // 确保书签有ID
-      if (!bookmark.id) {
-        bookmark.id = generateBookmarkId();
-      }
-
       // 查找书签所属的分类
       const bookmarkCategories = categories
-        .filter(category => category.bookmarks.includes(bookmark.id))
+        .filter(category => category.bookmarks.includes(bookmark.url))
         .map(cat => ({
-          id: cat.id,
           name: cat.name,
           color: cat.color
         }));
@@ -292,7 +276,7 @@ export async function getBookmarksWithCategories(): Promise<OperationResult<(Boo
 /**
  * 按分类过滤书签
  */
-export async function getBookmarksByCategory(categoryId: string): Promise<OperationResult<Bookmark[]>> {
+export async function getBookmarksByCategory(categoryName: string): Promise<OperationResult<Bookmark[]>> {
   try {
     const [bookmarksResult, categoriesResult] = await Promise.all([
       loadBookmarks(),
@@ -300,29 +284,35 @@ export async function getBookmarksByCategory(categoryId: string): Promise<Operat
     ]);
 
     if (!bookmarksResult.success) {
-      return bookmarksResult;
+      return {
+        success: false,
+        error: bookmarksResult.error || '加载书签失败'
+      };
     }
 
     if (!categoriesResult.success) {
-      return categoriesResult;
+      return {
+        success: false,
+        error: categoriesResult.error || '加载分类失败'
+      };
     }
 
     const bookmarks = bookmarksResult.data || [];
     const categories = categoriesResult.data || [];
 
     // 找到指定分类
-    const category = categories.find(cat => cat.id === categoryId);
+    const category = categories.find(cat => cat.name === categoryName);
 
     if (!category) {
       return {
         success: false,
-        error: `找不到ID为 ${categoryId} 的分类`
+        error: `找不到名称为 ${categoryName} 的分类`
       };
     }
 
     // 过滤出属于该分类的书签
     const categoryBookmarks = bookmarks.filter(bookmark =>
-      bookmark.id && category.bookmarks.includes(bookmark.id)
+      category.bookmarks.includes(bookmark.url)
     );
 
     return { success: true, data: categoryBookmarks };
@@ -345,27 +335,33 @@ export async function getUncategorizedBookmarks(): Promise<OperationResult<Bookm
     ]);
 
     if (!bookmarksResult.success) {
-      return bookmarksResult;
+      return {
+        success: false,
+        error: bookmarksResult.error || '加载书签失败'
+      };
     }
 
     if (!categoriesResult.success) {
-      return categoriesResult;
+      return {
+        success: false,
+        error: categoriesResult.error || '加载分类失败'
+      };
     }
 
     const bookmarks = bookmarksResult.data || [];
     const categories = categoriesResult.data || [];
 
-    // 收集所有已分类的书签ID
-    const categorizedBookmarkIds = new Set<string>();
+    // 收集所有已分类的书签URL
+    const categorizedBookmarkUrls = new Set<string>();
     categories.forEach(category => {
-      category.bookmarks.forEach(bookmarkId => {
-        categorizedBookmarkIds.add(bookmarkId);
+      category.bookmarks.forEach(bookmarkUrl => {
+        categorizedBookmarkUrls.add(bookmarkUrl);
       });
     });
 
     // 过滤出未分类的书签
     const uncategorizedBookmarks = bookmarks.filter(bookmark =>
-      bookmark.id && !categorizedBookmarkIds.has(bookmark.id)
+      !categorizedBookmarkUrls.has(bookmark.url)
     );
 
     return { success: true, data: uncategorizedBookmarks };
@@ -380,35 +376,41 @@ export async function getUncategorizedBookmarks(): Promise<OperationResult<Bookm
 /**
  * 将书签添加到分类
  */
-export async function addBookmarkToCategory(categoryId: string, bookmarkId: string): Promise<OperationResult<BookmarkCategory>> {
+export async function addBookmarkToCategory(categoryName: string, bookmarkUrl: string): Promise<OperationResult<BookmarkCategory>> {
   try {
     const categoriesResult = await loadCategories();
     if (!categoriesResult.success) {
-      return categoriesResult;
+      return {
+        success: false,
+        error: categoriesResult.error || '加载分类失败'
+      };
     }
 
     const categories = categoriesResult.data || [];
-    const categoryIndex = categories.findIndex(cat => cat.id === categoryId);
+    const categoryIndex = categories.findIndex(cat => cat.name === categoryName);
 
     if (categoryIndex === -1) {
       return {
         success: false,
-        error: `找不到ID为 ${categoryId} 的分类`
+        error: `找不到名称为 ${categoryName} 的分类`
       };
     }
 
     // 检查书签是否已在分类中
-    if (!categories[categoryIndex].bookmarks.includes(bookmarkId)) {
+    if (!categories[categoryIndex].bookmarks.includes(bookmarkUrl)) {
       categories[categoryIndex] = {
         ...categories[categoryIndex],
-        bookmarks: [...categories[categoryIndex].bookmarks, bookmarkId],
+        bookmarks: [...categories[categoryIndex].bookmarks, bookmarkUrl],
         updatedAt: Date.now()
       };
 
       // 保存分类
       const saveResult = await saveCategories(categories);
       if (!saveResult.success) {
-        return saveResult;
+        return {
+          success: false,
+          error: saveResult.error || '保存分类失败'
+        };
       }
     }
 
@@ -424,34 +426,40 @@ export async function addBookmarkToCategory(categoryId: string, bookmarkId: stri
 /**
  * 从分类中移除书签
  */
-export async function removeBookmarkFromCategory(categoryId: string, bookmarkId: string): Promise<OperationResult<BookmarkCategory>> {
+export async function removeBookmarkFromCategory(categoryName: string, bookmarkUrl: string): Promise<OperationResult<BookmarkCategory>> {
   try {
     const categoriesResult = await loadCategories();
     if (!categoriesResult.success) {
-      return categoriesResult;
+      return {
+        success: false,
+        error: categoriesResult.error || '加载分类失败'
+      };
     }
 
     const categories = categoriesResult.data || [];
-    const categoryIndex = categories.findIndex(cat => cat.id === categoryId);
+    const categoryIndex = categories.findIndex(cat => cat.name === categoryName);
 
     if (categoryIndex === -1) {
       return {
         success: false,
-        error: `找不到ID为 ${categoryId} 的分类`
+        error: `找不到名称为 ${categoryName} 的分类`
       };
     }
 
     // 移除书签
     categories[categoryIndex] = {
       ...categories[categoryIndex],
-      bookmarks: categories[categoryIndex].bookmarks.filter(id => id !== bookmarkId),
+      bookmarks: categories[categoryIndex].bookmarks.filter(url => url !== bookmarkUrl),
       updatedAt: Date.now()
     };
 
     // 保存分类
     const saveResult = await saveCategories(categories);
     if (!saveResult.success) {
-      return saveResult;
+      return {
+        success: false,
+        error: saveResult.error || '保存分类失败'
+      };
     }
 
     return { success: true, data: categories[categoryIndex] };
@@ -466,16 +474,19 @@ export async function removeBookmarkFromCategory(categoryId: string, bookmarkId:
 /**
  * 获取书签所属的所有分类
  */
-export async function getCategoriesByBookmarkId(bookmarkId: string): Promise<OperationResult<BookmarkCategory[]>> {
+export async function getCategoriesByBookmarkUrl(bookmarkUrl: string): Promise<OperationResult<BookmarkCategory[]>> {
   try {
     const categoriesResult = await loadCategories();
     if (!categoriesResult.success) {
-      return categoriesResult;
+      return {
+        success: false,
+        error: categoriesResult.error || '加载分类失败'
+      };
     }
 
     const categories = categoriesResult.data || [];
     const bookmarkCategories = categories.filter(category =>
-      category.bookmarks.includes(bookmarkId)
+      category.bookmarks.includes(bookmarkUrl)
     );
 
     return { success: true, data: bookmarkCategories };
@@ -490,30 +501,41 @@ export async function getCategoriesByBookmarkId(bookmarkId: string): Promise<Ope
 /**
  * 批量操作：添加多个书签
  */
-export async function addBookmarks(newBookmarks: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<OperationResult<Bookmark[]>> {
+export async function addBookmarks(newBookmarks: Omit<Bookmark, 'createdAt' | 'updatedAt'>[]): Promise<OperationResult<Bookmark[]>> {
   try {
     const result = await loadBookmarks();
     if (!result.success) {
-      return result;
+      return {
+        success: false,
+        error: result.error || '加载书签失败'
+      };
     }
 
     const existingBookmarks = result.data || [];
     const now = Date.now();
 
-    // 创建新书签，添加ID和时间戳
+    // 创建新书签，添加时间戳
     const bookmarksToAdd: Bookmark[] = newBookmarks.map(bookmark => ({
       ...bookmark,
-      id: generateBookmarkId(),
       createdAt: now,
       updatedAt: now
     }));
 
-    const updatedBookmarks = [...existingBookmarks, ...bookmarksToAdd];
+    // 检查是否有重复的URL，如果有则覆盖
+    const existingUrls = new Set(existingBookmarks.map(b => b.url));
+    const filteredExistingBookmarks = existingBookmarks.filter(bookmark => 
+      !bookmarksToAdd.some(newBookmark => newBookmark.url === bookmark.url)
+    );
+
+    const updatedBookmarks = [...filteredExistingBookmarks, ...bookmarksToAdd];
 
     // 保存更新后的书签
     const saveResult = await saveBookmarks(updatedBookmarks);
     if (!saveResult.success) {
-      return saveResult;
+      return {
+        success: false,
+        error: saveResult.error || '保存书签失败'
+      };
     }
 
     return { success: true, data: bookmarksToAdd };
@@ -528,7 +550,7 @@ export async function addBookmarks(newBookmarks: Omit<Bookmark, 'id' | 'createdA
 /**
  * 批量操作：删除多个书签
  */
-export async function deleteBookmarks(bookmarkIds: string[]): Promise<OperationResult<void>> {
+export async function deleteBookmarks(bookmarkUrls: string[]): Promise<OperationResult<void>> {
   try {
     const [bookmarksResult, categoriesResult] = await Promise.all([
       loadBookmarks(),
@@ -536,24 +558,30 @@ export async function deleteBookmarks(bookmarkIds: string[]): Promise<OperationR
     ]);
 
     if (!bookmarksResult.success) {
-      return bookmarksResult;
+      return {
+        success: false,
+        error: bookmarksResult.error || '加载书签失败'
+      };
     }
 
     if (!categoriesResult.success) {
-      return categoriesResult;
+      return {
+        success: false,
+        error: categoriesResult.error || '加载分类失败'
+      };
     }
 
     const bookmarks = bookmarksResult.data || [];
     const categories = categoriesResult.data || [];
 
     // 从书签列表中移除指定书签
-    const bookmarkIdsSet = new Set(bookmarkIds);
-    const updatedBookmarks = bookmarks.filter(bookmark => !bookmarkIdsSet.has(bookmark.id));
+    const bookmarkUrlsSet = new Set(bookmarkUrls);
+    const updatedBookmarks = bookmarks.filter(bookmark => !bookmarkUrlsSet.has(bookmark.url));
 
     // 从所有分类中移除这些书签
     const updatedCategories = categories.map(category => ({
       ...category,
-      bookmarks: category.bookmarks.filter(id => !bookmarkIdsSet.has(id)),
+      bookmarks: category.bookmarks.filter(url => !bookmarkUrlsSet.has(url)),
       updatedAt: Date.now()
     }));
 
@@ -654,11 +682,17 @@ export async function exportBookmarksData(): Promise<OperationResult<{ bookmarks
     ]);
 
     if (!bookmarksResult.success) {
-      return bookmarksResult;
+      return {
+        success: false,
+        error: bookmarksResult.error || '加载书签失败'
+      };
     }
 
     if (!categoriesResult.success) {
-      return categoriesResult;
+      return {
+        success: false,
+        error: categoriesResult.error || '加载分类失败'
+      };
     }
 
     return {

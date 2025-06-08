@@ -11,8 +11,8 @@ interface CategoryModalProps {
   onClose: () => void
   mode: 'add' | 'edit'
   category?: BookmarkCategory
-  onSave: (categoryData: Omit<BookmarkCategory, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
-  onUpdate: (id: string, updates: Partial<BookmarkCategory>) => Promise<void>
+  onSave: (categoryData: Omit<BookmarkCategory, 'createdAt' | 'updatedAt'>) => Promise<void>
+  onUpdate: (name: string, updates: Partial<BookmarkCategory>) => Promise<void>
 }
 
 const PRESET_ICONS = ['🏠', '💼', '🎯', '📚', '🛠️', '🎮', '🎵', '📱', '💻', '🌐']
@@ -53,7 +53,7 @@ export function CategoryModal({ isOpen, onClose, mode, category, onSave, onUpdat
       if (mode === 'add') {
         await onSave(formData)
       } else if (mode === 'edit' && category) {
-        await onUpdate(category.id, formData)
+        await onUpdate(category.name, formData)
       }
       onClose()
     } catch {

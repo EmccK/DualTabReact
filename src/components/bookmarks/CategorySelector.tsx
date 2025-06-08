@@ -60,12 +60,12 @@ export function CategorySelector({
       {availableCategories && availableCategories.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {availableCategories.map((category) => {
-            const isSelected = selectedCategories.includes(category.id)
+            const isSelected = selectedCategories.includes(category.name)
             return (
               <button
-                key={category.id}
+                key={category.name}
                 type="button"
-                onClick={() => handleCategoryToggle(category.id)}
+                onClick={() => handleCategoryToggle(category.name)}
                 className={cn(
                   "h-10 flex items-center justify-center space-x-1 relative overflow-hidden rounded-md border-2 transition-all duration-200 hover:scale-105",
                   isSelected 
@@ -175,13 +175,13 @@ export function CategorySelector({
       {/* 已选择的分类 - 紧凑显示 */}
       {selectedCategories.length > 0 && (
         <div className="flex flex-wrap gap-1 pt-1">
-          {selectedCategories.map((categoryId) => {
+          {selectedCategories.map((categoryName) => {
             // 先从真实分类中查找
-            const realCategory = availableCategories?.find(c => c.id === categoryId)
+            const realCategory = availableCategories?.find(c => c.name === categoryName)
             if (realCategory) {
               return (
                 <div
-                  key={categoryId}
+                  key={categoryName}
                   className="inline-flex items-center space-x-1 border px-2 py-1 rounded-full text-xs font-medium"
                   style={{
                     backgroundColor: `${realCategory.color}20`,
@@ -193,7 +193,7 @@ export function CategorySelector({
                   <span>{realCategory.name}</span>
                   <button
                     type="button"
-                    onClick={() => handleCategoryToggle(categoryId)}
+                    onClick={() => handleCategoryToggle(categoryName)}
                     className="ml-1 hover:text-red-500 text-xs"
                     style={{ color: realCategory.color }}
                   >
@@ -204,17 +204,17 @@ export function CategorySelector({
             }
             
             // 如果不是真实分类，可能是预设分类名称
-            const categoryConfig = theme.categoryColors.find(c => c.name === categoryId)
+            const categoryConfig = theme.categoryColors.find(c => c.name === categoryName)
             return (
               <div
-                key={categoryId}
+                key={categoryName}
                 className="inline-flex items-center space-x-1 bg-[#4F46E5]/10 text-[#4F46E5] border border-[#4F46E5]/20 px-2 py-1 rounded-full text-xs font-medium"
               >
                 <span className="text-xs">{categoryConfig?.icon || '📌'}</span>
-                <span>{categoryId}</span>
+                <span>{categoryName}</span>
                 <button
                   type="button"
-                  onClick={() => handleCategoryToggle(categoryId)}
+                  onClick={() => handleCategoryToggle(categoryName)}
                   className="ml-1 text-[#4F46E5] hover:text-red-500 text-xs"
                 >
                   ×
