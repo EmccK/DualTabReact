@@ -3,26 +3,22 @@
  * 使用统一的BackgroundImageManager服务
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
-import { 
-  RefreshCw, 
-  Info, 
-  Grid,
-  List
+import {
+  Info
 } from 'lucide-react';
 
 import { useSettings } from '@/hooks/useSettings';
-import type { 
-  BackgroundImage, 
+import type {
+  BackgroundImage,
   BackgroundImageSource,
 } from '@/types/background';
 import { RANDOM_IMAGE_CATEGORIES, RANDOM_IMAGE_THEMES } from '@/types/randomImage';
@@ -43,10 +39,27 @@ export function UniversalImageGallery({
   initialCategory = 'all',
   initialTheme = 'all'
 }: UniversalImageGalleryProps) {
-  const { settings, updateSettings } = useSettings();
-  const [selectedCategory, setSelectedCategory] = useState(settings.background.randomImageCategory || initialCategory);
-  const [selectedTheme, setSelectedTheme] = useState(settings.background.randomImageTheme || initialTheme);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const { settings, updateSettings, isLoading } = useSettings();
+
+  // 使用 useMemo 来稳定初始值，避免因为 settings 变化导致的重新渲染
+  const stableInitialCategory = useMemo(() => {
+    return settings.background.randomImageCategory || initialCategory;
+  }, [settings.background.randomImageCategory, initialCategory]);
+
+  const stableInitialTheme = useMemo(() => {
+    return settings.background.randomImageTheme || initialTheme;
+  }, [settings.background.randomImageTheme, initialTheme]);
+
+  const [selectedCategory, setSelectedCategory] = useState(stableInitialCategory);
+  const [selectedTheme, setSelectedTheme] = useState(stableInitialTheme);
+
+  // 当设置加载完成后，同步状态
+  useEffect(() => {
+    if (!isLoading) {
+      setSelectedCategory(settings.background.randomImageCategory || initialCategory);
+      setSelectedTheme(settings.background.randomImageTheme || initialTheme);
+    }
+  }, [isLoading, settings.background.randomImageCategory, settings.background.randomImageTheme, initialCategory, initialTheme]);
 
 
 
@@ -55,38 +68,30 @@ export function UniversalImageGallery({
       {/* 控制面板 */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-indigo-600" />
-              背景图片
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                className="h-7 px-2"
-              >
-                {viewMode === 'grid' ? <List className="w-3 h-3" /> : <Grid className="w-3 h-3" />}
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Info className="w-4 h-4 text-indigo-600" />
+            随机图片设置
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {/* 筛选选项 */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs text-gray-600">分类</label>
-              <Select value={selectedCategory} onValueChange={(value) => {
-                setSelectedCategory(value);
-                // 保存选择的分类到设置中
-                updateSettings('background', {
-                  ...settings.background,
-                  randomImageCategory: value
-                });
-              }}>
+              <Select
+                value={selectedCategory}
+                onValueChange={(value) => {
+                  setSelectedCategory(value);
+                  // 使用防抖更新设置，避免频繁的状态更新
+                  updateSettings('background', {
+                    ...settings.background,
+                    randomImageCategory: value
+                  });
+                }}
+                disabled={isLoading}
+              >
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
+                  <SelectValue placeholder="选择分类..." />
                 </SelectTrigger>
                 <SelectContent>
                   {RANDOM_IMAGE_CATEGORIES.map((category) => (
@@ -100,16 +105,20 @@ export function UniversalImageGallery({
 
             <div className="space-y-1">
               <label className="text-xs text-gray-600">主题</label>
-              <Select value={selectedTheme} onValueChange={(value) => {
-                setSelectedTheme(value);
-                // 保存选择的主题到设置中
-                updateSettings('background', {
-                  ...settings.background,
-                  randomImageTheme: value
-                });
-              }}>
+              <Select
+                value={selectedTheme}
+                onValueChange={(value) => {
+                  setSelectedTheme(value);
+                  // 使用防抖更新设置，避免频繁的状态更新
+                  updateSettings('background', {
+                    ...settings.background,
+                    randomImageTheme: value
+                  });
+                }}
+                disabled={isLoading}
+              >
                 <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
+                  <SelectValue placeholder="选择主题..." />
                 </SelectTrigger>
                 <SelectContent>
                   {RANDOM_IMAGE_THEMES.map((theme) => (
@@ -131,7 +140,9 @@ export function UniversalImageGallery({
             <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-blue-800">
               <p className="font-medium mb-1">使用说明：</p>
-              <p className="text-blue-700">选择喜欢的图片分类，然后点击右下角的刷新按钮获取随机背景图片</p>
+              <p className="text-blue-700">
+                选择喜欢的图片分类和主题，然后点击右下角的刷新按钮获取随机背景图片。
+              </p>
             </div>
           </div>
         </CardContent>
