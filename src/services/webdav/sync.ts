@@ -121,7 +121,10 @@ export class WebDAVSyncService {
 
       // 步骤2: 确保同步目录存在
       this.updateSyncState('准备同步目录', 20);
-      await this.client.ensureDirectory('/');
+      const syncDirExists = await this.client.ensureSyncDirectory();
+      if (!syncDirExists) {
+        throw new Error('无法创建同步目录，请检查WebDAV服务器设置和权限');
+      }
 
       // 步骤3: 创建本地数据包
       this.updateSyncState('准备本地数据', 30);
@@ -178,9 +181,38 @@ export class WebDAVSyncService {
     localData: { categories: any[]; bookmarks: any[]; settings: any },
     options: SyncOptions = {}
   ): Promise<SyncResult> {
+    if (this.syncState.isRunning) {
+      return {
+        status: 'error',
+        error: ERROR_MESSAGES.SYNC_IN_PROGRESS,
+        timestamp: Date.now(),
+      };
+    }
+
+    this.syncState = {
+      isRunning: true,
+      startTime: Date.now(),
+      currentStep: '初始化上传',
+      progress: 0,
+    };
+
     try {
-      this.updateSyncState('上传数据', 50);
+      // 步骤1: 测试连接
+      this.updateSyncState('测试连接', 10);
+      const connectionOk = await this.client.testConnection();
+      if (!connectionOk) {
+        throw new Error(ERROR_MESSAGES.NETWORK_ERROR);
+      }
+
+      // 步骤2: 确保同步目录存在
+      this.updateSyncState('准备同步目录', 20);
+      const syncDirExists = await this.client.ensureSyncDirectory();
+      if (!syncDirExists) {
+        throw new Error('无法创建同步目录，请检查WebDAV服务器设置和权限');
+      }
       
+      // 步骤3: 准备数据
+      this.updateSyncState('准备上传数据', 40);
       const dataPackage = await createSyncDataPackage(
         localData.categories,
         localData.bookmarks,
@@ -188,23 +220,36 @@ export class WebDAVSyncService {
         this.device
       );
 
+      // 步骤4: 创建备份（如果需要）
       if (options.createBackup) {
-        await this.createBackup(dataPackage);
+        this.updateSyncState('创建备份', 60);
+        try {
+          await this.createBackup(dataPackage);
+        } catch (backupError) {
+          // 备份失败不影响主要上传流程，但记录警告
+          console.warn('备份创建失败:', backupError);
+        }
       }
 
+      // 步骤5: 上传数据
+      this.updateSyncState('上传数据', 80);
       await this.uploadDataPackage(dataPackage);
 
+      this.updateSyncState('上传完成', 100);
       return {
         status: 'success',
         message: SUCCESS_MESSAGES.UPLOAD_SUCCESS,
         timestamp: Date.now(),
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.SERVER_ERROR;
       return {
         status: 'error',
-        error: error instanceof Error ? error.message : ERROR_MESSAGES.SERVER_ERROR,
+        error: errorMessage,
         timestamp: Date.now(),
       };
+    } finally {
+      this.syncState.isRunning = false;
     }
   }
 
@@ -311,11 +356,22 @@ export class WebDAVSyncService {
    */
   private async uploadDataPackage(dataPackage: SyncDataPackage): Promise<void> {
     try {
+      // 确保同步目录存在
+      const syncDirExists = await this.client.ensureSyncDirectory();
+      if (!syncDirExists) {
+        throw new Error('无法创建同步目录，请检查WebDAV服务器设置和权限');
+      }
+      
       const content = JSON.stringify(dataPackage, null, 2);
-      await this.client.putFile(`/${SYNC_FILES.DATA}`, content, 'application/json');
+      const uploadSuccess = await this.client.putFile(`/${SYNC_FILES.DATA}`, content, 'application/json');
+      
+      if (!uploadSuccess) {
+        throw new Error('文件上传失败，请检查WebDAV服务器连接和权限');
+      }
       
     } catch (error) {
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.SERVER_ERROR;
+      throw new Error(errorMessage);
     }
   }
 
@@ -328,10 +384,14 @@ export class WebDAVSyncService {
       const backupFileName = `${SYNC_FILES.BACKUP_PREFIX}${timestamp}.json`;
       const content = JSON.stringify(dataPackage, null, 2);
       
-      await this.client.putFile(`/${backupFileName}`, content, 'application/json');
+      const backupSuccess = await this.client.putFile(`/${backupFileName}`, content, 'application/json');
+      if (!backupSuccess) {
+        throw new Error('备份文件上传失败');
+      }
       
     } catch (error) {
-      // 备份失败不影响主要同步流程
+      // 备份失败不影响主要同步流程，但应该抛出错误以便调用者处理
+      throw error;
     }
   }
 

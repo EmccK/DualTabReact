@@ -66,14 +66,22 @@ export class WebDAVClient {
   /**
    * 创建请求头
    */
-  private createHeaders(additionalHeaders: Record<string, string> = {}): Record<string, string> {
+  private createHeaders(additionalHeaders: Record<string, string> = {}, includeDefaultContentType: boolean = true): Record<string, string> {
     const authConfig = createAuthConfigFromWebDAV(this.config);
     const authHeader = createAuthHeader(authConfig);
     
-    return {
+    const baseHeaders = {
       [WEBDAV_HEADERS.AUTHORIZATION]: authHeader,
-      [WEBDAV_HEADERS.CONTENT_TYPE]: WEBDAV_CONTENT_TYPES.XML,
       'User-Agent': 'DualTab WebDAV Client/2.0.0',
+    };
+    
+    // 只在需要时添加默认Content-Type
+    if (includeDefaultContentType) {
+      baseHeaders[WEBDAV_HEADERS.CONTENT_TYPE] = WEBDAV_CONTENT_TYPES.XML;
+    }
+    
+    return {
+      ...baseHeaders,
       ...additionalHeaders,
     };
   }
@@ -82,7 +90,7 @@ export class WebDAVClient {
    * 执行WebDAV请求的核心方法
    */
   async request(options: WebDAVRequestOptions): Promise<WebDAVResponse> {
-    const { method, url, headers = {}, body, timeout = SYNC_CONSTANTS.DEFAULT_TIMEOUT } = options;
+    const { method, url, headers = {}, body, timeout = SYNC_CONSTANTS.DEFAULT_TIMEOUT, useDefaultContentType = true } = options;
     
 
     try {
@@ -91,7 +99,7 @@ export class WebDAVClient {
 
       const response = await fetch(url, {
         method,
-        headers: this.createHeaders(headers),
+        headers: this.createHeaders(headers, useDefaultContentType),
         body,
         signal: controller.signal,
       });
@@ -147,7 +155,7 @@ export class WebDAVClient {
   }
 
   /**
-   * 检查路径是否存在
+   * 检查路径是否存在（相对于同步目录）
    */
   async exists(path: string): Promise<boolean> {
     try {
@@ -168,40 +176,166 @@ export class WebDAVClient {
   }
 
   /**
-   * 创建目录
+   * 检查绝对路径是否存在
    */
-  async createDirectory(path: string): Promise<boolean> {
+  async existsAbsolute(absolutePath: string): Promise<boolean> {
     try {
-      const url = this.buildUrl(path);
+      const url = this.baseUrl + absolutePath;
+      
       const response = await this.request({
-        method: 'MKCOL',
+        method: 'PROPFIND',
         url,
-        body: MKCOL_BODY,
+        headers: {
+          [WEBDAV_HEADERS.DEPTH]: '0',
+        },
+        body: PROPFIND_BODY,
       });
 
-      return response.status === WEBDAV_STATUS.CREATED || response.status === WEBDAV_STATUS.OK;
+      return response.status === WEBDAV_STATUS.OK || response.status === WEBDAV_STATUS.MULTI_STATUS;
     } catch (error) {
       return false;
     }
   }
 
   /**
-   * 确保目录存在
+   * 创建目录（相对于同步目录）
+   */
+  async createDirectory(path: string): Promise<boolean> {
+    try {
+      const url = this.buildUrl(path);
+      
+      // 先尝试不带请求体的MKCOL请求
+      let response = await this.request({
+        method: 'MKCOL',
+        url,
+        useDefaultContentType: false,
+      });
+
+      // 如果失败，再尝试带XML请求体的方式
+      if (response.status >= 400) {
+        response = await this.request({
+          method: 'MKCOL',
+          url,
+          body: MKCOL_BODY,
+        });
+      }
+
+      // 目录创建成功的状态码
+      const isSuccess = response.status === WEBDAV_STATUS.CREATED || 
+                       response.status === WEBDAV_STATUS.OK ||
+                       response.status === WEBDAV_STATUS.NO_CONTENT;
+      
+      // 如果返回409，可能是目录已存在，需要检查一下
+      if (!isSuccess && response.status === WEBDAV_STATUS.CONFLICT) {
+        // 检查目录是否实际存在
+        return await this.exists(path);
+      }
+      
+      return isSuccess;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * 创建绝对路径目录
+   */
+  async createDirectoryAbsolute(absolutePath: string): Promise<boolean> {
+    try {
+      const url = this.baseUrl + absolutePath;
+      
+      // 先尝试不带请求体的MKCOL请求
+      let response = await this.request({
+        method: 'MKCOL',
+        url,
+        useDefaultContentType: false,
+      });
+
+      // 如果失败，再尝试带XML请求体的方式
+      if (response.status >= 400) {
+        response = await this.request({
+          method: 'MKCOL',
+          url,
+          body: MKCOL_BODY,
+        });
+      }
+
+      // 目录创建成功的状态码
+      const isSuccess = response.status === WEBDAV_STATUS.CREATED || 
+                       response.status === WEBDAV_STATUS.OK ||
+                       response.status === WEBDAV_STATUS.NO_CONTENT;
+      
+      // 如果返回409，可能是目录已存在，需要检查一下
+      if (!isSuccess && response.status === WEBDAV_STATUS.CONFLICT) {
+        // 检查目录是否实际存在
+        return await this.existsAbsolute(absolutePath);
+      }
+      
+      return isSuccess;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * 确保同步根目录存在（/DualTab）
+   */
+  async ensureSyncDirectory(): Promise<boolean> {
+    try {
+      const syncPath = this.config.syncPath || '/DualTab';
+      
+      // 检查同步目录是否存在
+      const syncDirExists = await this.existsAbsolute(syncPath);
+      if (syncDirExists) {
+        return true;
+      }
+
+      // 创建同步目录
+      const created = await this.createDirectoryAbsolute(syncPath);
+      if (created) {
+        // 再次验证目录是否真的创建成功
+        return await this.existsAbsolute(syncPath);
+      }
+      
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * 确保目录存在（相对于同步目录）
    */
   async ensureDirectory(path: string): Promise<boolean> {
-    // 检查目录是否已存在
-    if (await this.exists(path)) {
-      return true;
-    }
+    try {
+      // 规范化路径
+      const normalizedPath = path === '/' ? '/' : path.replace(/\/+$/, '');
+      
+      // 检查目录是否已存在
+      if (await this.exists(normalizedPath)) {
+        return true;
+      }
 
-    // 递归创建父目录
-    const parentPath = path.substring(0, path.lastIndexOf('/'));
-    if (parentPath && parentPath !== path) {
-      await this.ensureDirectory(parentPath);
-    }
+      // 递归创建父目录
+      const parentPath = normalizedPath.substring(0, normalizedPath.lastIndexOf('/'));
+      if (parentPath && parentPath !== normalizedPath && parentPath !== '') {
+        const parentSuccess = await this.ensureDirectory(parentPath);
+        if (!parentSuccess) {
+          return false;
+        }
+      }
 
-    // 创建当前目录
-    return await this.createDirectory(path);
+      // 创建当前目录
+      const created = await this.createDirectory(normalizedPath);
+      if (created) {
+        // 再次验证目录是否真的创建成功
+        return await this.exists(normalizedPath);
+      }
+      
+      return false;
+    } catch (error) {
+      return false;
+    }
   }
 
   /**
@@ -238,31 +372,69 @@ export class WebDAVClient {
    * 上传文件内容
    */
   async putFile(path: string, content: string | ArrayBuffer, contentType?: string): Promise<boolean> {
-    const url = this.buildUrl(path);
-    
-    // 确保父目录存在
-    const parentPath = path.substring(0, path.lastIndexOf('/'));
-    if (parentPath) {
-      await this.ensureDirectory(parentPath);
+    try {
+      const url = this.buildUrl(path);
+      
+      // 首先确保同步根目录存在（/DualTab）
+      const syncPath = this.config.syncPath || '/DualTab';
+      const ensureSyncDirResult = await this.ensureSyncDirectory();
+      if (!ensureSyncDirResult) {
+        throw new Error(`无法创建同步目录: ${syncPath}`);
+      }
+      
+      // 然后确保文件的父目录存在（如果有子目录）
+      const parentPath = path.substring(0, path.lastIndexOf('/'));
+      if (parentPath && parentPath !== '') {
+        // 这里的parentPath是相对于同步目录的路径
+        const ensureResult = await this.ensureDirectory(parentPath);
+        if (!ensureResult) {
+          throw new Error(`无法创建目录: ${syncPath}${parentPath}`);
+        }
+      }
+
+      const headers: Record<string, string> = {};
+      if (contentType) {
+        headers[WEBDAV_HEADERS.CONTENT_TYPE] = contentType;
+      } else if (typeof content === 'string') {
+        headers[WEBDAV_HEADERS.CONTENT_TYPE] = WEBDAV_CONTENT_TYPES.JSON;
+      } else {
+        headers[WEBDAV_HEADERS.CONTENT_TYPE] = WEBDAV_CONTENT_TYPES.OCTET_STREAM;
+      }
+
+      const response = await this.request({
+        method: 'PUT',
+        url,
+        headers,
+        body: content,
+        useDefaultContentType: false, // 不使用默认的XML Content-Type
+      });
+
+      // 检查上传是否成功
+      const isSuccess = response.status === WEBDAV_STATUS.CREATED || 
+                       response.status === WEBDAV_STATUS.NO_CONTENT ||
+                       response.status === WEBDAV_STATUS.OK;
+      
+      if (!isSuccess) {
+        let errorMessage = `上传失败，状态码: ${response.status}`;
+        
+        if (response.status === WEBDAV_STATUS.CONFLICT) {
+          errorMessage = '文件冲突，可能目录不存在或文件被锁定';
+        } else if (response.status === WEBDAV_STATUS.FORBIDDEN) {
+          errorMessage = '权限不足，请检查WebDAV权限设置';
+        } else if (response.status === WEBDAV_STATUS.UNAUTHORIZED) {
+          errorMessage = '认证失败，请检查用户名和密码';
+        } else if (response.status === WEBDAV_STATUS.NOT_FOUND) {
+          errorMessage = '目标路径不存在';
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.SERVER_ERROR;
+      throw new Error(errorMessage);
     }
-
-    const headers: Record<string, string> = {};
-    if (contentType) {
-      headers[WEBDAV_HEADERS.CONTENT_TYPE] = contentType;
-    } else if (typeof content === 'string') {
-      headers[WEBDAV_HEADERS.CONTENT_TYPE] = WEBDAV_CONTENT_TYPES.JSON;
-    } else {
-      headers[WEBDAV_HEADERS.CONTENT_TYPE] = WEBDAV_CONTENT_TYPES.OCTET_STREAM;
-    }
-
-    const response = await this.request({
-      method: 'PUT',
-      url,
-      headers,
-      body: content,
-    });
-
-    return response.status === WEBDAV_STATUS.CREATED || response.status === WEBDAV_STATUS.NO_CONTENT;
   }
 
   /**
@@ -416,39 +588,36 @@ export class WebDAVClient {
    */
   async testConnection(): Promise<boolean> {
     try {
-      const testUrl = this.baseUrl + (this.config.syncPath || '/DualTab');
-      
-      
       // 首先尝试一个简单的OPTIONS请求来测试基本连接
       try {
-        const optionsResponse = await this.request({
+        await this.request({
           method: 'OPTIONS',
           url: this.baseUrl,
           headers: {},
         });
-        
       } catch (optionsError) {
+        // 忽略OPTIONS错误，继续测试
       }
       
-      const response = await this.request({
+      // 测试访问根目录
+      const rootResponse = await this.request({
         method: 'PROPFIND',
-        url: testUrl,
+        url: this.baseUrl + '/',
         headers: {
           [WEBDAV_HEADERS.DEPTH]: '0',
         },
         body: PROPFIND_BODY,
       });
-
-      const isSuccess = response.status === WEBDAV_STATUS.OK || 
-                       response.status === WEBDAV_STATUS.MULTI_STATUS ||
-                       response.status === WEBDAV_STATUS.NOT_FOUND; // 目录不存在但连接正常
       
+      const isSuccess = rootResponse.status === WEBDAV_STATUS.OK || 
+                       rootResponse.status === WEBDAV_STATUS.MULTI_STATUS;
       
       return isSuccess;
     } catch (error) {
       return false;
     }
   }
+  
 
   /**
    * 更新配置

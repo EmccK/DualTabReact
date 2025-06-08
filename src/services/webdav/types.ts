@@ -35,6 +35,7 @@ export interface WebDAVRequestOptions {
   headers?: Record<string, string>;
   body?: string | ArrayBuffer;
   timeout?: number;
+  useDefaultContentType?: boolean;
 }
 
 /**
