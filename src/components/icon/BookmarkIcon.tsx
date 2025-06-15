@@ -12,10 +12,17 @@ import {
   extractDomain,
   generateDefaultIconColor,
   getFaviconFallbackUrls,
-  testImageUrl
+  testImageUrl,
+  getCachedFaviconUrl
 } from '@/utils/icon-utils';
+import { iconCache } from '@/utils/icon-cache';
 import type { Bookmark, NetworkMode } from '@/types';
 import type { IconType } from '@/types/bookmark-icon.types';
+
+// 开发环境下加载调试工具
+if (process.env.NODE_ENV === 'development') {
+  import('@/utils/icon-debug');
+}
 
 interface BookmarkIconProps {
   bookmark: Bookmark;
@@ -46,19 +53,64 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
   const [currentFaviconUrl, setCurrentFaviconUrl] = useState<string | null>(null);
   const [fallbackIndex, setFallbackIndex] = useState(0);
   const [allUrlsFailed, setAllUrlsFailed] = useState(false);
+  const [cacheChecked, setCacheChecked] = useState(false);
 
   // 获取图标类型
   const iconType: IconType = bookmark.iconType || 'official';
 
-  // 当书签或网络模式改变时重置状态
+  // 当书签或网络模式改变时重置状态并立即检查缓存
   useEffect(() => {
+    console.log(`🔄 BookmarkIcon重置状态: ${bookmark.title} (${bookmark.url})`);
+    
+    // 重置所有状态
     setImageLoaded(false);
     setImageError(false);
     setIsLoading(true);
-    setCurrentFaviconUrl(null);
     setFallbackIndex(0);
     setAllUrlsFailed(false);
-  }, [bookmark.id, bookmark.url, bookmark.internalUrl, bookmark.externalUrl, networkMode]);
+    setCurrentFaviconUrl(null); // 先清空，避免显示错误的图标
+    setCacheChecked(false);
+    
+    // 立即检查验证缓存
+    if (iconType === 'official') {
+      const getActiveUrl = () => {
+        if (networkMode === 'internal' && bookmark.internalUrl) {
+          return bookmark.internalUrl;
+        }
+        if (networkMode === 'external' && bookmark.externalUrl) {
+          return bookmark.externalUrl;
+        }
+        return bookmark.url;
+      };
+      
+      const activeUrl = getActiveUrl();
+      const domain = extractDomain(activeUrl);
+      
+      // 如果是内网地址，直接跳过
+      if (isInternalDomain(domain)) {
+        return;
+      }
+      
+      // 优先检查已验证的缓存（成功URL记忆）
+      iconCache.getValidated(activeUrl, size).then(validatedUrl => {
+        console.log(`🔍 检查验证缓存 [${bookmark.title}]: ${activeUrl} (原始size: ${size}) -> ${validatedUrl || '无缓存'}`);
+        
+        if (validatedUrl) {
+          console.log(`🎯 使用已验证缓存 [${bookmark.title}]: ${activeUrl} -> ${validatedUrl}`);
+          setCurrentFaviconUrl(validatedUrl);
+          setIsLoading(false);
+        } else {
+          console.log(`🔍 开始加载图标 [${bookmark.title}]: ${activeUrl}`);
+        }
+        setCacheChecked(true);
+      }).catch(error => {
+        console.error(`❌ 缓存检查失败 [${bookmark.title}]:`, error);
+        setCacheChecked(true);
+      });
+    } else {
+      setCacheChecked(true);
+    }
+  }, [bookmark.url, bookmark.internalUrl, bookmark.externalUrl, networkMode, size, iconType]);
 
   // 统一的容器样式
   const containerStyle = useMemo(() => ({
@@ -74,11 +126,48 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
     setImageLoaded(true);
     setImageError(false);
     setIsLoading(false);
+    
+    // 将成功加载的图标URL保存为已验证的缓存
+    if (currentFaviconUrl && iconType === 'official') {
+      const getActiveUrl = () => {
+        if (networkMode === 'internal' && bookmark.internalUrl) {
+          return bookmark.internalUrl;
+        }
+        if (networkMode === 'external' && bookmark.externalUrl) {
+          return bookmark.externalUrl;
+        }
+        return bookmark.url;
+      };
+      
+      const activeUrl = getActiveUrl();
+      
+      // 检查是否已经是验证缓存并保存
+      iconCache.getValidated(activeUrl, size).then(existingValidated => {
+        console.log(`📋 当前状态: activeUrl=${activeUrl}, size=${size}, currentFaviconUrl=${currentFaviconUrl}, existingValidated=${existingValidated}`);
+        
+        if (existingValidated !== currentFaviconUrl) {
+          // 保存新的成功URL到验证缓存
+          iconCache.setValidated(activeUrl, size, currentFaviconUrl).then(() => {
+            console.log(`💾 保存成功URL到验证缓存: ${activeUrl} (size: ${size}) -> ${currentFaviconUrl}`);
+            
+            // 验证是否真的保存成功
+            iconCache.getValidated(activeUrl, size).then(checkSaved => {
+              console.log(`🔍 验证保存结果: ${checkSaved === currentFaviconUrl ? '✅ 成功' : '❌ 失败'} (${checkSaved})`);
+            });
+          });
+        } else {
+          console.log(`✅ 验证缓存命中成功: ${activeUrl} -> ${currentFaviconUrl}`);
+        }
+      });
+    }
+    
     onLoad?.();
-  }, [onLoad]);
+  }, [onLoad, currentFaviconUrl, iconType, bookmark, networkMode, size]);
 
   // 处理图片加载错误 - 尝试备用URL
   const handleImageError = useCallback(() => {
+    console.log(`❌ 图标加载失败: ${currentFaviconUrl}`);
+    
     // 只有官方图标才尝试备用URL
     if (bookmark.iconType === 'official' || !bookmark.iconType) {
       const getActiveUrl = () => {
@@ -103,6 +192,7 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
 
       // 还有备用URL可以尝试
       if (nextIndex < fallbackUrls.length) {
+        console.log(`🔄 尝试下一个URL (${nextIndex}/${fallbackUrls.length-1}): ${fallbackUrls[nextIndex]}`);
         setFallbackIndex(nextIndex);
         setCurrentFaviconUrl(fallbackUrls[nextIndex]);
         setImageLoaded(false);
@@ -112,6 +202,7 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
       }
 
       // 所有URL都失败了
+      console.log(`💥 所有fallback URL都失败了: ${activeUrl}`);
       setAllUrlsFailed(true);
     }
 
@@ -233,8 +324,8 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
       );
     }
 
-    // 初始化favicon URL（如果还没有设置）
-    if (!currentFaviconUrl && !allUrlsFailed) {
+    // 初始化favicon URL（如果还没有设置）- 等待缓存检查完成
+    if (!currentFaviconUrl && !allUrlsFailed && cacheChecked) {
       let fallbackUrls = getFaviconFallbackUrls(activeUrl, size);
 
       // 如果书签有保存的真实favicon URL，优先使用
@@ -243,15 +334,28 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
       }
 
       if (fallbackUrls.length > 0) {
+        console.log(`🔄 开始尝试第一个URL [${bookmark.title}]: ${fallbackUrls[0]}`);
         setCurrentFaviconUrl(fallbackUrls[0]);
         setFallbackIndex(0);
         setIsLoading(true);
         setImageError(false);
       } else {
         // 没有可用的URL，直接显示兜底图标
+        console.log(`❌ 没有可用的fallback URL [${bookmark.title}]`);
         setAllUrlsFailed(true);
       }
       return null; // 等待下次渲染
+    }
+
+    // 如果缓存还没检查完成，显示加载状态
+    if (!cacheChecked) {
+      return (
+        <div style={containerStyle} className="relative">
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 animate-pulse">
+            <Globe size={size * 0.4} className="text-gray-400" />
+          </div>
+        </div>
+      );
     }
 
     if (!currentFaviconUrl) {

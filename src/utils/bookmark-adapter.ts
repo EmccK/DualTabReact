@@ -8,18 +8,19 @@ import type { BookmarkItem, BookmarkStyleSettings } from '@/types/bookmark-style
 
 // 将旧的Bookmark转换为新的BookmarkItem
 export const adaptBookmarkToItem = (bookmark: Bookmark): BookmarkItem => {
-  // 确定图标类型
+  // 确定图标类型 - 统一使用新的类型
   let iconType: BookmarkItem['iconType'] = 'text';
   if (bookmark.iconType === 'favicon' || bookmark.iconType === 'official') {
-    iconType = 'favicon';
+    iconType = 'official';
   } else if (bookmark.iconType === 'upload' || bookmark.iconType === 'image') {
-    iconType = 'image';
+    iconType = 'upload';
   } else {
     iconType = 'text';
   }
 
   return {
-    url: bookmark.url, // 使用URL作为唯一标识
+    id: bookmark.url, // 使用URL作为唯一标识
+    url: bookmark.url,
     title: bookmark.title,
     description: bookmark.description,
     iconType,
@@ -43,11 +44,11 @@ export const adaptItemToBookmark = (item: BookmarkItem, originalBookmark?: Bookm
     internalUrl: originalBookmark?.internalUrl,
     externalUrl: originalBookmark?.externalUrl,
     description: item.description || originalBookmark?.description,
-    iconType: item.iconType === 'image' ? 'upload' : item.iconType === 'favicon' ? 'favicon' : 'text',
+    iconType: item.iconType === 'upload' ? 'upload' : item.iconType === 'official' ? 'favicon' : 'text',
     iconText: item.iconText,
     iconImage: item.iconImage,
-    iconData: item.iconType === 'image' ? item.iconImage : undefined,
-    icon: item.iconType === 'favicon' ? item.iconImage : undefined,
+    iconData: item.iconType === 'upload' ? item.iconImage : undefined,
+    icon: item.iconType === 'official' ? item.iconImage : undefined,
     iconColor: item.iconColor,
     imageScale: item.imageScale,
     originalIconImage: item.originalIconImage,

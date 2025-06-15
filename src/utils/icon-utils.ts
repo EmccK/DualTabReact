@@ -265,13 +265,27 @@ export const testImageUrl = (url: string, timeout: number = 3000): Promise<boole
 };
 
 /**
- * 异步获取最佳favicon URL - 增强版，优先使用浏览器原生favicon
+ * 异步获取最佳favicon URL - 优先使用已验证的成功URL
  */
 export const getBestFaviconUrl = async (url: string, size: number = 32): Promise<string | null> => {
+  // 首先检查是否有已验证的成功URL
+  const validatedUrl = iconCache.getValidated(url, size);
+  if (validatedUrl) {
+    // 验证已缓存的URL是否仍然有效
+    if (await testImageUrl(validatedUrl, 2000)) {
+      return validatedUrl;
+    } else {
+      // 如果已验证的URL失效了，从缓存中移除
+      iconCache.removeDomain(extractDomain(url));
+    }
+  }
+
   // 方法1：尝试从Chrome API获取标签页的favicon（最可靠）
   try {
     const tabFaviconUrl = await getTabFaviconUrl(url);
     if (tabFaviconUrl && await testImageUrl(tabFaviconUrl)) {
+      // 保存成功的URL到验证缓存
+      iconCache.setValidated(url, size, tabFaviconUrl);
       return tabFaviconUrl;
     }
   } catch (error) {
@@ -283,6 +297,8 @@ export const getBestFaviconUrl = async (url: string, size: number = 32): Promise
 
   for (const faviconUrl of fallbackUrls) {
     if (await testImageUrl(faviconUrl)) {
+      // 保存成功的URL到验证缓存
+      iconCache.setValidated(url, size, faviconUrl);
       return faviconUrl;
     }
   }
@@ -389,82 +405,23 @@ export const captureRealFaviconForBookmark = async (url: string): Promise<string
   return await getBestFaviconUrl(url, 32);
 };
 
-/**
- * 简化的图标缓存管理
- */
-class SimpleIconCache {
-  private cache = new Map<string, { url: string; timestamp: number }>();
-  private readonly maxSize = 100;
-  private readonly maxAge = 24 * 60 * 60 * 1000; // 24小时
-
-  private generateKey(url: string, size: number): string {
-    return `${extractDomain(url)}:${size}`;
-  }
-
-  get(url: string, size: number): string | null {
-    const key = this.generateKey(url, size);
-    const entry = this.cache.get(key);
-    
-    if (!entry) return null;
-    
-    // 检查是否过期
-    if (Date.now() - entry.timestamp > this.maxAge) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return entry.url;
-  }
-
-  set(url: string, size: number, faviconUrl: string): void {
-    const key = this.generateKey(url, size);
-    
-    this.cache.set(key, {
-      url: faviconUrl,
-      timestamp: Date.now(),
-    });
-    
-    // 限制缓存大小
-    if (this.cache.size > this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      if (firstKey) {
-        this.cache.delete(firstKey);
-      }
-    }
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  getStats() {
-    return {
-      size: this.cache.size,
-      maxSize: this.maxSize,
-    };
-  }
-}
-
-// 创建全局缓存实例
-export const iconCache = new SimpleIconCache();
+// 使用统一的图标缓存实例
+import { iconCache } from './icon-cache';
 
 /**
- * 带缓存的favicon获取
+ * 带缓存的favicon获取 - 优先使用已验证的URL
  */
 export const getCachedFaviconUrl = async (url: string, size: number = 32): Promise<string | null> => {
-  // 先尝试从缓存获取
-  const cached = iconCache.get(url, size);
-  if (cached) {
-    return cached;
+  // 优先从验证缓存获取（已知有效的URL）
+  const validatedUrl = iconCache.getValidated(url, size);
+  if (validatedUrl) {
+    return validatedUrl;
   }
 
   // 获取新的favicon URL
   const faviconUrl = await getBestFaviconUrl(url, size);
   
-  if (faviconUrl) {
-    iconCache.set(url, size, faviconUrl);
-  }
-  
+  // getBestFaviconUrl 已经处理了验证和缓存
   return faviconUrl;
 };
 

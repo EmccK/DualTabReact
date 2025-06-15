@@ -28,26 +28,18 @@ const BookmarkIconStyle: React.FC<BookmarkCardProps> = ({
     onContextMenu?.(bookmark, e);
   };
 
-  // 转换BookmarkItem到Bookmark格式
+  // 转换BookmarkItem到Bookmark格式 - 简化版本
   const normalizedBookmark: Bookmark = {
-    id: bookmark.id,
     name: bookmark.title,
     title: bookmark.title,
     url: bookmark.url,
     description: bookmark.description,
-    iconType: bookmark.iconType === 'favicon' ? 'official' : 
-              bookmark.iconType === 'image' ? 'upload' : 
-              bookmark.iconType,
+    iconType: bookmark.iconType,
     iconText: bookmark.iconText,
     iconImage: bookmark.iconImage,
-    iconData: bookmark.iconImage, // 兼容处理
+    iconData: bookmark.iconImage,
     iconColor: bookmark.iconColor,
     imageScale: bookmark.imageScale,
-    backgroundColor: undefined,
-    internalUrl: undefined,
-    externalUrl: undefined,
-    categoryId: undefined,
-    position: undefined,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };

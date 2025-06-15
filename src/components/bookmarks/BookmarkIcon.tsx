@@ -30,16 +30,13 @@ const BookmarkIcon: React.FC<BookmarkIconProps> = ({
   onLoad,
   onError,
 }) => {
-  // 转换BookmarkItem到Bookmark格式
+  // 转换BookmarkItem到Bookmark格式 - 简化版本
   const normalizedBookmark: Bookmark = {
-    id: bookmark.id,
     name: bookmark.title,
     title: bookmark.title,
     url: bookmark.url,
     description: 'description' in bookmark ? bookmark.description : undefined,
-    iconType: bookmark.iconType === 'favicon' ? 'official' : 
-              bookmark.iconType === 'image' ? 'upload' : 
-              bookmark.iconType,
+    iconType: bookmark.iconType,
     iconText: bookmark.iconText,
     iconImage: 'iconImage' in bookmark ? bookmark.iconImage : undefined,
     iconData: 'iconData' in bookmark ? bookmark.iconData : 
@@ -49,10 +46,8 @@ const BookmarkIcon: React.FC<BookmarkIconProps> = ({
     backgroundColor: 'backgroundColor' in bookmark ? bookmark.backgroundColor : undefined,
     internalUrl: 'internalUrl' in bookmark ? bookmark.internalUrl : undefined,
     externalUrl: 'externalUrl' in bookmark ? bookmark.externalUrl : undefined,
-    categoryId: 'categoryId' in bookmark ? bookmark.categoryId : undefined,
-    position: 'position' in bookmark ? bookmark.position : undefined,
-    createdAt: 'createdAt' in bookmark ? bookmark.createdAt : Date.now(),
-    updatedAt: 'updatedAt' in bookmark ? bookmark.updatedAt : Date.now(),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
   };
 
   return (

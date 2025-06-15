@@ -7,6 +7,7 @@ interface CacheEntry {
   url: string;
   timestamp: number;
   accessCount: number;
+  isValidated: boolean; // 标记这个URL是否已经验证过可用
 }
 
 interface CacheStats {
@@ -20,25 +21,84 @@ class SimpleIconCache {
   private cache = new Map<string, CacheEntry>();
   private hitCount = 0;
   private missCount = 0;
-  private readonly maxSize = 100;
-  private readonly maxAge = 24 * 60 * 60 * 1000; // 24小时
+  private readonly maxSize = 200; // 增加缓存容量
+  private readonly maxAge = 7 * 24 * 60 * 60 * 1000; // 7天，favicon相对稳定
+  private readonly storageKey = 'icon_cache_data';
+  private isInitialized = false;
 
   /**
-   * 生成缓存键
+   * 生成缓存键 - 统一尺寸到标准值，避免多尺寸缓存问题
    */
   private generateKey(url: string, size: number): string {
     try {
       const domain = new URL(url).hostname;
-      return `${domain}:${size}`;
+      // 将常用的尺寸统一到标准值，减少缓存碎片
+      const normalizedSize = this.normalizeSize(size);
+      return `${domain}:${normalizedSize}`;
     } catch {
-      return `${url}:${size}`;
+      return `${url}:${this.normalizeSize(size)}`;
+    }
+  }
+
+  /**
+   * 标准化图标尺寸
+   */
+  private normalizeSize(size: number): number {
+    // 将常见尺寸统一到标准值
+    if (size <= 24) return 24;
+    if (size <= 32) return 32;
+    if (size <= 48) return 48;
+    if (size <= 64) return 64;
+    return size; // 大尺寸保持原值
+  }
+
+  /**
+   * 初始化缓存（从 localStorage 加载）
+   */
+  private async initializeCache(): Promise<void> {
+    if (this.isInitialized) return;
+    
+    try {
+      const stored = localStorage.getItem(this.storageKey);
+      if (stored) {
+        const data = JSON.parse(stored);
+        console.log(`📥 从 localStorage 加载缓存: ${Object.keys(data).length} 个条目`);
+        
+        // 重建 Map
+        this.cache.clear();
+        Object.entries(data).forEach(([key, entry]) => {
+          this.cache.set(key, entry as CacheEntry);
+        });
+        
+        // 清理过期条目
+        this.cleanup();
+      }
+    } catch (error) {
+      console.warn('加载图标缓存失败:', error);
+    }
+    
+    this.isInitialized = true;
+  }
+
+  /**
+   * 保存缓存到 localStorage
+   */
+  private saveToStorage(): void {
+    try {
+      const data = Object.fromEntries(this.cache);
+      localStorage.setItem(this.storageKey, JSON.stringify(data));
+      console.log(`💾 保存缓存到 localStorage: ${this.cache.size} 个条目`);
+    } catch (error) {
+      console.warn('保存图标缓存失败:', error);
     }
   }
 
   /**
    * 获取缓存的图标URL
    */
-  get(url: string, size: number): string | null {
+  async get(url: string, size: number): Promise<string | null> {
+    await this.initializeCache();
+    
     const key = this.generateKey(url, size);
     const entry = this.cache.get(key);
 
@@ -51,6 +111,7 @@ class SimpleIconCache {
     const now = Date.now();
     if (now - entry.timestamp > this.maxAge) {
       this.cache.delete(key);
+      this.saveToStorage();
       this.missCount++;
       return null;
     }
@@ -58,14 +119,62 @@ class SimpleIconCache {
     // 更新访问信息
     entry.accessCount++;
     this.hitCount++;
+    this.saveToStorage();
     
     return entry.url;
   }
 
   /**
+   * 获取已验证的图标URL（成功加载过的URL）
+   */
+  async getValidated(url: string, size: number): Promise<string | null> {
+    await this.initializeCache();
+    
+    const key = this.generateKey(url, size);
+    const normalizedSize = this.normalizeSize(size);
+    const entry = this.cache.get(key);
+    
+    console.log(`🔧 getValidated调试: url=${url}, size=${size} -> normalizedSize=${normalizedSize}, key=${key}`);
+    console.log(`🔍 找到的entry: ${entry ? JSON.stringify(entry) : 'null'}`);
+    console.log(`🔍 缓存大小: ${this.cache.size}, 所有keys: [${Array.from(this.cache.keys()).join(', ')}]`);
+
+    if (!entry || !entry.isValidated) {
+      console.log(`❌ 无验证缓存: entry=${!!entry}, isValidated=${entry?.isValidated}`);
+      return null;
+    }
+
+    // 检查是否过期
+    const now = Date.now();
+    if (now - entry.timestamp > this.maxAge) {
+      console.log(`⏰ 缓存过期: age=${now - entry.timestamp}ms > ${this.maxAge}ms`);
+      this.cache.delete(key);
+      this.saveToStorage();
+      return null;
+    }
+
+    // 更新访问信息
+    entry.accessCount++;
+    this.hitCount++;
+    this.saveToStorage();
+    
+    console.log(`✅ 验证缓存命中: ${entry.url}`);
+    return entry.url;
+  }
+
+  /**
+   * 检查是否有已验证的缓存
+   */
+  async hasValidated(url: string, size: number): Promise<boolean> {
+    const validated = await this.getValidated(url, size);
+    return validated !== null;
+  }
+
+  /**
    * 设置缓存
    */
-  set(url: string, size: number, faviconUrl: string): void {
+  async set(url: string, size: number, faviconUrl: string, isValidated: boolean = false): Promise<void> {
+    await this.initializeCache();
+    
     const key = this.generateKey(url, size);
     const now = Date.now();
 
@@ -73,10 +182,27 @@ class SimpleIconCache {
       url: faviconUrl,
       timestamp: now,
       accessCount: 1,
+      isValidated: isValidated,
     };
 
     this.cache.set(key, entry);
     this.cleanup();
+    this.saveToStorage();
+  }
+
+  /**
+   * 设置已验证的成功URL（优先级最高）
+   */
+  async setValidated(url: string, size: number, faviconUrl: string): Promise<void> {
+    const key = this.generateKey(url, size);
+    const normalizedSize = this.normalizeSize(size);
+    console.log(`🔧 setValidated调试: url=${url}, size=${size} -> normalizedSize=${normalizedSize}, key=${key}, faviconUrl=${faviconUrl}`);
+    
+    await this.set(url, size, faviconUrl, true);
+    
+    // 验证是否真的保存了
+    const saved = this.cache.get(key);
+    console.log(`🔍 保存验证: key=${key}, saved=${JSON.stringify(saved)}`);
   }
 
   /**
@@ -110,24 +236,38 @@ class SimpleIconCache {
   async preload(urls: string[], size: number = 32): Promise<void> {
     const { getBestFaviconUrl } = await import('./icon-utils');
     
-    const promises = urls.map(async (url) => {
-      const key = this.generateKey(url, size);
-      
-      if (this.cache.has(key)) {
-        return; // 已缓存，跳过
-      }
+    // 限制并发数以避免过多网络请求
+    const concurrencyLimit = 5;
+    const chunks: string[][] = [];
+    for (let i = 0; i < urls.length; i += concurrencyLimit) {
+      chunks.push(urls.slice(i, i + concurrencyLimit));
+    }
 
-      try {
-        const faviconUrl = await getBestFaviconUrl(url, size);
-        if (faviconUrl) {
-          this.set(url, size, faviconUrl);
+    for (const chunk of chunks) {
+      const promises = chunk.map(async (url) => {
+        const key = this.generateKey(url, size);
+        
+        if (this.cache.has(key)) {
+          return; // 已缓存，跳过
         }
-      } catch {
-        // Ignore favicon fetch errors
-      }
-    });
 
-    await Promise.allSettled(promises);
+        try {
+          const faviconUrl = await getBestFaviconUrl(url, size);
+          if (faviconUrl) {
+            this.set(url, size, faviconUrl);
+          }
+        } catch {
+          // Ignore favicon fetch errors
+        }
+      });
+
+      await Promise.allSettled(promises);
+      
+      // 在chunks之间添加小延迟，避免过于频繁的请求
+      if (chunks.indexOf(chunk) < chunks.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
   }
 
   /**
