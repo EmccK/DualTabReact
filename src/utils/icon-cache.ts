@@ -57,26 +57,25 @@ class SimpleIconCache {
    */
   private async initializeCache(): Promise<void> {
     if (this.isInitialized) return;
-    
+
     try {
       const stored = localStorage.getItem(this.storageKey);
       if (stored) {
         const data = JSON.parse(stored);
-        console.log(`📥 从 localStorage 加载缓存: ${Object.keys(data).length} 个条目`);
-        
+
         // 重建 Map
         this.cache.clear();
         Object.entries(data).forEach(([key, entry]) => {
           this.cache.set(key, entry as CacheEntry);
         });
-        
+
         // 清理过期条目
         this.cleanup();
       }
     } catch (error) {
       console.warn('加载图标缓存失败:', error);
     }
-    
+
     this.isInitialized = true;
   }
 
@@ -87,7 +86,6 @@ class SimpleIconCache {
     try {
       const data = Object.fromEntries(this.cache);
       localStorage.setItem(this.storageKey, JSON.stringify(data));
-      console.log(`💾 保存缓存到 localStorage: ${this.cache.size} 个条目`);
     } catch (error) {
       console.warn('保存图标缓存失败:', error);
     }
@@ -129,24 +127,17 @@ class SimpleIconCache {
    */
   async getValidated(url: string, size: number): Promise<string | null> {
     await this.initializeCache();
-    
+
     const key = this.generateKey(url, size);
-    const normalizedSize = this.normalizeSize(size);
     const entry = this.cache.get(key);
-    
-    console.log(`🔧 getValidated调试: url=${url}, size=${size} -> normalizedSize=${normalizedSize}, key=${key}`);
-    console.log(`🔍 找到的entry: ${entry ? JSON.stringify(entry) : 'null'}`);
-    console.log(`🔍 缓存大小: ${this.cache.size}, 所有keys: [${Array.from(this.cache.keys()).join(', ')}]`);
 
     if (!entry || !entry.isValidated) {
-      console.log(`❌ 无验证缓存: entry=${!!entry}, isValidated=${entry?.isValidated}`);
       return null;
     }
 
     // 检查是否过期
     const now = Date.now();
     if (now - entry.timestamp > this.maxAge) {
-      console.log(`⏰ 缓存过期: age=${now - entry.timestamp}ms > ${this.maxAge}ms`);
       this.cache.delete(key);
       this.saveToStorage();
       return null;
@@ -156,8 +147,7 @@ class SimpleIconCache {
     entry.accessCount++;
     this.hitCount++;
     this.saveToStorage();
-    
-    console.log(`✅ 验证缓存命中: ${entry.url}`);
+
     return entry.url;
   }
 
@@ -194,15 +184,7 @@ class SimpleIconCache {
    * 设置已验证的成功URL（优先级最高）
    */
   async setValidated(url: string, size: number, faviconUrl: string): Promise<void> {
-    const key = this.generateKey(url, size);
-    const normalizedSize = this.normalizeSize(size);
-    console.log(`🔧 setValidated调试: url=${url}, size=${size} -> normalizedSize=${normalizedSize}, key=${key}, faviconUrl=${faviconUrl}`);
-    
     await this.set(url, size, faviconUrl, true);
-    
-    // 验证是否真的保存了
-    const saved = this.cache.get(key);
-    console.log(`🔍 保存验证: key=${key}, saved=${JSON.stringify(saved)}`);
   }
 
   /**

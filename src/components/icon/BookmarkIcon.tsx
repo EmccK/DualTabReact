@@ -57,7 +57,6 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
 
   // 当书签或网络模式改变时重置状态并立即检查缓存
   useEffect(() => {
-    console.log(`🔄 BookmarkIcon重置状态: ${bookmark.title} (${bookmark.url})`);
     
     // 重置所有状态
     setImageLoaded(false);
@@ -90,18 +89,13 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
       
       // 优先检查已验证的缓存（成功URL记忆）
       iconCache.getValidated(activeUrl, size).then(validatedUrl => {
-        console.log(`🔍 检查验证缓存 [${bookmark.title}]: ${activeUrl} (原始size: ${size}) -> ${validatedUrl || '无缓存'}`);
         
         if (validatedUrl) {
-          console.log(`🎯 使用已验证缓存 [${bookmark.title}]: ${activeUrl} -> ${validatedUrl}`);
           setCurrentFaviconUrl(validatedUrl);
           setIsLoading(false);
-        } else {
-          console.log(`🔍 开始加载图标 [${bookmark.title}]: ${activeUrl}`);
         }
         setCacheChecked(true);
-      }).catch(error => {
-        console.error(`❌ 缓存检查失败 [${bookmark.title}]:`, error);
+      }).catch(() => {
         setCacheChecked(true);
       });
     } else {
@@ -140,20 +134,9 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
       
       // 检查是否已经是验证缓存并保存
       iconCache.getValidated(activeUrl, size).then(existingValidated => {
-        console.log(`📋 当前状态: activeUrl=${activeUrl}, size=${size}, currentFaviconUrl=${currentFaviconUrl}, existingValidated=${existingValidated}`);
-        
         if (existingValidated !== currentFaviconUrl) {
           // 保存新的成功URL到验证缓存
-          iconCache.setValidated(activeUrl, size, currentFaviconUrl).then(() => {
-            console.log(`💾 保存成功URL到验证缓存: ${activeUrl} (size: ${size}) -> ${currentFaviconUrl}`);
-            
-            // 验证是否真的保存成功
-            iconCache.getValidated(activeUrl, size).then(checkSaved => {
-              console.log(`🔍 验证保存结果: ${checkSaved === currentFaviconUrl ? '✅ 成功' : '❌ 失败'} (${checkSaved})`);
-            });
-          });
-        } else {
-          console.log(`✅ 验证缓存命中成功: ${activeUrl} -> ${currentFaviconUrl}`);
+          iconCache.setValidated(activeUrl, size, currentFaviconUrl);
         }
       });
     }

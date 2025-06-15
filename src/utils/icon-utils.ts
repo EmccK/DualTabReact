@@ -268,8 +268,11 @@ export const testImageUrl = (url: string, timeout: number = 3000): Promise<boole
  * 异步获取最佳favicon URL - 优先使用已验证的成功URL
  */
 export const getBestFaviconUrl = async (url: string, size: number = 32): Promise<string | null> => {
+  // 动态导入避免循环依赖
+  const { iconCache } = await import('./icon-cache');
+  
   // 首先检查是否有已验证的成功URL
-  const validatedUrl = iconCache.getValidated(url, size);
+  const validatedUrl = await iconCache.getValidated(url, size);
   if (validatedUrl) {
     // 验证已缓存的URL是否仍然有效
     if (await testImageUrl(validatedUrl, 2000)) {
@@ -285,7 +288,7 @@ export const getBestFaviconUrl = async (url: string, size: number = 32): Promise
     const tabFaviconUrl = await getTabFaviconUrl(url);
     if (tabFaviconUrl && await testImageUrl(tabFaviconUrl)) {
       // 保存成功的URL到验证缓存
-      iconCache.setValidated(url, size, tabFaviconUrl);
+      await iconCache.setValidated(url, size, tabFaviconUrl);
       return tabFaviconUrl;
     }
   } catch (error) {
@@ -298,7 +301,7 @@ export const getBestFaviconUrl = async (url: string, size: number = 32): Promise
   for (const faviconUrl of fallbackUrls) {
     if (await testImageUrl(faviconUrl)) {
       // 保存成功的URL到验证缓存
-      iconCache.setValidated(url, size, faviconUrl);
+      await iconCache.setValidated(url, size, faviconUrl);
       return faviconUrl;
     }
   }
@@ -405,15 +408,16 @@ export const captureRealFaviconForBookmark = async (url: string): Promise<string
   return await getBestFaviconUrl(url, 32);
 };
 
-// 使用统一的图标缓存实例
-import { iconCache } from './icon-cache';
 
 /**
  * 带缓存的favicon获取 - 优先使用已验证的URL
  */
 export const getCachedFaviconUrl = async (url: string, size: number = 32): Promise<string | null> => {
+  // 动态导入避免循环依赖
+  const { iconCache } = await import('./icon-cache');
+  
   // 优先从验证缓存获取（已知有效的URL）
-  const validatedUrl = iconCache.getValidated(url, size);
+  const validatedUrl = await iconCache.getValidated(url, size);
   if (validatedUrl) {
     return validatedUrl;
   }
@@ -473,14 +477,16 @@ export const generateDefaultIconColor = (text: string): string => {
 /**
  * 清理图标缓存
  */
-export const clearIconCache = (): void => {
+export const clearIconCache = async (): Promise<void> => {
+  const { iconCache } = await import('./icon-cache');
   iconCache.clear();
 };
 
 /**
  * 获取图标缓存统计信息
  */
-export const getIconCacheStats = () => {
+export const getIconCacheStats = async () => {
+  const { iconCache } = await import('./icon-cache');
   return iconCache.getStats();
 };
 
