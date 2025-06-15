@@ -36,14 +36,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 // 获取页面favicon URL
 function getFaviconUrl(): string {
+  // 首先尝试从页面的link标签获取
   const favicon = document.querySelector('link[rel*="icon"]') as HTMLLinkElement
   if (favicon && favicon.href) {
     return favicon.href
   }
-  
-  // 备选：使用Google的favicon服务
+
+  // 备选1：尝试网站根目录的favicon.ico
+  const protocol = window.location.protocol
   const domain = window.location.hostname
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+  const port = window.location.port ? `:${window.location.port}` : ''
+  return `${protocol}//${domain}${port}/favicon.ico`
 }
 
 // 获取页面描述

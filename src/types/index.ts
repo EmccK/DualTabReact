@@ -23,6 +23,7 @@ export interface Bookmark {
   iconColor?: string; // 图标背景颜色
   imageScale?: import('./bookmark-style.types').ImageScaleConfig; // 图片缩放配置
   backgroundColor?: string;
+  realFaviconUrl?: string; // 真实的favicon URL（从浏览器或页面获取）
   position?: number; // 书签在网格中的位置索引
   createdAt: number;
   updatedAt: number;

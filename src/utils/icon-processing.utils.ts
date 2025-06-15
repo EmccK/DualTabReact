@@ -58,11 +58,26 @@ export const generateOfficialIconConfig = (
 ): OfficialIconConfig => {
   const activeUrl = getActiveUrl(bookmark, networkMode);
   const domain = extractDomain(activeUrl);
-  
-  // 简化的fallback URLs
+
+  // 获取URL协议
+  const getUrlProtocol = (url: string): string => {
+    try {
+      return new URL(url).protocol.replace(':', '');
+    } catch {
+      return 'https';
+    }
+  };
+
+  const protocol = getUrlProtocol(activeUrl);
+
+  // 优先使用网站自己的图标，然后是可靠的第三方服务
   const fallbackUrls = [
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=${Math.min(size, 64)}`,
+    `${protocol}://${domain}/favicon.ico`,
+    `${protocol}://${domain}/favicon.png`,
+    `${protocol}://${domain}/apple-touch-icon.png`,
+    `${protocol}://${domain}/apple-touch-icon-precomposed.png`,
     `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+    // 注意：Google的s2/favicons API有协议问题，暂时移除
   ];
 
   return {

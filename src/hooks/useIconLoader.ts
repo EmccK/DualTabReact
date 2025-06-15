@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { getCachedFaviconUrl, getActiveUrl } from '@/utils/icon-utils';
+import { getBestBookmarkIconUrl } from '@/utils/icon-utils';
 import type { Bookmark, NetworkMode } from '@/types';
 import type { IconType } from '@/types/bookmark-icon.types';
 
@@ -52,8 +52,7 @@ export const useIconLoader = ({
       setIsLoading(true);
       setHasError(false);
 
-      const activeUrl = getActiveUrl(bookmark, networkMode);
-      const favicon = await getCachedFaviconUrl(activeUrl, size);
+      const favicon = await getBestBookmarkIconUrl(bookmark, networkMode, size);
 
       setIconUrl(favicon);
     } catch (error) {

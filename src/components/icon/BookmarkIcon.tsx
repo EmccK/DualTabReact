@@ -3,14 +3,16 @@
  * 替换所有现有的图标组件，提供一致的接口和功能
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Globe, Image, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { 
-  getBookmarkIconUrl, 
-  isInternalDomain, 
+import {
+  getBookmarkIconUrl,
+  isInternalDomain,
   extractDomain,
-  generateDefaultIconColor 
+  generateDefaultIconColor,
+  getFaviconFallbackUrls,
+  testImageUrl
 } from '@/utils/icon-utils';
 import type { Bookmark, NetworkMode } from '@/types';
 import type { IconType } from '@/types/bookmark-icon.types';
@@ -41,9 +43,22 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentFaviconUrl, setCurrentFaviconUrl] = useState<string | null>(null);
+  const [fallbackIndex, setFallbackIndex] = useState(0);
+  const [allUrlsFailed, setAllUrlsFailed] = useState(false);
 
   // 获取图标类型
   const iconType: IconType = bookmark.iconType || 'official';
+
+  // 当书签或网络模式改变时重置状态
+  useEffect(() => {
+    setImageLoaded(false);
+    setImageError(false);
+    setIsLoading(true);
+    setCurrentFaviconUrl(null);
+    setFallbackIndex(0);
+    setAllUrlsFailed(false);
+  }, [bookmark.id, bookmark.url, bookmark.internalUrl, bookmark.externalUrl, networkMode]);
 
   // 统一的容器样式
   const containerStyle = useMemo(() => ({
@@ -62,13 +77,50 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
     onLoad?.();
   }, [onLoad]);
 
-  // 处理图片加载错误
+  // 处理图片加载错误 - 尝试备用URL
   const handleImageError = useCallback(() => {
+    // 只有官方图标才尝试备用URL
+    if (bookmark.iconType === 'official' || !bookmark.iconType) {
+      const getActiveUrl = () => {
+        if (networkMode === 'internal' && bookmark.internalUrl) {
+          return bookmark.internalUrl;
+        }
+        if (networkMode === 'external' && bookmark.externalUrl) {
+          return bookmark.externalUrl;
+        }
+        return bookmark.url;
+      };
+
+      const activeUrl = getActiveUrl();
+      let fallbackUrls = getFaviconFallbackUrls(activeUrl, size);
+
+      // 如果书签有保存的真实favicon URL，优先使用
+      if (bookmark.realFaviconUrl) {
+        fallbackUrls = [bookmark.realFaviconUrl, ...fallbackUrls.filter(url => url !== bookmark.realFaviconUrl)];
+      }
+
+      const nextIndex = fallbackIndex + 1;
+
+      // 还有备用URL可以尝试
+      if (nextIndex < fallbackUrls.length) {
+        setFallbackIndex(nextIndex);
+        setCurrentFaviconUrl(fallbackUrls[nextIndex]);
+        setImageLoaded(false);
+        setImageError(false);
+        setIsLoading(true);
+        return;
+      }
+
+      // 所有URL都失败了
+      setAllUrlsFailed(true);
+    }
+
+    // 显示错误状态
     setImageError(true);
     setIsLoading(false);
     const error = new Error(`图标加载失败: ${bookmark.title}`);
     onError?.(error);
-  }, [bookmark.title, onError]);
+  }, [bookmark, networkMode, size, fallbackIndex, currentFaviconUrl, onError]);
 
   // 渲染文字图标
   const renderTextIcon = () => {
@@ -162,14 +214,51 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
       );
     }
 
-    // 获取favicon URL
-    const faviconUrl = getBookmarkIconUrl(bookmark, networkMode, Math.min(size, 64));
-    
-    if (!faviconUrl) {
+    // 如果所有URL都失败了，显示兜底文字图标
+    if (allUrlsFailed || (imageError && !currentFaviconUrl)) {
+      const fallbackText = bookmark.title.slice(0, 2).toUpperCase();
+      const backgroundColor = bookmark.iconColor || generateDefaultIconColor(fallbackText);
+
+      return (
+        <div
+          className="flex items-center justify-center text-white font-bold"
+          style={{
+            ...containerStyle,
+            backgroundColor,
+            fontSize: `${size * 0.35}px`,
+          }}
+        >
+          {fallbackText}
+        </div>
+      );
+    }
+
+    // 初始化favicon URL（如果还没有设置）
+    if (!currentFaviconUrl && !allUrlsFailed) {
+      let fallbackUrls = getFaviconFallbackUrls(activeUrl, size);
+
+      // 如果书签有保存的真实favicon URL，优先使用
+      if (bookmark.realFaviconUrl) {
+        fallbackUrls = [bookmark.realFaviconUrl, ...fallbackUrls.filter(url => url !== bookmark.realFaviconUrl)];
+      }
+
+      if (fallbackUrls.length > 0) {
+        setCurrentFaviconUrl(fallbackUrls[0]);
+        setFallbackIndex(0);
+        setIsLoading(true);
+        setImageError(false);
+      } else {
+        // 没有可用的URL，直接显示兜底图标
+        setAllUrlsFailed(true);
+      }
+      return null; // 等待下次渲染
+    }
+
+    if (!currentFaviconUrl) {
       // 回退到文字图标
       const fallbackText = bookmark.title.slice(0, 2).toUpperCase();
       const backgroundColor = bookmark.iconColor || generateDefaultIconColor(fallbackText);
-      
+
       return (
         <div
           className="flex items-center justify-center text-white font-bold"
@@ -199,7 +288,7 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
           style={{ borderRadius: `${borderRadius}px` }}
         >
           <img
-            src={faviconUrl}
+            src={currentFaviconUrl}
             alt={bookmark.title}
             className="w-full h-full object-contain"
             style={{ borderRadius: `${borderRadius * 0.5}px` }}
@@ -207,7 +296,7 @@ export const BookmarkIcon: React.FC<BookmarkIconProps> = ({
             onError={handleImageError}
           />
         </div>
-        {imageError && (
+        {(imageError || allUrlsFailed) && (
           <div
             className="absolute inset-0 flex items-center justify-center text-white font-bold"
             style={{

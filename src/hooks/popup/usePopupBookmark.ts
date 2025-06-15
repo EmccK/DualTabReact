@@ -10,6 +10,7 @@ import type { QuickBookmarkFormData } from '@/types/popup/tab.types';
 import { validateQuickBookmarkForm, isInternalUrl } from '@/utils/popup/urlHelpers';
 import { sanitizeUrl } from '@/utils/popup/tabHelpers';
 import { loadSelectedCategoryName } from '@/utils/storage';
+import { captureRealFaviconForBookmark } from '@/utils/icon-utils';
 
 export function usePopupBookmark() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,7 +58,16 @@ export function usePopupBookmark() {
       
       // 智能判断内外网
       const isInternal = isInternalUrl(cleanUrl);
-      
+
+      // 尝试获取真实的favicon URL
+      let realFaviconUrl: string | null = null;
+      try {
+        realFaviconUrl = await captureRealFaviconForBookmark(cleanUrl);
+      } catch (error) {
+        // 忽略favicon获取错误，不影响书签添加
+        console.warn('获取favicon失败:', error);
+      }
+
       // 构建书签数据
       const bookmarkData: Omit<Bookmark, 'createdAt' | 'updatedAt' | 'position'> = {
         name: formData.name.trim(),
@@ -70,6 +80,8 @@ export function usePopupBookmark() {
         internalUrl: isInternal ? cleanUrl : undefined,
         // 使用官方图标作为默认
         iconType: 'official',
+        // 保存真实的favicon URL
+        realFaviconUrl: realFaviconUrl || undefined,
         // 其他字段使用默认值
         icon: undefined,
         iconText: undefined,
