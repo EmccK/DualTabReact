@@ -74,6 +74,7 @@ export function useBookmarks() {
           try {
             await addBookmarkToCategory(bookmarkData.categoryName, newBookmark.url);
           } catch (categoryError) {
+            console.error('添加书签到分类失败:', categoryError);
           }
         }
         
@@ -149,6 +150,7 @@ export function useBookmarks() {
             await saveCategories(updatedCategories);
           }
         } catch (categoryError) {
+          console.error('从分类中移除书签失败:', categoryError);
         }
         
         return { success: true };
@@ -208,12 +210,13 @@ export function useBookmarks() {
     };
 
     // 监听来自background script的存储变化消息
-    const handleRuntimeMessage = (message: any, _sender: any, _sendResponse: any) => {
+    const handleRuntimeMessage = (message: unknown) => {
       if (message.action === 'storage_changed' && message.data?.changes) {
         const changes = message.data.changes;
         if (changes.includes('bookmarks')) {
           loadBookmarkList();
         } else {
+          console.debug('Storage change does not include bookmarks');
         }
       }
       return false; // 不需要异步响应

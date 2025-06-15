@@ -78,6 +78,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
         await resetSettings(activeTab);
         setShowResetConfirm(false);
       } catch (error) {
+        console.error('重置设置失败:', error);
       }
     } else {
       setShowResetConfirm(true);

@@ -7,13 +7,10 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Globe, Image, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
-  getBookmarkIconUrl,
   isInternalDomain,
   extractDomain,
   generateDefaultIconColor,
-  getFaviconFallbackUrls,
-  testImageUrl,
-  getCachedFaviconUrl
+  getFaviconFallbackUrls
 } from '@/utils/icon-utils';
 import { iconCache } from '@/utils/icon-cache';
 import type { Bookmark, NetworkMode } from '@/types';

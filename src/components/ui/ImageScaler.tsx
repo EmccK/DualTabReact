@@ -166,7 +166,8 @@ export function ImageScaler({
           const dataUrl = canvas.toDataURL('image/png');
           onImageGenerated?.(dataUrl);
         }
-      } catch (error) {
+      } catch {
+        console.error('图片处理失败');
       } finally {
         setIsProcessing(false);
       }

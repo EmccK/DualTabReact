@@ -69,7 +69,8 @@ export const useBookmarkIcon = ({
     clearError();
   };
 
-  const handleError = (error: Error) => {
+  const handleError = () => {
+    console.error('图标加载失败');
   };
 
   const updateIconType = () => {
@@ -86,6 +87,7 @@ export const useBookmarkIcon = ({
       const imageData = await fileToBase64(file);
       await compressImage(imageData);
     } catch (error) {
+      console.error('图片上传失败:', error);
       throw error;
     }
   };

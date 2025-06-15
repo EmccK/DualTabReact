@@ -128,7 +128,8 @@ export function useCacheManager() {
       await CacheManagerService.recordAccess(imageId, category);
       // 可选：重新加载统计以更新最近访问记录
       // await loadStats();
-    } catch (err) {
+    } catch {
+      console.error('记录访问失败');
     }
   }, []);
 

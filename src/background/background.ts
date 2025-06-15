@@ -8,8 +8,8 @@ import { initializeSyncManager } from '../services/sync/sync-manager';
 let syncManager = null;
 try {
   syncManager = initializeSyncManager();
-} catch {
-  // Ignore sync manager initialization errors
+} catch (error) {
+  console.error('同步管理器初始化失败:', error);
 }
 
 // 监听来自content script或popup的消息
@@ -129,13 +129,13 @@ chrome.runtime.onInstalled.addListener((details) => {
         enabled: false,
         autoSyncInterval: 30,
       }
-    }).catch(() => {
-      // Ignore storage errors
+    }).catch((error) => {
+      console.error('初始化WebDAV配置失败:', error);
     })
   } else if (details.reason === 'update') {
     // 清理过期的同步锁和状态
-    chrome.storage.local.remove(['sync_lock']).catch(() => {
-      // 忽略错误
+    chrome.storage.local.remove(['sync_lock']).catch((error) => {
+      console.error('清理同步锁失败:', error);
     })
     
     // 重新初始化同步管理器
@@ -143,8 +143,8 @@ chrome.runtime.onInstalled.addListener((details) => {
       try {
         syncManager.stop()
         syncManager = initializeSyncManager()
-      } catch {
-        // Ignore sync manager restart errors
+      } catch (error) {
+        console.error('同步管理器重启失败:', error);
       }
     }
   }
@@ -160,8 +160,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       // 触发自动同步调度器的新标签页事件
       chrome.runtime.sendMessage({
         action: 'auto_sync_tab_opened'
-      }).catch(() => {
-        // Ignore auto sync message errors
+      }).catch((error) => {
+        console.debug('自动同步消息发送失败:', error);
       })
     }
   }
@@ -177,12 +177,12 @@ chrome.tabs.onCreated.addListener((tab) => {
         
         chrome.runtime.sendMessage({
           action: 'auto_sync_tab_opened'
-        }).catch(() => {
-          // 忽略发送失败
+        }).catch((error) => {
+          console.debug('延迟自动同步消息发送失败:', error);
         })
       }
-    }).catch(() => {
-      // 忽略错误
+    }).catch((error) => {
+      console.debug('获取标签页信息失败:', error);
     })
   }, 100)
 })

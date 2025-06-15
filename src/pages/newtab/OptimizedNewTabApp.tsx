@@ -31,20 +31,19 @@ function OptimizedNewTabApp() {
   const isPageReady = usePageLoadState()
   
   // 设置管理Hook - 最优先加载
-  const { settings, updateSettings, isLoading: settingsLoading } = useSettings()
+  const { settings, isLoading: settingsLoading } = useSettings()
   
   // 背景管理Hook
   const { backgroundStyles, currentAttribution, setOnlineImageBackground } = useBackground()
   
   // 使用设置数据的其他Hooks
   const { currentTime } = useClock(settings.preferences)
-  const { networkMode, setNetworkMode, loading: networkLoading } = useNetworkMode()
+  const { networkMode, setNetworkMode } = useNetworkMode()
   
   // 书签管理Hook
   const {
     bookmarks,
     loading: bookmarksLoading,
-    error: bookmarksError,
     addBookmark,
     updateBookmark,
     deleteBookmark,
@@ -56,7 +55,6 @@ function OptimizedNewTabApp() {
   const {
     categories,
     loading: categoriesLoading,
-    error: categoriesError,
     addCategory,
     updateCategory,
     deleteCategory,
@@ -65,14 +63,13 @@ function OptimizedNewTabApp() {
   } = useCategories()
   
   // 优化的分类切换Hook
-  const { 
-    selectedCategoryName, 
-    handleCategorySelect, 
-    isPending: categoryPending, 
-    isInitialized: categoryInitialized 
-  } = useCategorySwitch({ 
-    categories, 
-    categoriesLoading 
+  const {
+    selectedCategoryName,
+    handleCategorySelect,
+    isInitialized: categoryInitialized
+  } = useCategorySwitch({
+    categories,
+    categoriesLoading
   })
   
   // 书签弹窗状态
@@ -107,11 +104,11 @@ function OptimizedNewTabApp() {
   useEffect(() => {
     const triggerAutoSync = async () => {
       try {
-        const response = await chrome.runtime.sendMessage({
+        await chrome.runtime.sendMessage({
           action: 'auto_sync_tab_opened'
         });
       } catch (error) {
-        // 忽略错误
+        console.debug('自动同步触发失败:', error);
       }
     };
 
@@ -159,6 +156,7 @@ function OptimizedNewTabApp() {
     try {
       await setNetworkMode(mode)
     } catch (error) {
+      console.error('网络模式切换失败:', error);
     }
   }, [setNetworkMode])
 
@@ -192,6 +190,7 @@ function OptimizedNewTabApp() {
       const imageUrl = backgroundImageManager.getImageUrl(image, 'large')
       await setOnlineImageBackground(image, imageUrl)
     } catch (error) {
+      console.error('刷新背景图片失败:', error);
     }
   }, [settings.background.type, settings.background.randomImageCategory, setOnlineImageBackground])
 
@@ -323,6 +322,7 @@ function OptimizedNewTabApp() {
     try {
       await reorderBookmarks(reorderedBookmarks)
     } catch (error) {
+      console.error('书签重排序失败:', error);
     }
   }, [reorderBookmarks])
 
@@ -357,8 +357,10 @@ function OptimizedNewTabApp() {
           await handleCategorySelect(newSelectedName)
         }
       } else {
+        console.error('删除分类失败:', result.error);
       }
     } catch (error) {
+      console.error('删除分类异常:', error);
     }
   }, [deleteCategory, selectedCategoryName, hideContextMenu, categories, handleCategorySelect])
 
@@ -373,9 +375,12 @@ function OptimizedNewTabApp() {
     try {
       const result = await addCategory(categoryData)
       if (result.success) {
+        console.log('分类保存成功');
       } else {
+        console.error('分类保存失败:', result.error);
       }
     } catch (error) {
+      console.error('分类保存异常:', error);
     }
   }, [addCategory])
 
@@ -384,9 +389,12 @@ function OptimizedNewTabApp() {
     try {
       const result = await updateCategory(name, updates)
       if (result.success) {
+        console.log('分类更新成功');
       } else {
+        console.error('分类更新失败:', result.error);
       }
     } catch (error) {
+      console.error('分类更新异常:', error);
     }
   }, [updateCategory])
 
@@ -395,9 +403,12 @@ function OptimizedNewTabApp() {
     try {
       const result = await reorderCategories(reorderedCategories)
       if (result.success) {
+        console.log('分类重排序成功');
       } else {
+        console.error('分类重排序失败:', result.error);
       }
     } catch (error) {
+      console.error('分类重排序异常:', error);
     }
   }, [reorderCategories])
 
@@ -432,7 +443,7 @@ function OptimizedNewTabApp() {
 
   // 监听来自background的消息
   useEffect(() => {
-    const handleMessage = (message: any, _sender: any, sendResponse: any) => {
+    const handleMessage = (message: unknown, _sender: unknown, sendResponse: (response?: unknown) => void) => {
       if (message.action === 'get_selected_category') {
         sendResponse({ selectedCategoryName })
         return true

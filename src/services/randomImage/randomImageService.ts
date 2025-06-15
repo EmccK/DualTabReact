@@ -46,7 +46,7 @@ export class RandomImageService {
   /**
    * 发送API请求
    */
-  private async request<T>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
+  private async request<T>(endpoint: string, params: Record<string, unknown> = {}): Promise<T> {
     const url = new URL(`${this.baseURL}${endpoint}`);
     
     // 添加查询参数

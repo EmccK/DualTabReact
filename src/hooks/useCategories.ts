@@ -8,7 +8,7 @@ import {
   deleteCategory,
   reorderCategories 
 } from '@/utils/storage'
-import { createBookmarkCategory, createDefaultCategory, getCategoryKey } from '@/models/BookmarkCategory'
+import { createDefaultCategory } from '@/models/BookmarkCategory'
 import { loadBookmarks, saveBookmarks } from '@/utils/storage'
 
 interface UseCategoriesReturn {
@@ -65,7 +65,7 @@ export function useCategories(): UseCategoriesReturn {
         setError(result.error || '加载分类失败')
         setCategories([])
       }
-    } catch (err) {
+    } catch {
       setError('加载分类数据失败')
       setCategories([])
     } finally {
@@ -87,12 +87,13 @@ export function useCategories(): UseCategoriesReturn {
     };
 
     // 监听来自background script的存储变化消息
-    const handleRuntimeMessage = (message: any, _sender: any, _sendResponse: any) => {
+    const handleRuntimeMessage = (message: unknown) => {
       if (message.action === 'storage_changed' && message.data?.changes) {
         const changes = message.data.changes;
         if (changes.includes('categories')) {
           loadCategoriesData();
         } else {
+          console.debug('Storage change does not include categories');
         }
       }
       return false; // 不需要异步响应
@@ -127,7 +128,7 @@ export function useCategories(): UseCategoriesReturn {
         await loadCategoriesData()
       }
       return result
-    } catch (err) {
+    } catch {
       return { success: false, error: '添加分类失败' }
     }
   }, [loadCategoriesData, categories])
@@ -151,7 +152,7 @@ export function useCategories(): UseCategoriesReturn {
         await loadCategoriesData()
       }
       return result
-    } catch (err) {
+    } catch {
       return { success: false, error: '更新分类失败' }
     }
   }, [loadCategoriesData, categories])
@@ -188,7 +189,7 @@ export function useCategories(): UseCategoriesReturn {
         await loadCategoriesData()
       }
       return result
-    } catch (err) {
+    } catch {
       return { success: false, error: '删除分类失败' }
     }
   }, [loadCategoriesData, categories])
@@ -204,7 +205,7 @@ export function useCategories(): UseCategoriesReturn {
         await loadCategoriesData()
       }
       return result
-    } catch (err) {
+    } catch {
       await loadCategoriesData()
       return { success: false, error: '重排序分类失败' }
     }

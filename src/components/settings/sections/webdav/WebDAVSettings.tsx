@@ -9,7 +9,7 @@ import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { Label } from '../../../ui/label';
 import { Separator } from '../../../ui/separator';
-import { Badge } from '../../../ui/badge';
+
 import { Alert } from '../../../ui/alert';
 import { AutoSyncConfig } from './AutoSyncConfig';
 import { useWebDAVSync } from '../../../../hooks/webdav';
@@ -34,6 +34,7 @@ export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: 
     autoLoadConfig: true,
     autoRefreshStatus: true,
     onError: (error) => {
+      console.error('WebDAV同步错误:', error);
     },
   });
 
@@ -120,8 +121,10 @@ export function WebDAVSettings({ className, onRegisterSave, onUnregisterSave }: 
         });
         
         if (!response?.success) {
+          console.error('保存自动同步配置失败:', response?.error);
         }
       } catch (error) {
+        console.error('发送自动同步配置失败:', error);
       }
     }
   };

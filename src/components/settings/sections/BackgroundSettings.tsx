@@ -3,7 +3,7 @@
  * 集成在设置弹窗中的背景配置面板，采用紧凑布局设计
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {

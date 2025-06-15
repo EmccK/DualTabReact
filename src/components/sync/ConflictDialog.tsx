@@ -85,7 +85,7 @@ const RESOLUTION_OPTIONS = [
 /**
  * 获取数据统计信息
  */
-function getDataStats(data: any) {
+function getDataStats(data: unknown) {
   return {
     categoriesCount: data?.categories?.length || 0,
     bookmarksCount: data?.bookmarks?.length || 0,
@@ -103,7 +103,7 @@ function DataPreview({
   isLocal = false 
 }: { 
   title: string; 
-  data: any; 
+  data: unknown;
   timestamp: number; 
   isLocal?: boolean; 
 }) {
@@ -249,7 +249,8 @@ export function ConflictDialog({
         }
         onClose();
       }
-    } catch (error) {
+    } catch {
+      console.error('解决冲突失败');
     } finally {
       setIsResolving(false);
     }

@@ -161,6 +161,7 @@ export function useRandomImage(options: RandomImageOptions = {}) {
   // 自动加载
   useEffect(() => {
     if (autoLoad && !state.currentWallpaper && !state.isLoading) {
+      fetchRandomWallpaper();
     }
   }, [autoLoad, state.currentWallpaper, state.isLoading, fetchRandomWallpaper]);
 

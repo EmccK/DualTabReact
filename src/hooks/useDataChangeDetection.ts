@@ -25,7 +25,7 @@ interface UseDataChangeDetectionOptions {
  * @param options 选项配置
  */
 export function useDataChangeDetection(
-  dependencies: any[], 
+  dependencies: unknown[],
   options: UseDataChangeDetectionOptions = {}
 ): void {
   const {
@@ -35,7 +35,7 @@ export function useDataChangeDetection(
   } = options;
 
   const isInitialMount = useRef(true);
-  const lastDependencies = useRef<any[]>([]);
+  const lastDependencies = useRef<unknown[]>([]);
   const debouncedDependencies = useDebounce(dependencies, debounceDelay);
 
   /**
@@ -49,9 +49,11 @@ export function useDataChangeDetection(
       });
       
       if (debug) {
+        console.log('自动同步数据变更事件已触发');
       }
     } catch (error) {
       if (debug) {
+        console.error('自动同步数据变更事件触发失败:', error);
       }
     }
   };
@@ -59,7 +61,7 @@ export function useDataChangeDetection(
   /**
    * 检查依赖是否发生变化
    */
-  const hasChanged = (current: any[], previous: any[]): boolean => {
+  const hasChanged = (current: unknown[], previous: unknown[]): boolean => {
     if (current.length !== previous.length) {
       return true;
     }
@@ -93,6 +95,7 @@ export function useDataChangeDetection(
     // 检查是否有变化
     if (hasChanged(debouncedDependencies, lastDependencies.current)) {
       if (debug) {
+        console.log('检测到数据变更，触发自动同步');
       }
 
       // 触发自动同步
@@ -115,8 +118,8 @@ export function useDataChangeDetection(
  * 专门用于监听书签相关数据变更
  */
 export function useBookmarkDataChangeDetection(
-  bookmarks: any[],
-  categories: any[],
+  bookmarks: unknown[],
+  categories: unknown[],
   options: UseDataChangeDetectionOptions = {}
 ): void {
   // 创建用于比较的数据快照
@@ -148,7 +151,7 @@ export function useBookmarkDataChangeDetection(
  * 专门用于监听应用设置变更
  */
 export function useSettingsDataChangeDetection(
-  settings: any,
+  settings: unknown,
   options: UseDataChangeDetectionOptions = {}
 ): void {
   // 只监听关键设置字段的变更

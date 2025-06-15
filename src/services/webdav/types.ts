@@ -110,9 +110,9 @@ export interface ConflictInfo {
   /** 冲突类型 */
   type: 'data_conflict' | 'timestamp_conflict' | 'hash_mismatch';
   /** 本地数据 */
-  localData: any;
+  localData: unknown;
   /** 远程数据 */
-  remoteData: any;
+  remoteData: unknown;
   /** 本地时间戳 */
   localTimestamp: number;
   /** 远程时间戳 */
@@ -165,11 +165,11 @@ export interface SyncDataPackage {
   /** 设备信息 */
   device: DeviceInfo;
   /** 书签分类数据 */
-  categories: any[];
+  categories: unknown[];
   /** 书签数据 */
-  bookmarks: any[];
+  bookmarks: unknown[];
   /** 应用设置 */
-  settings: any;
+  settings: unknown;
   /** 数据版本 */
   version: string;
   /** 创建时间 */

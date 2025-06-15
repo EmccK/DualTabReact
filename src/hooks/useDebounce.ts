@@ -39,7 +39,7 @@ export function useDebounce<T>(value: T, delay: number): T {
  * @param deps 依赖数组
  * @returns 防抖后的回调函数
  */
-export function useDebouncedCallback<T extends (...args: any[]) => any>(
+export function useDebouncedCallback<T extends (...args: unknown[]) => unknown>(
   callback: T,
   delay: number,
   deps: React.DependencyList = []
@@ -67,13 +67,13 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
  * @param delay 延迟时间（毫秒）
  * @returns 防抖后的函数
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number
 ): T {
   let timeoutId: NodeJS.Timeout;
-  
-  return ((...args: any[]) => {
+
+  return ((...args: unknown[]) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
   }) as T;

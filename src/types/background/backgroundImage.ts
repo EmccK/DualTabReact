@@ -54,7 +54,7 @@ export interface BackgroundImageMetadata {
 }
 
 // API响应的通用接口
-export interface BackgroundImageApiResponse<T = any> {
+export interface BackgroundImageApiResponse<T = unknown> {
   success: boolean;
   data: T;
   message?: string;

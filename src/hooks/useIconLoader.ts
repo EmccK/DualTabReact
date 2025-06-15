@@ -55,7 +55,7 @@ export const useIconLoader = ({
       const favicon = await getBestBookmarkIconUrl(bookmark, networkMode, size);
 
       setIconUrl(favicon);
-    } catch (error) {
+    } catch {
       setHasError(true);
       setIconUrl(null);
     } finally {

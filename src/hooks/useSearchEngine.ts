@@ -18,7 +18,8 @@ export function useSearchEngine() {
       await updateSettings('preferences', {
         searchEngine: engineId,
       });
-    } catch (error) {
+    } catch {
+      console.error('搜索引擎设置加载失败');
     }
   }, [updateSettings]);
 

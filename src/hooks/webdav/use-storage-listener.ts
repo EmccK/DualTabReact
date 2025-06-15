@@ -154,7 +154,7 @@ export function useWebDAVStorageListener(
 /**
  * 监听特定存储键的Hook
  */
-export function useStorageKey<T = any>(
+export function useStorageKey<T = unknown>(
   key: string,
   defaultValue: T,
   area: 'local' | 'sync' = 'local'

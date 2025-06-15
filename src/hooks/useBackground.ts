@@ -74,7 +74,7 @@ export function useBackground() {
         default:
           styles.backgroundImage = generateGradientCSS(gradient);
       }
-    } catch (error) {
+    } catch {
       // 回退到默认渐变
       styles.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
     }
@@ -141,6 +141,7 @@ export function useBackground() {
         }
       });
     } catch (error) {
+      console.error('设置在线图片背景失败:', error);
       throw error;
     }
   };

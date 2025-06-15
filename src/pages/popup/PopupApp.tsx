@@ -3,7 +3,7 @@
  * 复用新标签页的书签管理功能，提供快速添加书签界面
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { PopupLayout } from '@/components/popup/PopupLayout';
 import { CurrentTabInfo } from '@/components/popup/CurrentTabInfo';
 import { QuickBookmarkForm } from '@/components/popup/QuickBookmarkForm';
@@ -75,6 +75,7 @@ function PopupApp() {
       }
       // 错误处理由usePopupBookmark Hook处理
     } catch (error) {
+      console.error('添加书签失败:', error);
     }
   }, [quickAddBookmark]);
 

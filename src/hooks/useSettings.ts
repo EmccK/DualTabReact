@@ -27,7 +27,7 @@ export function useSettings(): SettingsContextType {
         const mergedSettings = mergeWithDefaults(rawSettings, DEFAULT_SETTINGS);
         setSettings(mergedSettings);
       }
-    } catch (error) {
+    } catch {
       setSettings(DEFAULT_SETTINGS);
     } finally {
       setIsLoading(false);
@@ -122,7 +122,7 @@ export function useSettings(): SettingsContextType {
     };
 
     // 监听来自background script的存储变化消息
-    const handleRuntimeMessage = (message: any, _sender: any, _sendResponse: any) => {
+    const handleRuntimeMessage = (message: unknown) => {
       if (message.action === 'storage_changed' && message.data?.changes) {
         const changes = message.data.changes;
         if (changes.includes(SETTINGS_KEY)) {
@@ -171,7 +171,7 @@ function mergeWithDefaults(saved: Partial<AppSettings>, defaults: AppSettings): 
       merged[sectionKey] = {
         ...defaults[sectionKey],
         ...saved[sectionKey],
-      } as any;
+      } as typeof defaults[typeof sectionKey];
     }
   });
   

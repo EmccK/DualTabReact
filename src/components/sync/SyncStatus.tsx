@@ -287,7 +287,7 @@ export function SyncStatus({
 /**
  * 同步状态监控器（用于在其他组件中嵌入状态显示）
  */
-export function SyncStatusMonitor({ onStatusChange }: { onStatusChange?: (status: any) => void }) {
+export function SyncStatusMonitor({ onStatusChange }: { onStatusChange?: (status: unknown) => void }) {
   useWebDAVSync({
     autoLoadConfig: true,
     autoRefreshStatus: true,

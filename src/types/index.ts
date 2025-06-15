@@ -59,7 +59,7 @@ export interface AppSettings {
   enableBlur: boolean;
   enableAnimations: boolean;
   autoSync: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // API限制信息类型
@@ -80,12 +80,12 @@ export interface BackupData {
 }
 
 // Chrome Storage 响应类型
-export interface StorageResponse<T = any> {
+export interface StorageResponse<T = unknown> {
   [key: string]: T;
 }
 
 // 操作结果类型
-export interface OperationResult<T = any> {
+export interface OperationResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;

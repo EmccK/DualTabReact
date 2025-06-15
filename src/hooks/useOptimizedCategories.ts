@@ -45,7 +45,7 @@ export const useCategorySwitch = ({ categories, categoriesLoading }: UseCategory
           setSelectedCategoryName(targetCategoryName);
           setIsInitialized(true);
         });
-      } catch (error) {
+      } catch {
         // 出错时也选择第一个分类
         if (categories.length > 0) {
           const firstCategoryName = categories[0].name;
@@ -82,7 +82,7 @@ export const useCategorySwitch = ({ categories, categoriesLoading }: UseCategory
         
         await saveSelectedCategoryName(categoryName);
       }
-    } catch (error) {
+    } catch {
       // 即使保存失败也要更新UI状态
       startTransition(() => {
         setSelectedCategoryName(categoryName);

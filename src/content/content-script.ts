@@ -5,13 +5,14 @@
 const DEBUG = process.env.NODE_ENV === 'development'
 
 if (DEBUG) {
+  console.log('DualTab content script loaded in debug mode');
 }
 
 // 监听来自background script的消息
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   
   switch (message.action) {
-    case 'get_page_info':
+    case 'get_page_info': {
       // 获取当前页面信息
       const pageInfo = {
         title: document.title,
@@ -21,6 +22,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
       sendResponse(pageInfo)
       break
+    }
       
     case 'refresh_bookmarks':
       // 如果当前页面是新标签页，可以处理刷新逻辑
@@ -73,6 +75,7 @@ if (document.readyState === 'loading') {
 
 function initialize() {
   if (DEBUG) {
+    console.log('DualTab content script initialized');
   }
   // 这里可以添加页面加载完成后的初始化逻辑
 }
