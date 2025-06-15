@@ -83,14 +83,29 @@ const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
     if (!onBookmarkReorder) return;
     
     startTransition(() => {
-      const reorderedBookmarks = reorderedItems.map(item => {
+      // 获取重排序后的当前分类书签，并更新其position
+      const reorderedCurrentCategoryBookmarks = reorderedItems.map((item, index) => {
         const originalBookmark = bookmarks.find(b => b.url === item.url);
-        return originalBookmark!;
+        return {
+          ...originalBookmark!,
+          position: index
+        };
       }).filter(Boolean);
       
-      onBookmarkReorder(reorderedBookmarks);
+      // 获取其他分类的书签（不在当前分类中的书签）
+      const otherCategoryBookmarks = bookmarks.filter(bookmark => 
+        selectedCategoryName ? bookmark.categoryName !== selectedCategoryName : false
+      );
+      
+      // 合并所有书签：其他分类书签 + 重排序后的当前分类书签
+      const allBookmarks = [
+        ...otherCategoryBookmarks,
+        ...reorderedCurrentCategoryBookmarks
+      ];
+      
+      onBookmarkReorder(allBookmarks);
     });
-  }, [bookmarks, onBookmarkReorder]);
+  }, [bookmarks, onBookmarkReorder, selectedCategoryName]);
 
   // 如果是初始加载，显示加载状态而不是空内容
   if (isInitialLoad && bookmarks.length === 0) {
