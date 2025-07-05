@@ -17,7 +17,8 @@ import { COLOR_PALETTE } from '@/constants/bookmark-style.constants';
 import { compressAndScaleImage } from '@/utils/icon-processing.utils';
 import { colorWithOpacity } from '@/utils/gradient/customGradientUtils';
 import { BookmarkIcon } from '@/components/icon';
-import type { Bookmark, NetworkMode } from '@/types';
+import { useCategories } from '@/hooks/useCategories';
+import type { Bookmark, NetworkMode, IconType } from '@/types';
 import type { ImageScaleConfig } from '@/types/bookmark-style.types';
 
 interface BookmarkModalProps {
@@ -43,6 +44,8 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   onSave,
   onUpdate,
 }) => {
+  const { categories, loading: categoriesLoading } = useCategories();
+  
   const [formData, setFormData] = useState<Partial<Bookmark>>({
     title: '',
     url: '',
@@ -57,6 +60,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   const [urlError, setUrlError] = useState('');
   const [showImageScaler, setShowImageScaler] = useState(false);
   const [originalImageData, setOriginalImageData] = useState('');
+  const [originalImageUrl, setOriginalImageUrl] = useState('');
 
   const [imageScale, setImageScale] = useState<ImageScaleConfig>({
     scale: 1,
@@ -138,6 +142,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
     } else {
       // 新增模式：清空数据
       setOriginalImageData('');
+      setOriginalImageUrl('');
       setImageScale({
         scale: 1,
         offsetX: 0,
@@ -147,7 +152,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
         backgroundOpacity: 100
       });
     }
-  }, [bookmark, mode, isOpen, selectedCategoryName]);
+  }, [bookmark, mode, isOpen, selectedCategoryName, categories]);
 
   // 键盘事件处理
   useEffect(() => {
@@ -208,6 +213,11 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
   // 处理表单提交
   const handleSubmit = async () => {
     if (!formData.title?.trim()) {
+      return;
+    }
+
+    // 验证分类选择
+    if (!formData.categoryName?.trim()) {
       return;
     }
 
@@ -511,6 +521,30 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
                 rows={2}
               />
             </div>
+
+            {/* 分类选择 */}
+            {!categoriesLoading && categories.length > 0 && (
+              <div>
+                <Label htmlFor="bookmark-category">分类 *</Label>
+                <select
+                  id="bookmark-category"
+                  value={formData.categoryName || ''}
+                  onChange={(e) => handleInputChange('categoryName', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-800"
+                  required
+                >
+                  <option value="">请选择分类</option>
+                  {categories.map((category) => (
+                    <option key={category.name} value={category.name}>
+                      {category.icon} {category.name}
+                    </option>
+                  ))}
+                </select>
+                {!formData.categoryName && (
+                  <p className="text-sm text-red-500 mt-1">请选择一个分类</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 图标设置 */}
@@ -781,6 +815,7 @@ const BookmarkModal: React.FC<BookmarkModalProps> = ({
             onClick={handleSubmit}
             disabled={
               !formData.title?.trim() || 
+              !formData.categoryName?.trim() ||
               (networkMode 
                 ? (!formData.externalUrl?.trim() && !formData.internalUrl?.trim())
                 : !formData.url?.trim()
