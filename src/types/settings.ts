@@ -25,6 +25,7 @@ export interface BookmarkSettings {
   // 分类设置
   categories: {
     sidebarVisible: 'always' | 'auto'; // 边栏显示模式
+    enableScrollSwitch?: boolean;      // 是否启用滚动自动切换分类
   };
 }
 
@@ -95,6 +96,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     },
     categories: {
       sidebarVisible: 'always',
+      enableScrollSwitch: true,
     },
   },
   background: {

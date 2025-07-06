@@ -17,6 +17,7 @@ interface OptimizedBookmarkGridV3Props {
   onBookmarkContextMenu?: (bookmark: Bookmark, event: React.MouseEvent) => void;
   onBookmarkReorder?: (reorderedBookmarks: Bookmark[]) => void;
   className?: string;
+  networkMode?: 'internal' | 'external';
 }
 
 const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
@@ -27,6 +28,7 @@ const OptimizedBookmarkGridV3: React.FC<OptimizedBookmarkGridV3Props> = ({
   onBookmarkContextMenu,
   onBookmarkReorder,
   className = '',
+  networkMode,
 }) => {
   const [isPending, startTransition] = useTransition();
   const [isInitialLoad, setIsInitialLoad] = useState(true);

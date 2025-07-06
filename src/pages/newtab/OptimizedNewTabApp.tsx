@@ -16,6 +16,7 @@ import { AttributionOverlay } from '@/components/background'
 
 import { useClock, useBookmarks, useNetworkMode, useCategories, useSettings, useBackground, useBookmarkDataChangeDetection, useSettingsDataChangeDetection, debounce } from '@/hooks'
 import { useCategorySwitch, usePageLoadState } from '@/hooks/useOptimizedCategories'
+import { useMouseWheelCategorySwitch } from '@/hooks/useMouseWheelCategorySwitch'
 import { useRuntimeMessageListener } from '@/hooks/webdav/use-storage-listener'
 import { backgroundImageManager } from '@/services/background'
 import type { BackgroundImageFilters } from '@/types/background'
@@ -70,6 +71,14 @@ function OptimizedNewTabApp() {
   } = useCategorySwitch({
     categories,
     categoriesLoading
+  })
+  
+  // 鼠标滚轮切换分类Hook
+  useMouseWheelCategorySwitch({
+    categories,
+    selectedCategoryName,
+    onCategorySelect: handleCategorySelect,
+    enabled: settings.bookmarks.categories.enableScrollSwitch !== false
   })
   
   // 书签弹窗状态

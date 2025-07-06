@@ -16,3 +16,4 @@ export {
   useBookmarkDataChangeDetection,
   useSettingsDataChangeDetection 
 } from './useDataChangeDetection';
+export { useMouseWheelCategorySwitch } from './useMouseWheelCategorySwitch';
